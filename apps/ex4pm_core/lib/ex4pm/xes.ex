@@ -22,8 +22,10 @@ defmodule Ex4pm.XES do
           |> Enum.with_index(1)
           |> Enum.reduce({%{}, %{}}, fn {trace, trace_index}, {objects, events} ->
             case_id =
-              xpath(trace, ~x"./string[@key='concept:name']/@value"so) ||
-                "trace-#{trace_index}"
+              trace
+              |> xpath(~x"./string[@key='concept:name']/@value"so)
+              |> optional_text()
+              |> Kernel.||("trace-#{trace_index}")
 
             object = %{"type" => case_object_type, "xes:trace_index" => trace_index}
 
@@ -32,12 +34,21 @@ defmodule Ex4pm.XES do
               |> xpath(~x"./event"el)
               |> Enum.with_index(1)
               |> Enum.map(fn {event, event_index} ->
-                activity = xpath(event, ~x"./string[@key='concept:name']/@value"so)
-                timestamp = xpath(event, ~x"./date[@key='time:timestamp']/@value"so)
+                activity =
+                  event
+                  |> xpath(~x"./string[@key='concept:name']/@value"so)
+                  |> optional_text()
+
+                timestamp =
+                  event
+                  |> xpath(~x"./date[@key='time:timestamp']/@value"so)
+                  |> optional_text()
 
                 event_id =
-                  xpath(event, ~x"./string[@key='identity:id']/@value"so) ||
-                    "#{case_id}:#{event_index}"
+                  event
+                  |> xpath(~x"./string[@key='identity:id']/@value"so)
+                  |> optional_text()
+                  |> Kernel.||("#{case_id}:#{event_index}")
 
                 {event_id,
                  %{
@@ -76,4 +87,7 @@ defmodule Ex4pm.XES do
   def parse(other, _opts) do
     {:error, Refusal.new(:invalid_xes_subject, "XES input must be XML bytes", subject: other)}
   end
+
+  defp optional_text(value) when value in [nil, ""], do: nil
+  defp optional_text(value), do: value
 end

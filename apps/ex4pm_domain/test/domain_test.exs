@@ -22,8 +22,13 @@ defmodule Ex4pm.DomainTest do
       Ex4pm.Engine.Registry.candidates(:discover)
       |> Enum.find(&(&1.id == :beam))
 
+    assert capability.standing == :partial_alive
+    assert capability.evidence.executed == false
+
     assert {:ok, projected} = Ex4pm.Domain.Projector.capability(capability)
     assert projected.engine == :beam
-    assert projected.standing == :alive
+    assert projected.standing == :partial_alive
+    assert projected.reason == :candidate_available
+    assert projected.evidence.executed == false
   end
 end

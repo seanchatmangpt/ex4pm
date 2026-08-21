@@ -193,14 +193,14 @@ defmodule Ex4pm.Evidence.BRCE do
   def admit(authority, operation) when is_map(authority) do
     capabilities = Map.get(authority, :capabilities) || Map.get(authority, "capabilities") || []
     allowed = Map.get(authority, :allow) || Map.get(authority, "allow") || []
-    operation_text = to_string(operation)
+    operation_text = operation_text(operation)
 
     if :do in capabilities or "do" in capabilities or operation in allowed or operation_text in allowed do
       :ok
     else
       {:error,
        Refusal.new(:authority_denied, "authority does not admit requested DO operation",
-         details: %{operation: operation}
+         details: %{operation: operation, operation_text: operation_text}
        )}
     end
   end
@@ -211,6 +211,10 @@ defmodule Ex4pm.Evidence.BRCE do
        details: %{operation: operation}
      )}
   end
+
+  defp operation_text(operation) when is_binary(operation), do: operation
+  defp operation_text(operation) when is_atom(operation), do: Atom.to_string(operation)
+  defp operation_text(operation), do: inspect(operation)
 
   defp invoke_and_finalize(pending, fun, store, metadata) do
     try do
