@@ -35,7 +35,9 @@ defmodule Ex4pm.Runtime do
      )}
   end
 
-  def execute(%Plan{} = plan, authority, opts \\ []) do
+  def execute(plan, authority, opts \\ [])
+
+  def execute(%Plan{} = plan, authority, opts) do
     max_concurrency = Keyword.get(opts, :max_concurrency, System.schedulers_online())
     task_executor = Keyword.get(opts, :task_executor, &default_task_executor/1)
     store = Keyword.get(opts, :store, Ex4pm.Evidence.Store)

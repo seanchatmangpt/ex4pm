@@ -184,25 +184,8 @@ defmodule Ex4pm.Evidence.BRCE do
       metadata = Map.new(Keyword.get(opts, :metadata, %{}))
       pending = Receipt.pending(subject_hash, operation, authority, metadata)
 
-      with {:ok, _} <- Store.put(pending, store) do
-        try do
-          result = fun.()
-          outcome = Receipt.outcome(pending, result, :alive, Map.put(metadata, :result, :ok))
-          {:ok, _} = Store.put(outcome, store)
-          {:ok, %{result: result, pending: pending, receipt: outcome}}
-        rescue
-          exception ->
-            failure = %{exception: Exception.message(exception), module: exception.__struct__}
-            outcome = Receipt.outcome(pending, failure, :blocked, Map.put(metadata, :result, :exception))
-            {:ok, _} = Store.put(outcome, store)
-            {:error, %{error: exception, pending: pending, receipt: outcome}}
-        catch
-          kind, reason ->
-            failure = %{kind: kind, reason: inspect(reason)}
-            outcome = Receipt.outcome(pending, failure, :blocked, Map.put(metadata, :result, :caught))
-            {:ok, _} = Store.put(outcome, store)
-            {:error, %{error: {kind, reason}, pending: pending, receipt: outcome}}
-        end
+      with {:ok, _} <- persist(pending, store, :pending_receipt_persistence_failed) do
+        invoke_and_finalize(pending, fun, store, metadata)
       end
     end
   end
@@ -227,5 +210,70 @@ defmodule Ex4pm.Evidence.BRCE do
      Refusal.new(:authority_required, "DO requires an explicit authority map",
        details: %{operation: operation}
      )}
+  end
+
+  defp invoke_and_finalize(pending, fun, store, metadata) do
+    try do
+      result = fun.()
+      outcome = Receipt.outcome(pending, result, :alive, Map.put(metadata, :result, :ok))
+
+      with {:ok, _} <- persist(outcome, store, :outcome_receipt_persistence_failed) do
+        {:ok, %{result: result, pending: pending, receipt: outcome}}
+      end
+    rescue
+      exception ->
+        failure = %{exception: Exception.message(exception), module: exception.__struct__}
+        finalize_failure(pending, failure, exception, store, Map.put(metadata, :result, :exception))
+    catch
+      kind, reason ->
+        failure = %{kind: kind, reason: inspect(reason)}
+        finalize_failure(pending, failure, {kind, reason}, store, Map.put(metadata, :result, :caught))
+    end
+  end
+
+  defp finalize_failure(pending, failure, original_error, store, metadata) do
+    outcome = Receipt.outcome(pending, failure, :blocked, metadata)
+
+    case persist(outcome, store, :outcome_receipt_persistence_failed) do
+      {:ok, _} ->
+        {:error, %{error: original_error, pending: pending, receipt: outcome}}
+
+      {:error, %Refusal{} = refusal} ->
+        {:error,
+         %{refusal | details: Map.put(refusal.details, :original_failure, failure)}}
+    end
+  end
+
+  defp persist(receipt, store, code) do
+    case safe_put(receipt, store) do
+      {:ok, _} ->
+        {:ok, receipt}
+
+      {:error, reason} ->
+        {:error,
+         Refusal.new(code, "receipt persistence failed; standing cannot advance",
+           details: %{
+             phase: receipt.phase,
+             receipt_hash: receipt.hash,
+             subject_hash: receipt.subject_hash,
+             operation: receipt.operation,
+             do_attempted: receipt.phase == :outcome,
+             reason: inspect(reason)
+           }
+         )}
+    end
+  end
+
+  defp safe_put(receipt, store) do
+    try do
+      case Store.put(receipt, store) do
+        {:ok, _} = ok -> ok
+        other -> {:error, other}
+      end
+    rescue
+      exception -> {:error, {:exception, exception.__struct__, Exception.message(exception)}}
+    catch
+      kind, reason -> {:error, {kind, reason}}
+    end
   end
 end
