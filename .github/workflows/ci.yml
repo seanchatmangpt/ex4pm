@@ -1,0 +1,42 @@
+name: ex4pm-ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/**
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+      - name: Resolve dependencies
+        run: mix deps.get
+      - name: Compile with warnings as errors
+        run: mix compile --warnings-as-errors
+      - name: Run umbrella tests
+        run: mix test
+      - name: Check formatting
+        run: mix format --check-formatted
+      - name: Upload resolved lockfile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mix-lock-${{ github.sha }}
+          path: mix.lock
+          if-no-files-found: ignore
