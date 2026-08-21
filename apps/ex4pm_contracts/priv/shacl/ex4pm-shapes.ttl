@@ -1,0 +1,19 @@
+@prefix ex4pm: <https://chatman.ai/ex4pm#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex4pm:EventShape a sh:NodeShape ;
+  sh:targetClass ex4pm:Event ;
+  sh:property [ sh:path ex4pm:activity ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path ex4pm:timestamp ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:dateTime ] .
+
+ex4pm:ProcessModelShape a sh:NodeShape ;
+  sh:targetClass ex4pm:ProcessModel ;
+  sh:property [ sh:path ex4pm:subjectHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path ex4pm:standing ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] .
+
+ex4pm:ReceiptShape a sh:NodeShape ;
+  sh:targetClass ex4pm:Receipt ;
+  sh:property [ sh:path ex4pm:subjectHash ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path ex4pm:operation ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+  sh:property [ sh:path ex4pm:standing ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ] .

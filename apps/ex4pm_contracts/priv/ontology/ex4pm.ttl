@@ -1,0 +1,37 @@
+@prefix ex4pm: <https://chatman.ai/ex4pm#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+ex4pm:Observation a rdfs:Class .
+ex4pm:EventLog a rdfs:Class ; rdfs:subClassOf ex4pm:Observation .
+ex4pm:Event a rdfs:Class ; rdfs:subClassOf ex4pm:Observation .
+ex4pm:Object a rdfs:Class .
+ex4pm:ProcessModel a rdfs:Class ; rdfs:subClassOf prov:Entity .
+ex4pm:Engine a rdfs:Class ; rdfs:subClassOf prov:SoftwareAgent .
+ex4pm:Capability a rdfs:Class .
+ex4pm:Intent a rdfs:Class ; rdfs:subClassOf prov:Plan .
+ex4pm:Authority a rdfs:Class ; rdfs:subClassOf prov:Entity .
+ex4pm:Actuation a rdfs:Class ; rdfs:subClassOf prov:Activity .
+ex4pm:Receipt a rdfs:Class ; rdfs:subClassOf prov:Entity .
+ex4pm:Refusal a rdfs:Class ; rdfs:subClassOf prov:Entity .
+
+ex4pm:subjectHash a rdf:Property ; rdfs:range xsd:string .
+ex4pm:artifactHash a rdf:Property ; rdfs:range xsd:string .
+ex4pm:activity a rdf:Property ; rdfs:domain ex4pm:Event ; rdfs:range xsd:string .
+ex4pm:timestamp a rdf:Property ; rdfs:domain ex4pm:Event ; rdfs:range xsd:dateTime .
+ex4pm:relatesObject a rdf:Property ; rdfs:domain ex4pm:Event ; rdfs:range ex4pm:Object .
+ex4pm:hasModel a rdf:Property ; rdfs:range ex4pm:ProcessModel .
+ex4pm:executedBy a rdf:Property ; rdfs:range ex4pm:Engine .
+ex4pm:requiresAuthority a rdf:Property ; rdfs:range ex4pm:Authority .
+ex4pm:hasReceipt a rdf:Property ; rdfs:range ex4pm:Receipt .
+ex4pm:standing a rdf:Property ; rdfs:range xsd:string .
+ex4pm:operation a rdf:Property ; rdfs:range xsd:string .
+
+ex4pm:UNKNOWN a ex4pm:Capability .
+ex4pm:PARTIAL_ALIVE a ex4pm:Capability .
+ex4pm:ALIVE a ex4pm:Capability .
+ex4pm:BLOCKED a ex4pm:Capability .
+ex4pm:BUILD_BROKEN a ex4pm:Capability .
+ex4pm:UNSUPPORTED a ex4pm:Capability .

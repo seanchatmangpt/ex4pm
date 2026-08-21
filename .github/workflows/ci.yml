@@ -1,0 +1,87 @@
+name: ex4pm-ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/**
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+
+      - name: Verify exact subject identity
+        run: |
+          actual="$(git rev-parse HEAD)"
+          printf 'admitted=%s\nobserved=%s\n' "$EX4PM_SUBJECT_SHA" "$actual"
+          test "$actual" = "$EX4PM_SUBJECT_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Resolve exact locked dependencies
+        run: mix deps.get --check-locked
+
+      - name: Compile with warnings as errors
+        run: mix compile --warnings-as-errors
+
+      - name: Run umbrella tests
+        run: mix test
+
+      - name: Check formatting
+        id: format
+        run: mix format --check-formatted
+
+      - name: Manufacture formatting diagnostic
+        if: failure() && steps.format.outcome == 'failure'
+        run: |
+          mix format
+          mkdir -p .ci
+          git diff -- . > .ci/format.patch
+          cat .ci/format.patch
+
+      - name: Upload formatting patch
+        if: failure() && steps.format.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: format-patch-${{ env.EX4PM_SUBJECT_SHA }}
+          path: .ci/format.patch
+          if-no-files-found: error
+
+      - name: Upload formatter-produced source
+        if: failure() && steps.format.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatted-source-${{ env.EX4PM_SUBJECT_SHA }}
+          path: |
+            apps
+            config
+            mix.exs
+            .formatter.exs
+          if-no-files-found: error
+
+      - name: Upload resolved lockfile
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mix-lock-${{ env.EX4PM_SUBJECT_SHA }}
+          path: mix.lock
+          if-no-files-found: error

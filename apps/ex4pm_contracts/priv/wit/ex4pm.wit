@@ -1,0 +1,34 @@
+package chatman:ex4pm@0.1.0;
+
+interface engine {
+  enum standing {
+    unknown,
+    partial-alive,
+    alive,
+    blocked,
+    build-broken,
+    unsupported,
+  }
+
+  record refusal {
+    code: string,
+    message: string,
+    subject-hash: option<string>,
+  }
+
+  record envelope {
+    subject-hash: string,
+    artifact-hash: string,
+    standing: standing,
+    payload: list<u8>,
+  }
+
+  discover: func(observation: list<u8>, options: list<u8>) -> result<envelope, refusal>;
+  conform: func(observation: list<u8>, model: list<u8>, options: list<u8>) -> result<envelope, refusal>;
+  simulate: func(model: list<u8>, options: list<u8>) -> result<envelope, refusal>;
+  optimize: func(observation: list<u8>, model: list<u8>, options: list<u8>) -> result<envelope, refusal>;
+}
+
+world ex4pm-engine {
+  export engine;
+}
