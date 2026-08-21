@@ -1,9 +1,9 @@
-defmodule Ex4pmCore.MixProject do
+defmodule Ex4pmContracts.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :ex4pm_core,
+      app: :ex4pm_contracts,
       version: "0.1.0",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
@@ -16,10 +16,10 @@ defmodule Ex4pmCore.MixProject do
   end
 
   def application do
-    [extra_applications: [:logger, :crypto, :xmerl]]
+    [extra_applications: [:logger, :crypto]]
   end
 
   defp deps do
-    [{:sweet_xml, "~> 0.7.5"}]
+    [{:ex4pm_core, in_umbrella: true}]
   end
 end

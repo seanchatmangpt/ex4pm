@@ -34,7 +34,8 @@ Selection is capability- and evidence-driven. An unavailable edge yields a typed
 
 ## Umbrella applications
 
-- `ex4pm_core` - canonical observation IR, OCEL normalization, POWL, capabilities, hashing;
+- `ex4pm_contracts` - canonical ontology, SHACL, WIT component contract, and receipt schema;
+- `ex4pm_core` - canonical observation IR, OCEL/XES normalization, POWL, capabilities, hashing;
 - `ex4pm_evidence` - receipts, replay, receipt store, BRCE;
 - `ex4pm_engine` - engine calculus, BEAM discovery/conformance/simulation, WASM/NIF/remote adapters, differential verification;
 - `ex4pm_runtime` - POWL planning and receipted OTP execution;
@@ -47,18 +48,37 @@ Selection is capability- and evidence-driven. An unavailable edge yields a typed
 
 ```elixir
 {:ok, dataset} = Ex4pm.ingest(ocel_map)
+{:ok, dataset} = Ex4pm.ingest_xes(xes_xml)
 {:ok, run} = Ex4pm.discover(dataset, algorithm: :dfg, object_type: "Order")
-{:ok, report} = Ex4pm.conform(dataset, run.model)
-{:ok, paths} = Ex4pm.simulate(run.model, max_depth: 12, max_paths: 128)
-{:ok, candidates} = Ex4pm.optimize(dataset, run.model)
+{:ok, report} = Ex4pm.conform(dataset, run.value)
+{:ok, paths} = Ex4pm.simulate(run.value, max_depth: 12, max_paths: 128)
+{:ok, candidates} = Ex4pm.optimize(dataset, run.value)
 {:ok, replayed} = Ex4pm.replay(run.receipt.hash)
+{:ok, contract} = Ex4pm.contracts()
 ```
 
 `operate/3` is different: it requires an explicit authority map and all task callbacks cross the BRCE boundary.
 
+## Canonical contracts
+
+The `ex4pm_contracts` application carries four executable identity surfaces:
+
+- RDF/Turtle ontology for observations, models, engines, authority, actuation, and receipts;
+- SHACL shapes for event/model/receipt closure;
+- WIT component-world contract for portable process engines;
+- JSON Schema for receipt interchange.
+
+`Ex4pm.contracts/0` reads and hashes all four artifacts, verifies required semantic terms, and produces one contract hash. These are canonical public semantic surfaces; Ash records and engine-specific structs are projections.
+
 ## wasm4pm bridge
 
 `Ex4pm.Engine.Wasm` is a real Wasmex-backed raw WebAssembly route. Because wasm4pm builds can expose build-specific ABIs, ex4pm does not invent an OCEL string ABI. The adapter only executes a configured export/parameter contract. A wasm4pm integration reaches `ALIVE` only when the exact artifact, export, parameters, output decoder, and replay evidence are all bound to one run.
+
+The WIT component contract is a forward portable ex4pm engine boundary; it does not claim that arbitrary historical wasm4pm wasm-bindgen bundles already implement that component world.
+
+## OCEL and XES
+
+OCEL-v2-style object-centric data and XES case logs converge on the same canonical `Ex4pm.EventLog` IR. XES parsing disables DTD processing before XPath projection. A malformed activity/timestamp still reaches canonical admission and receives the same typed refusal as equivalent malformed OCEL.
 
 ## Ash control plane
 

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://chatman.ai/ex4pm/schema/receipt-0.1.0.json",
+  "title": "ex4pm Receipt",
+  "type": "object",
+  "required": ["phase", "subject_hash", "operation", "hash"],
+  "properties": {
+    "phase": {"enum": ["pending", "outcome"]},
+    "subject_hash": {"type": "string"},
+    "operation": {"type": "string"},
+    "hash": {"type": "string"},
+    "parent_hash": {"type": ["string", "null"]},
+    "authority_hash": {"type": ["string", "null"]},
+    "artifact_hash": {"type": ["string", "null"]},
+    "standing": {
+      "type": ["string", "null"],
+      "enum": ["unknown", "partial_alive", "alive", "blocked", "build_broken", "unsupported", null]
+    },
+    "metadata": {"type": "object"}
+  },
+  "additionalProperties": true
+}

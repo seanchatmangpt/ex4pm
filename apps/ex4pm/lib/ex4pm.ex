@@ -11,10 +11,19 @@ defmodule Ex4pm do
   alias Ex4pm.Engine
   alias Ex4pm.Engine.Differential
   alias Ex4pm.Evidence.{Receipt, Replay, Store}
-  alias Ex4pm.{EventLog, OCEL, POWL, Refusal, Run}
+  alias Ex4pm.{EventLog, OCEL, POWL, Refusal, Run, XES}
+
+  def contracts, do: Ex4pm.Contracts.verify()
 
   def ingest(raw, opts \\ []) do
     with {:ok, log} <- OCEL.normalize(raw),
+         {:ok, projections} <- maybe_project_dataset(log, opts) do
+      {:ok, %{log | metadata: Map.put(log.metadata, :projections, projections)}}
+    end
+  end
+
+  def ingest_xes(xml, opts \\ []) do
+    with {:ok, log} <- XES.parse(xml, opts),
          {:ok, projections} <- maybe_project_dataset(log, opts) do
       {:ok, %{log | metadata: Map.put(log.metadata, :projections, projections)}}
     end

@@ -20,6 +20,14 @@ defmodule Ex4pmPublic.MixProject do
   end
 
   defp deps do
-    [{:ex4pm_core, in_umbrella: true}, {:ex4pm_evidence, in_umbrella: true}, {:ex4pm_engine, in_umbrella: true}, {:ex4pm_runtime, in_umbrella: true}, {:ex4pm_stream, in_umbrella: true}, {:ex4pm_domain, in_umbrella: true}]
+    [
+      {:ex4pm_contracts, in_umbrella: true},
+      {:ex4pm_core, in_umbrella: true},
+      {:ex4pm_evidence, in_umbrella: true},
+      {:ex4pm_engine, in_umbrella: true},
+      {:ex4pm_runtime, in_umbrella: true},
+      {:ex4pm_stream, in_umbrella: true},
+      {:ex4pm_domain, in_umbrella: true}
+    ]
   end
 end

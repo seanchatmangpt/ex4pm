@@ -66,4 +66,10 @@ defmodule Ex4pmTest do
 
     assert length(execution.receipt_hashes) == 2
   end
+
+  test "public contract surface closes ontology, SHACL, WIT, and receipt schema" do
+    assert {:ok, contract} = Ex4pm.contracts()
+    assert contract.standing == :alive
+    assert map_size(contract.artifacts) == 4
+  end
 end
