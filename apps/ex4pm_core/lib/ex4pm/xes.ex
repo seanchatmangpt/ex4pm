@@ -5,7 +5,9 @@ defmodule Ex4pm.XES do
 
   alias Ex4pm.{OCEL, Refusal}
 
-  def parse(xml, opts \\ []) when is_binary(xml) do
+  def parse(xml, opts \\ [])
+
+  def parse(xml, opts) when is_binary(xml) do
     case_object_type = Keyword.get(opts, :case_object_type, "Case")
 
     try do

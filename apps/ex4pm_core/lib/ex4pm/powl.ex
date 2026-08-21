@@ -22,7 +22,11 @@ defmodule Ex4pm.POWL do
   end
 
   def layers(%__MODULE__{tasks: tasks, edges: edges}) do
-    indegree = Enum.reduce(edges, Map.new(tasks, fn {id, _} -> {id, 0} end), fn {_from, to}, acc -> Map.update!(acc, to, &(&1 + 1)) end)
+    indegree =
+      Enum.reduce(edges, Map.new(tasks, fn {id, _} -> {id, 0} end), fn {_from, to}, acc ->
+        Map.update!(acc, to, &(&1 + 1))
+      end)
+
     successors = Enum.group_by(edges, &elem(&1, 0), &elem(&1, 1))
     do_layers(indegree, successors, [])
   end
@@ -32,13 +36,14 @@ defmodule Ex4pm.POWL do
     |> Enum.reduce_while({:ok, %{}}, fn
       %Task{id: id} = task, {:ok, acc} ->
         id = to_string(id)
-        {:cont, {:ok, Map.put(acc, id, %{task | id: id}}}}
+        {:cont, {:ok, Map.put(acc, id, %{task | id: id})}}
 
       map, {:ok, acc} when is_map(map) ->
         id = Map.get(map, :id) || Map.get(map, "id")
 
         if is_nil(id) do
-          {:halt, {:error, Refusal.new(:missing_task_id, "POWL task is missing identity", subject: map)}}
+          {:halt,
+           {:error, Refusal.new(:missing_task_id, "POWL task is missing identity", subject: map)}}
         else
           id = to_string(id)
 
@@ -53,7 +58,9 @@ defmodule Ex4pm.POWL do
         end
 
       other, _acc ->
-        {:halt, {:error, Refusal.new(:invalid_task, "POWL task must be a task struct or map", subject: other)}}
+        {:halt,
+         {:error,
+          Refusal.new(:invalid_task, "POWL task must be a task struct or map", subject: other)}}
     end)
   end
 
@@ -66,7 +73,9 @@ defmodule Ex4pm.POWL do
     |> Enum.reduce_while({:ok, []}, fn
       {from, to}, {:ok, acc} -> normalize_edge(from, to, tasks, acc)
       [from, to], {:ok, acc} -> normalize_edge(from, to, tasks, acc)
-      other, _acc -> {:halt, {:error, Refusal.new(:invalid_edge, "POWL edge must contain from/to", subject: other)}}
+      other, _acc ->
+        {:halt,
+         {:error, Refusal.new(:invalid_edge, "POWL edge must contain from/to", subject: other)}}
     end)
     |> then(fn
       {:ok, normalized} -> {:ok, normalized |> Enum.uniq() |> Enum.sort()}
@@ -83,15 +92,32 @@ defmodule Ex4pm.POWL do
     to = to_string(to)
 
     cond do
-      from == to -> {:halt, {:error, Refusal.new(:self_cycle, "POWL edge cannot self-reference", details: %{task: from})}}
-      not Map.has_key?(tasks, from) -> {:halt, {:error, Refusal.new(:unknown_task, "POWL edge source is unknown", details: %{task: from})}}
-      not Map.has_key?(tasks, to) -> {:halt, {:error, Refusal.new(:unknown_task, "POWL edge target is unknown", details: %{task: to})}}
-      true -> {:cont, {:ok, [{from, to} | acc]}}
+      from == to ->
+        {:halt,
+         {:error,
+          Refusal.new(:self_cycle, "POWL edge cannot self-reference", details: %{task: from})}}
+
+      not Map.has_key?(tasks, from) ->
+        {:halt,
+         {:error,
+          Refusal.new(:unknown_task, "POWL edge source is unknown", details: %{task: from})}}
+
+      not Map.has_key?(tasks, to) ->
+        {:halt,
+         {:error,
+          Refusal.new(:unknown_task, "POWL edge target is unknown", details: %{task: to})}}
+
+      true ->
+        {:cont, {:ok, [{from, to} | acc]}}
     end
   end
 
   defp acyclic?(tasks, edges) do
-    indegree = Enum.reduce(edges, Map.new(tasks, fn {id, _} -> {id, 0} end), fn {_from, to}, acc -> Map.update!(acc, to, &(&1 + 1)) end)
+    indegree =
+      Enum.reduce(edges, Map.new(tasks, fn {id, _} -> {id, 0} end), fn {_from, to}, acc ->
+        Map.update!(acc, to, &(&1 + 1))
+      end)
+
     successors = Enum.group_by(edges, &elem(&1, 0), &elem(&1, 1))
 
     case consume_acyclic(indegree, successors, 0) do
@@ -101,28 +127,40 @@ defmodule Ex4pm.POWL do
   end
 
   defp consume_acyclic(indegree, successors, count) do
-    zeros = indegree |> Enum.filter(fn {_id, degree} -> degree == 0 end) |> Enum.map(&elem(&1, 0))
+    zeros =
+      indegree
+      |> Enum.filter(fn {_id, degree} -> degree == 0 end)
+      |> Enum.map(&elem(&1, 0))
 
     if zeros == [] do
       count
     else
       next =
         Enum.reduce(zeros, Map.drop(indegree, zeros), fn id, acc ->
-          Enum.reduce(Map.get(successors, id, []), acc, fn successor, degrees -> Map.update!(degrees, successor, &(&1 - 1)) end)
+          Enum.reduce(Map.get(successors, id, []), acc, fn successor, degrees ->
+            Map.update!(degrees, successor, &(&1 - 1))
+          end)
         end)
 
       consume_acyclic(next, successors, count + length(zeros))
     end
   end
 
-  defp do_layers(indegree, successors, acc) when map_size(indegree) == 0, do: Enum.reverse(acc)
+  defp do_layers(indegree, _successors, acc) when map_size(indegree) == 0,
+    do: Enum.reverse(acc)
 
   defp do_layers(indegree, successors, acc) do
-    layer = indegree |> Enum.filter(fn {_id, degree} -> degree == 0 end) |> Enum.map(&elem(&1, 0)) |> Enum.sort()
+    layer =
+      indegree
+      |> Enum.filter(fn {_id, degree} -> degree == 0 end)
+      |> Enum.map(&elem(&1, 0))
+      |> Enum.sort()
 
     next =
       Enum.reduce(layer, Map.drop(indegree, layer), fn id, degrees ->
-        Enum.reduce(Map.get(successors, id, []), degrees, fn successor, current -> Map.update!(current, successor, &(&1 - 1)) end)
+        Enum.reduce(Map.get(successors, id, []), degrees, fn successor, current ->
+          Map.update!(current, successor, &(&1 - 1))
+        end)
       end)
 
     do_layers(next, successors, [layer | acc])
