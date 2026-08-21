@@ -37,8 +37,8 @@ jobs:
           mix local.hex --force
           mix local.rebar --force
 
-      - name: Resolve dependencies
-        run: mix deps.get
+      - name: Resolve exact locked dependencies
+        run: mix deps.get --check-locked
 
       - name: Compile with warnings as errors
         run: mix compile --warnings-as-errors
@@ -72,4 +72,4 @@ jobs:
         with:
           name: mix-lock-${{ env.EX4PM_SUBJECT_SHA }}
           path: mix.lock
-          if-no-files-found: ignore
+          if-no-files-found: error
