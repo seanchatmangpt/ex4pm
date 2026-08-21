@@ -56,7 +56,9 @@ defmodule Ex4pm do
     end
   end
 
-  def operate(%POWL{} = model, authority, opts \\ []) do
+  def operate(subject, authority, opts \\ [])
+
+  def operate(%POWL{} = model, authority, opts) do
     with {:ok, plan} <- Ex4pm.Runtime.compile(model),
          {:ok, execution} <- Ex4pm.Runtime.execute(plan, authority, opts) do
       {:ok, %{plan: plan, execution: execution, standing: execution.standing}}
