@@ -58,12 +58,24 @@ jobs:
           git diff -- . > .ci/format.patch
           cat .ci/format.patch
 
-      - name: Upload formatting diagnostic
+      - name: Upload formatting patch
         if: failure() && steps.format.outcome == 'failure'
         uses: actions/upload-artifact@v4
         with:
           name: format-patch-${{ env.EX4PM_SUBJECT_SHA }}
           path: .ci/format.patch
+          if-no-files-found: error
+
+      - name: Upload formatter-produced source
+        if: failure() && steps.format.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatted-source-${{ env.EX4PM_SUBJECT_SHA }}
+          path: |
+            apps
+            config
+            mix.exs
+            .formatter.exs
           if-no-files-found: error
 
       - name: Upload resolved lockfile
