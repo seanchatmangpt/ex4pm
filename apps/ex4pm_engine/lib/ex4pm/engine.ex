@@ -54,7 +54,7 @@ defmodule Ex4pm.Engine.Registry do
       standing =
         cond do
           not supported -> :unsupported
-          available -> if(module.id() == :beam, do: :alive, else: :partial_alive)
+          available -> :partial_alive
           true -> :blocked
         end
 
@@ -126,5 +126,5 @@ defmodule Ex4pm.Engine.Registry do
   defp module_for(id), do: Enum.find(@engines, &(&1.id() == id))
   defp reason(false, _available), do: :operation_not_supported
   defp reason(true, false), do: :runtime_unavailable
-  defp reason(true, true), do: :candidate_available
+  defp reason(true, true), do: :candidate_available_unexecuted
 end

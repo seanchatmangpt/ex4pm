@@ -55,6 +55,7 @@ defmodule Ex4pm.Engine.Wasm do
            artifact_hash: Ex4pm.Core.Hash.digest(bytes),
            export: export,
            abi_hash: Ex4pm.Core.Hash.digest(abi),
+           runtime: :wasmex_wasmtime,
            executed: true
          }
        }}
@@ -145,9 +146,9 @@ defmodule Ex4pm.Engine.Nif do
        operation: operation,
        algorithm: :external_nif,
        subject_hash: Ex4pm.Core.Hash.digest(subject),
-       standing: :alive,
+       standing: :partial_alive,
        value: value,
-       evidence: %{module: module, executed: true}
+       evidence: %{module: module, executed: true, native_identity: :unproven}
      }}
   end
 end
@@ -191,9 +192,9 @@ defmodule Ex4pm.Engine.Remote do
        operation: operation,
        algorithm: :remote,
        subject_hash: Ex4pm.Core.Hash.digest(subject),
-       standing: :alive,
+       standing: :partial_alive,
        value: value,
-       evidence: %{executed: true, transport: :callback}
+       evidence: %{executed: true, transport: :callback, remote_identity: :unproven}
      }}
   end
 end

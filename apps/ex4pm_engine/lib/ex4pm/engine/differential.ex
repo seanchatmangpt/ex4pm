@@ -16,7 +16,14 @@ defmodule Ex4pm.Engine.Differential do
       right_hash = Hash.digest(right.value)
 
       if left_hash == right_hash do
-        {:ok, %{equivalent: true, hash: left_hash, left: left, right: right, standing: :alive}}
+        {:ok,
+         %{
+           equivalent: true,
+           hash: left_hash,
+           left: left,
+           right: right,
+           standing: Ex4pm.Standing.min(left.standing, right.standing)
+         }}
       else
         {:error,
          Refusal.new(:engine_divergence, "engine results are not semantically identical",
