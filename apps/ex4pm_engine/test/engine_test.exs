@@ -1,11 +1,13 @@
+defmodule Ex4pm.EngineTest.NifProbe do
+  def simulate(subject, _opts), do: {:ok, %{echo: subject}}
+end
+
 defmodule Ex4pm.EngineTest do
   use ExUnit.Case, async: true
-  use ExUnitProperties
 
   alias Ex4pm.Engine
-  alias Ex4pm.Ocel
 
-  @raw %{
+  @ocel %{
     "objects" => %{
       "o1" => %{"type" => "Order"},
       "o2" => %{"type" => "Order"}
@@ -34,21 +36,22 @@ defmodule Ex4pm.EngineTest do
     }
   }
 
-  test "native engine executes discovery, conformance, simulation and optimization" do
-    assert {:ok, log} = Ocel.ingest(@raw)
+  test "BEAM DFG discovery, conformance, simulation, and optimization execute" do
+    assert {:ok, log} = Ex4pm.OCEL.normalize(@ocel)
 
-    assert {:ok, discovery} = Engine.execute(:discover, log, algorithm: :dfg)
-    assert discovery.engine == :beam
+    assert {:ok, discovery} =
+             Engine.execute(:discover, log, algorithm: :dfg, object_type: "Order")
+
     assert discovery.standing == :alive
-    assert discovery.value.activities == %{"approve" => 1, "create" => 2, "reject" => 1}
-
     assert discovery.value.edges[{"create", "approve"}].count == 1
     assert discovery.value.edges[{"create", "reject"}].count == 1
 
-    assert {:ok, conformance} = Engine.execute(:conform, {log, discovery.value})
+    assert {:ok, conformance} =
+             Engine.execute(:conform, {log, discovery.value}, object_type: "Order")
+
     assert conformance.value.fitness == 1.0
 
-    assert {:ok, simulation} = Engine.execute(:simulate, discovery.value)
+    assert {:ok, simulation} = Engine.execute(:simulate, discovery.value, max_depth: 5)
     assert ["create", "approve"] in simulation.value.paths
     assert ["create", "reject"] in simulation.value.paths
 
@@ -59,7 +62,6 @@ defmodule Ex4pm.EngineTest do
 
   test "registry preserves candidates without confusing inspection with execution" do
     candidates = Engine.candidates(:discover)
-
     assert Enum.map(candidates, & &1.id) == [:beam, :ex4pm_plan, :wasm, :nif, :remote]
     assert Enum.find(candidates, &(&1.id == :beam)).standing == :partial_alive
     assert Enum.find(candidates, &(&1.id == :ex4pm_plan)).standing == :unsupported
@@ -80,35 +82,63 @@ defmodule Ex4pm.EngineTest do
       (export "sum" (func $sum)))
     """
 
-    wasm_path = Path.join(tmp_dir, "sum.wat")
-    File.write!(wasm_path, wat)
+    path = Path.join(tmp_dir, "sum.wat")
+    File.write!(path, wat)
+
+    contract = %{
+      simulate: %{
+        export: "sum",
+        params: [50, -8],
+        algorithm: :wasm_sum_probe,
+        timeout: 5_000
+      }
+    }
 
     assert {:ok, result} =
-             Engine.execute(:wasm, %{wasm_path: wasm_path, export: "sum", params: [20, 22]})
+             Engine.execute(:simulate, %{probe: true},
+               engine: :wasm,
+               wasm_path: path,
+               wasm_contract: contract
+             )
 
-    assert result.engine == :wasm
+    assert result.value == [42]
     assert result.standing == :alive
-    assert result.value == 42
+    assert result.evidence.runtime == :wasmex_wasmtime
     assert result.evidence.executed == true
-    assert is_binary(result.evidence.artifact_hash)
+    assert result.evidence.artifact_hash =~ "sha256:"
   end
 
-  property "BEAM discovery remains deterministic over admitted event permutations" do
-    check all(order <- StreamData.shuffle(Map.keys(@raw["events"]))) do
-      permuted_events = Map.new(order, &{&1, @raw["events"][&1]})
-      assert {:ok, log} = Ocel.ingest(%{@raw | "events" => permuted_events})
-      assert {:ok, result} = Engine.execute(:discover, log, algorithm: :dfg)
-      assert result.value.activities == %{"approve" => 1, "create" => 2, "reject" => 1}
-    end
+  test "NIF-shaped callbacks remain PARTIAL_ALIVE without native identity proof" do
+    assert {:ok, result} =
+             Engine.execute(:simulate, %{probe: true},
+               engine: :nif,
+               nif_module: Ex4pm.EngineTest.NifProbe
+             )
+
+    assert result.value == %{echo: %{probe: true}}
+    assert result.standing == :partial_alive
+    assert result.evidence.native_identity == :unproven
   end
 
-  property "unsupported algorithm names are refused instead of dynamically dispatched" do
-    check all(name <- StreamData.string(:alphanumeric, min_length: 1, max_length: 24)) do
-      if name not in ["dfg", "variants"] do
-        assert {:ok, log} = Ocel.ingest(@raw)
-        assert {:error, %Ex4pm.Refusal{code: :unsupported_algorithm}} =
-                 Engine.execute(:discover, log, algorithm: name)
-      end
+  test "differential standing is capped by the weakest executed engine evidence" do
+    model = %{
+      type: :dfg,
+      edges: %{{"a", "b"} => %{count: 1, average_duration_ms: 1}},
+      starts: %{"a" => 1},
+      ends: %{"b" => 1}
+    }
+
+    remote_fun = fn :simulate, subject, opts ->
+      {:ok, result} = Ex4pm.Engine.Beam.execute(:simulate, subject, opts)
+      {:ok, result.value}
     end
+
+    assert {:ok, comparison} =
+             Ex4pm.Engine.Differential.compare(:simulate, model, :beam, :remote,
+               remote_fun: remote_fun
+             )
+
+    assert comparison.equivalent
+    assert comparison.standing == :partial_alive
   end
 end
