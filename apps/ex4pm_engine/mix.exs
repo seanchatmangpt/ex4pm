@@ -20,6 +20,12 @@ defmodule Ex4pmEngine.MixProject do
   end
 
   defp deps do
-    [{:ex4pm_core, in_umbrella: true}, {:ex4pm_evidence, in_umbrella: true}, {:jason, "~> 1.4.5"}, {:wasmex, "~> 0.14"}, {:explorer, "~> 0.12"}]
+    [
+      {:ex4pm_core, in_umbrella: true},
+      {:ex4pm_evidence, in_umbrella: true},
+      {:jason, "~> 1.4.5"},
+      {:wasmex, "~> 0.14"},
+      {:explorer, "~> 0.12"}
+    ]
   end
 end

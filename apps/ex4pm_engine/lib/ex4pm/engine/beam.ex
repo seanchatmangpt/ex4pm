@@ -20,8 +20,12 @@ defmodule Ex4pm.Engine.Beam do
     algorithm = Keyword.get(opts, :algorithm, :dfg)
 
     case algorithm do
-      :dfg -> discover_dfg(log, opts)
-      :variants -> discover_variants(log, opts)
+      :dfg ->
+        discover_dfg(log, opts)
+
+      :variants ->
+        discover_variants(log, opts)
+
       other ->
         {:error,
          Refusal.new(:unsupported_algorithm, "BEAM engine does not implement discovery algorithm",
@@ -189,7 +193,12 @@ defmodule Ex4pm.Engine.Beam do
        algorithm: :bounded_dfg_paths,
        subject_hash: Ex4pm.Core.Hash.digest(model),
        standing: :alive,
-       value: %{paths: paths, path_count: length(paths), max_depth: max_depth, max_paths: max_paths},
+       value: %{
+         paths: paths,
+         path_count: length(paths),
+         max_depth: max_depth,
+         max_paths: max_paths
+       },
        evidence: %{bounded: true, deterministic: true}
      }}
   end
@@ -239,8 +248,12 @@ defmodule Ex4pm.Engine.Beam do
     next = Map.get(adjacency, current, []) |> Enum.sort()
 
     cond do
-      MapSet.member?(ends, current) -> [Enum.reverse(path)]
-      next == [] -> [Enum.reverse(path)]
+      MapSet.member?(ends, current) ->
+        [Enum.reverse(path)]
+
+      next == [] ->
+        [Enum.reverse(path)]
+
       true ->
         Enum.flat_map(next, fn activity ->
           explore(activity, adjacency, ends, depth - 1, [activity | path])

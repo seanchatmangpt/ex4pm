@@ -71,8 +71,12 @@ defmodule Ex4pm.POWL do
   defp normalize_edges(edges, tasks) when is_list(edges) do
     edges
     |> Enum.reduce_while({:ok, []}, fn
-      {from, to}, {:ok, acc} -> normalize_edge(from, to, tasks, acc)
-      [from, to], {:ok, acc} -> normalize_edge(from, to, tasks, acc)
+      {from, to}, {:ok, acc} ->
+        normalize_edge(from, to, tasks, acc)
+
+      [from, to], {:ok, acc} ->
+        normalize_edge(from, to, tasks, acc)
+
       other, _acc ->
         {:halt,
          {:error, Refusal.new(:invalid_edge, "POWL edge must contain from/to", subject: other)}}
@@ -104,8 +108,7 @@ defmodule Ex4pm.POWL do
 
       not Map.has_key?(tasks, to) ->
         {:halt,
-         {:error,
-          Refusal.new(:unknown_task, "POWL edge target is unknown", details: %{task: to})}}
+         {:error, Refusal.new(:unknown_task, "POWL edge target is unknown", details: %{task: to})}}
 
       true ->
         {:cont, {:ok, [{from, to} | acc]}}

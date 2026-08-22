@@ -113,7 +113,9 @@ defmodule Ex4pm.Evidence.Store do
   end
 
   def handle_call(:all, _from, state) do
-    receipts = state.table |> :ets.tab2list() |> Enum.map(&elem(&1, 1)) |> Enum.sort_by(& &1.started_at)
+    receipts =
+      state.table |> :ets.tab2list() |> Enum.map(&elem(&1, 1)) |> Enum.sort_by(& &1.started_at)
+
     {:reply, receipts, state}
   end
 end
@@ -157,7 +159,8 @@ defmodule Ex4pm.Evidence.Replay do
   end
 
   def verify(other) do
-    {:error, Refusal.new(:invalid_receipt, "receipt replay requires a receipt struct", subject: other)}
+    {:error,
+     Refusal.new(:invalid_receipt, "receipt replay requires a receipt struct", subject: other)}
   end
 
   defp compare(actual, expected, receipt) do
@@ -195,7 +198,8 @@ defmodule Ex4pm.Evidence.BRCE do
     allowed = Map.get(authority, :allow) || Map.get(authority, "allow") || []
     operation_text = operation_text(operation)
 
-    if :do in capabilities or "do" in capabilities or operation in allowed or operation_text in allowed do
+    if :do in capabilities or "do" in capabilities or operation in allowed or
+         operation_text in allowed do
       :ok
     else
       {:error,
@@ -227,11 +231,25 @@ defmodule Ex4pm.Evidence.BRCE do
     rescue
       exception ->
         failure = %{exception: Exception.message(exception), module: exception.__struct__}
-        finalize_failure(pending, failure, exception, store, Map.put(metadata, :result, :exception))
+
+        finalize_failure(
+          pending,
+          failure,
+          exception,
+          store,
+          Map.put(metadata, :result, :exception)
+        )
     catch
       kind, reason ->
         failure = %{kind: kind, reason: inspect(reason)}
-        finalize_failure(pending, failure, {kind, reason}, store, Map.put(metadata, :result, :caught))
+
+        finalize_failure(
+          pending,
+          failure,
+          {kind, reason},
+          store,
+          Map.put(metadata, :result, :caught)
+        )
     end
   end
 
@@ -243,8 +261,7 @@ defmodule Ex4pm.Evidence.BRCE do
         {:error, %{error: original_error, pending: pending, receipt: outcome}}
 
       {:error, %Refusal{} = refusal} ->
-        {:error,
-         %{refusal | details: Map.put(refusal.details, :original_failure, failure)}}
+        {:error, %{refusal | details: Map.put(refusal.details, :original_failure, failure)}}
     end
   end
 

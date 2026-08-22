@@ -20,6 +20,11 @@ defmodule Ex4pmDomain.MixProject do
   end
 
   defp deps do
-    [{:ex4pm_core, in_umbrella: true}, {:ex4pm_evidence, in_umbrella: true}, {:ex4pm_engine, in_umbrella: true}, {:ash, "~> 3.31"}]
+    [
+      {:ex4pm_core, in_umbrella: true},
+      {:ex4pm_evidence, in_umbrella: true},
+      {:ex4pm_engine, in_umbrella: true},
+      {:ash, "~> 3.31"}
+    ]
   end
 end

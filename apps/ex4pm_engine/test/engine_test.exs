@@ -69,7 +69,9 @@ defmodule Ex4pm.EngineTest do
   end
 
   @tag :tmp_dir
-  test "Wasmex executes exact admitted WebAssembly bytes before earning ALIVE", %{tmp_dir: tmp_dir} do
+  test "Wasmex executes exact admitted WebAssembly bytes before earning ALIVE", %{
+    tmp_dir: tmp_dir
+  } do
     wat = """
     (module
       (func $sum (param $left i32) (param $right i32) (result i32)

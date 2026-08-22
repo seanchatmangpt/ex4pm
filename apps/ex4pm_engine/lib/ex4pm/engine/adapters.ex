@@ -35,7 +35,9 @@ defmodule Ex4pm.Engine.Wasm do
          %{export: export} = abi <-
            contract ||
              {:error,
-              Refusal.new(:missing_wasm_contract, "operation has no admitted WebAssembly ABI contract",
+              Refusal.new(
+                :missing_wasm_contract,
+                "operation has no admitted WebAssembly ABI contract",
                 details: %{operation: operation}
               )},
          {:ok, bytes} <- File.read(path),

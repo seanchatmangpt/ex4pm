@@ -49,7 +49,8 @@ defmodule Ex4pm.OCEL do
     {:error, Refusal.new(:invalid_observation, "event observation must be a map", subject: other)}
   end
 
-  def flatten(%EventLog{} = log, object_type) when is_binary(object_type) or is_atom(object_type) do
+  def flatten(%EventLog{} = log, object_type)
+      when is_binary(object_type) or is_atom(object_type) do
     selected =
       log.objects
       |> Map.values()
@@ -111,9 +112,14 @@ defmodule Ex4pm.OCEL do
     type = value(raw, ["type", :type, "ocel:type", :"ocel:type"])
 
     cond do
-      is_nil(id) -> {:error, Refusal.new(:missing_object_id, "object is missing identity", subject: raw)}
-      is_nil(type) -> {:error, Refusal.new(:missing_object_type, "object is missing type", subject: raw)}
-      true -> {:ok, %ObjectRef{id: to_string(id), type: type, attributes: drop_known_object_keys(raw)}}
+      is_nil(id) ->
+        {:error, Refusal.new(:missing_object_id, "object is missing identity", subject: raw)}
+
+      is_nil(type) ->
+        {:error, Refusal.new(:missing_object_type, "object is missing type", subject: raw)}
+
+      true ->
+        {:ok, %ObjectRef{id: to_string(id), type: type, attributes: drop_known_object_keys(raw)}}
     end
   end
 
@@ -155,14 +161,25 @@ defmodule Ex4pm.OCEL do
 
   defp normalize_event(raw, fallback_id) when is_map(raw) do
     id = value(raw, ["id", :id, "ocel:eid", :"ocel:eid"]) || fallback_id
-    activity = value(raw, ["activity", :activity, "type", :type, "ocel:activity", :"ocel:activity"])
-    timestamp = value(raw, ["timestamp", :timestamp, "time", :time, "ocel:timestamp", :"ocel:timestamp"])
+
+    activity =
+      value(raw, ["activity", :activity, "type", :type, "ocel:activity", :"ocel:activity"])
+
+    timestamp =
+      value(raw, ["timestamp", :timestamp, "time", :time, "ocel:timestamp", :"ocel:timestamp"])
+
     object_ids = extract_object_ids(raw)
 
     cond do
-      is_nil(id) -> {:error, Refusal.new(:missing_event_id, "event is missing identity", subject: raw)}
-      is_nil(activity) -> {:error, Refusal.new(:missing_activity, "event is missing activity", subject: raw)}
-      is_nil(timestamp) -> {:error, Refusal.new(:missing_timestamp, "event is missing timestamp", subject: raw)}
+      is_nil(id) ->
+        {:error, Refusal.new(:missing_event_id, "event is missing identity", subject: raw)}
+
+      is_nil(activity) ->
+        {:error, Refusal.new(:missing_activity, "event is missing activity", subject: raw)}
+
+      is_nil(timestamp) ->
+        {:error, Refusal.new(:missing_timestamp, "event is missing timestamp", subject: raw)}
+
       true ->
         {:ok,
          %Event{
@@ -180,7 +197,8 @@ defmodule Ex4pm.OCEL do
   end
 
   defp extract_object_ids(raw) do
-    direct = value(raw, ["object_ids", :object_ids, "objects", :objects, "ocel:omap", :"ocel:omap"])
+    direct =
+      value(raw, ["object_ids", :object_ids, "objects", :objects, "ocel:omap", :"ocel:omap"])
 
     case direct do
       nil ->
@@ -188,8 +206,11 @@ defmodule Ex4pm.OCEL do
         |> value(["relationships", :relationships])
         |> List.wrap()
         |> Enum.map(fn
-          relationship when is_map(relationship) -> value(relationship, ["objectId", :objectId, "object_id", :object_id])
-          id -> id
+          relationship when is_map(relationship) ->
+            value(relationship, ["objectId", :objectId, "object_id", :object_id])
+
+          id ->
+            id
         end)
         |> Enum.reject(&is_nil/1)
 
@@ -227,7 +248,9 @@ defmodule Ex4pm.OCEL do
   end
 
   defp fetch_any(map, keys, code) do
-    case Enum.find_value(keys, fn key -> if Map.has_key?(map, key), do: {:found, Map.get(map, key)} end) do
+    case Enum.find_value(keys, fn key ->
+           if Map.has_key?(map, key), do: {:found, Map.get(map, key)}
+         end) do
       {:found, value} -> {:ok, value}
       nil -> {:error, Refusal.new(code, "required OCEL collection is missing")}
     end

@@ -5,7 +5,14 @@ defmodule Ex4pm.ContractsTest do
     assert {:ok, contract} = Ex4pm.Contracts.verify()
     assert contract.standing == :alive
     assert is_binary(contract.contract_hash)
-    assert Map.keys(contract.artifacts) |> Enum.sort() == [:ontology, :receipt_schema, :shacl, :wit]
+
+    assert Map.keys(contract.artifacts) |> Enum.sort() == [
+             :ontology,
+             :receipt_schema,
+             :shacl,
+             :wit
+           ]
+
     assert Enum.all?(contract.artifacts, fn {_id, artifact} -> artifact.hash =~ "sha256:" end)
   end
 end

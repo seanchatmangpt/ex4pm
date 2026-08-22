@@ -3,15 +3,32 @@ defmodule Ex4pm.CLI do
 
   def main(args) do
     case args do
-      ["doctor"] -> doctor()
-      ["contracts"] -> contracts()
-      ["discover", path] -> discover_json(path, [])
-      ["discover", path, object_type] -> discover_json(path, object_type: object_type)
-      ["discover-xes", path] -> discover_xes(path, [])
-      ["discover-xes", path, case_object_type] -> discover_xes(path, case_object_type: case_object_type)
-      ["help"] -> help(0)
-      [] -> help(0)
-      _ -> help(2)
+      ["doctor"] ->
+        doctor()
+
+      ["contracts"] ->
+        contracts()
+
+      ["discover", path] ->
+        discover_json(path, [])
+
+      ["discover", path, object_type] ->
+        discover_json(path, object_type: object_type)
+
+      ["discover-xes", path] ->
+        discover_xes(path, [])
+
+      ["discover-xes", path, case_object_type] ->
+        discover_xes(path, case_object_type: case_object_type)
+
+      ["help"] ->
+        help(0)
+
+      [] ->
+        help(0)
+
+      _ ->
+        help(2)
     end
   end
 
@@ -33,7 +50,11 @@ defmodule Ex4pm.CLI do
         {:error, refusal} -> %{standing: :blocked, refusal: inspect(refusal)}
       end
 
-    IO.puts(Jason.encode!(%{operation: :discover, candidates: payload, contracts: contract}, pretty: true))
+    IO.puts(
+      Jason.encode!(%{operation: :discover, candidates: payload, contracts: contract},
+        pretty: true
+      )
+    )
   end
 
   defp contracts do
@@ -56,7 +77,8 @@ defmodule Ex4pm.CLI do
   defp discover_xes(path, opts) do
     with {:ok, bytes} <- File.read(path),
          {:ok, log} <- Ex4pm.ingest_xes(bytes, opts),
-         {:ok, run} <- Ex4pm.discover(log, object_type: Keyword.get(opts, :case_object_type, "Case")) do
+         {:ok, run} <-
+           Ex4pm.discover(log, object_type: Keyword.get(opts, :case_object_type, "Case")) do
       print_run(run)
     else
       {:error, reason} -> fail("ex4pm discover-xes refused/failed", reason)
@@ -86,7 +108,10 @@ defmodule Ex4pm.CLI do
   end
 
   defp json_safe(list) when is_list(list), do: Enum.map(list, &json_safe/1)
-  defp json_safe(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
+
+  defp json_safe(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
+
   defp json_safe(value) when is_atom(value), do: Atom.to_string(value)
   defp json_safe(value), do: value
 

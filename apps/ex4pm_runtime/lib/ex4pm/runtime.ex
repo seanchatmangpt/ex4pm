@@ -24,7 +24,11 @@ defmodule Ex4pm.Runtime do
        subject_hash: Hash.digest(model),
        layers: layers,
        model: model,
-       metadata: %{task_count: map_size(model.tasks), layer_count: length(layers), mode: :construct}
+       metadata: %{
+         task_count: map_size(model.tasks),
+         layer_count: length(layers),
+         mode: :construct
+       }
      }}
   end
 
@@ -59,8 +63,7 @@ defmodule Ex4pm.Runtime do
           {:cont, {:ok, [layer_results | completed_layers]}}
 
         {:error, failure} ->
-          {:halt,
-           {:error, %{failure: failure, completed_layers: Enum.reverse(completed_layers)}}}
+          {:halt, {:error, %{failure: failure, completed_layers: Enum.reverse(completed_layers)}}}
       end
     end)
     |> case do
@@ -103,7 +106,9 @@ defmodule Ex4pm.Runtime do
 
   defp default_task_executor(%{intent: %{fun: fun}}) when is_function(fun, 0), do: fun.()
   defp default_task_executor(%{intent: %{"fun" => fun}}) when is_function(fun, 0), do: fun.()
-  defp default_task_executor(task), do: %{task_id: task.id, intent: task.intent, mode: :no_external_effect}
+
+  defp default_task_executor(task),
+    do: %{task_id: task.id, intent: task.intent, mode: :no_external_effect}
 
   defp normalize_layer_results(results) do
     Enum.reduce_while(results, {:ok, []}, fn
