@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.10.26)  21 AUG 2026 22:56
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.10.26)  21 AUG 2026 23:00
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -6,10 +6,10 @@ entering extended mode
 (/Users/sac/ex4pm/docs/thesis/phd_thesis.tex
 LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-02-20>
-(/usr/local/texlive/2024/texmf-dist/tex/latex/base/report.cls
-Document Class: report 2023/05/17 v1.4n Standard LaTeX document class
-(/usr/local/texlive/2024/texmf-dist/tex/latex/base/size11.clo
-File: size11.clo 2023/05/17 v1.4n Standard LaTeX file (size option)
+(/usr/local/texlive/2024/texmf-dist/tex/latex/base/book.cls
+Document Class: book 2023/05/17 v1.4n Standard LaTeX document class
+(/usr/local/texlive/2024/texmf-dist/tex/latex/base/bk11.clo
+File: bk11.clo 2023/05/17 v1.4n Standard LaTeX file (size option)
 )
 \c@part=\count188
 \c@chapter=\count189
@@ -525,7 +525,7 @@ Package hyperref Info: Option `colorlinks' set `true' on input line 25.
 \c@corollary=\count313
 \c@axiom=\count314
 \c@example=\count315
-LaTeX Font Info:    Trying to load font information for T1+lmr on input line 82
+LaTeX Font Info:    Trying to load font information for T1+lmr on input line 81
 .
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/lm/t1lmr.fd
@@ -539,24 +539,24 @@ File: l3backend-pdftex.def 2024-02-20 L3 backend support: PDF output (pdfTeX)
 (/Users/sac/ex4pm/docs/thesis/phd_thesis.aux)
 \openout1 = `phd_thesis.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 82.
-LaTeX Font Info:    ... okay on input line 82.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 81.
+LaTeX Font Info:    ... okay on input line 81.
 
 *geometry* driver: auto-detecting
 *geometry* detected driver: pdftex
@@ -565,7 +565,7 @@ LaTeX Font Info:    ... okay on input line 82.
 * paper: a4paper
 * layout: <same size as paper>
 * layoutoffset:(h,v)=(0.0pt,0.0pt)
-* modes: twoside 
+* modes: 
 * h-part:(L,W,R)=(72.26999pt, 452.9679pt, 72.26999pt)
 * v-part:(T,H,B)=(72.26999pt, 700.50687pt, 72.26999pt)
 * \paperwidth=597.50787pt
@@ -574,21 +574,21 @@ LaTeX Font Info:    ... okay on input line 82.
 * \textheight=700.50687pt
 * \oddsidemargin=0.0pt
 * \evensidemargin=0.0pt
-* \topmargin=-40.0pt
+* \topmargin=-34.8738pt
 * \headheight=15.0pt
-* \headsep=25.0pt
+* \headsep=19.8738pt
 * \topskip=11.0pt
-* \footskip=30.0pt
-* \marginparwidth=103.0pt
-* \marginparsep=10.0pt
+* \footskip=27.46295pt
+* \marginparwidth=53.0pt
+* \marginparsep=7.0pt
 * \columnsep=10.0pt
 * \skip\footins=10.0pt plus 4.0pt minus 2.0pt
 * \hoffset=0.0pt
 * \voffset=0.0pt
 * \mag=1000
 * \@twocolumnfalse
-* \@twosidetrue
-* \@mparswitchtrue
+* \@twosidefalse
+* \@mparswitchfalse
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
@@ -607,28 +607,28 @@ LaTeX Font Info:    ... okay on input line 82.
 \makeMPintoPDFobject=\count323
 \everyMPtoPDFconversion=\toks39
 )
-Package hyperref Info: Link coloring ON on input line 82.
+Package hyperref Info: Link coloring ON on input line 81.
  (/Users/sac/ex4pm/docs/thesis/phd_thesis.out)
 (/Users/sac/ex4pm/docs/thesis/phd_thesis.out)
 \@outlinefile=\write3
 \openout3 = `phd_thesis.out'.
 
-LaTeX Info: Redefining \microtypecontext on input line 82.
-Package microtype Info: Applying patch `item' on input line 82.
-Package microtype Info: Applying patch `toc' on input line 82.
-Package microtype Info: Applying patch `eqnum' on input line 82.
+LaTeX Info: Redefining \microtypecontext on input line 81.
+Package microtype Info: Applying patch `item' on input line 81.
+Package microtype Info: Applying patch `toc' on input line 81.
+Package microtype Info: Applying patch `eqnum' on input line 81.
 
 
-Package microtype Warning: Unable to apply patch `footnote' on input line 82.
+Package microtype Warning: Unable to apply patch `footnote' on input line 81.
 
-Package microtype Info: Applying patch `verbatim' on input line 82.
+Package microtype Info: Applying patch `verbatim' on input line 81.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using default protrusion set `alltext'.
 Package microtype Info: Automatic font expansion enabled (level 2),
 (microtype)             stretch: 20, shrink: 20, step: 1, non-selected.
 Package microtype Info: Using default expansion set `alltext-nott'.
-LaTeX Info: Redefining \showhyphens on input line 82.
+LaTeX Info: Redefining \showhyphens on input line 81.
 Package microtype Info: No adjustment of tracking.
 Package microtype Info: No adjustment of interword spacing.
 Package microtype Info: No adjustment of character kerning.
@@ -637,41 +637,40 @@ File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman
 (RS)
 ) [1
 
-{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/loc
-al/texlive/2024/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}] [2
 
-]
+{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/loc
+al/texlive/2024/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}]
 LaTeX Font Info:    Trying to load font information for OT1+lmr on input line 1
-20.
+16.
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OML+lmm on input line 1
-20.
+16.
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMS+lmsy on input line 
-120.
+116.
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    Trying to load font information for OMX+lmex on input line 
-120.
+116.
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 120.
+(Font)              <10.95> on input line 116.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 120.
+(Font)              <8> on input line 116.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 120.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 120
+(Font)              <6> on input line 116.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 116
 .
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsa.fd
@@ -680,7 +679,7 @@ File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 (/usr/local/texlive/2024/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 120
+LaTeX Font Info:    Trying to load font information for U+msb on input line 116
 .
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/amsfonts/umsb.fd
@@ -690,7 +689,7 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
-20.
+16.
 
 (/usr/local/texlive/2024/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
@@ -699,106 +698,147 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             `lmtt' (encoding: T1).
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
- [3
+
+pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
+been already used, duplicate ignored
+<to be read again> 
+                   \relax 
+l.126     \item \textbf
+                       {Full-Scale Empirical Industrial Benchmark}: Comprehe...
+[1
 
 {/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/loca
 l/texlive/2024/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/usr/local/texlive/2024
 /texmf-dist/fonts/enc/dvips/lm/lm-mathex.enc}{/usr/local/texlive/2024/texmf-dis
-t/fonts/enc/dvips/lm/lm-mathsy.enc}] [4] (/Users/sac/ex4pm/docs/thesis/phd_thes
-is.toc [5
-
+t/fonts/enc/dvips/lm/lm-mathsy.enc}] [2]
+(/Users/sac/ex4pm/docs/thesis/phd_thesis.toc [3
 
 ])
 \tf@toc=\write4
 \openout4 = `phd_thesis.toc'.
 
-
-[6]
+ [4]
 Chapter 1.
-
-Underfull \vbox (badness 3271) has occurred while \output is active []
-
- [7
+[5
 
 ]
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
-59.
-
-(/usr/local/texlive/2024/texmf-dist/tex/latex/lm/ts1lmr.fd
+56.
+ (/usr/local/texlive/2024/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
 )
-Underfull \hbox (badness 10000) in paragraph at lines 181--181
+Underfull \hbox (badness 10000) in paragraph at lines 178--178
 []|\T1/lmr/bx/n/10 (+20) Status-Quo Test-ing (\T1/lmtt/b/n/10 mix
  []
 
 
-Underfull \hbox (badness 1107) in paragraph at lines 181--181
+Underfull \hbox (badness 1107) in paragraph at lines 178--178
 []|\T1/lmr/bx/n/10 (+20) Autonomic Pro-cess In-tel-li-
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 181--181
+Underfull \hbox (badness 10000) in paragraph at lines 178--178
 []|\T1/lmr/m/n/10 (+20) Propositional Pred-i-cates
  []
 
 
-Underfull \hbox (badness 1796) in paragraph at lines 181--181
+Underfull \hbox (badness 1796) in paragraph at lines 178--178
 []|\T1/lmr/m/n/10 (+20) Petri Nets, 1-Safe Sound-ness,
  []
 
 
-Underfull \hbox (badness 2662) in paragraph at lines 181--181
+Underfull \hbox (badness 2662) in paragraph at lines 178--178
 []|\T1/lmr/m/n/10 (+20) W3C ODRL / Separation-of-
  []
 
-[8{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}]
+[6{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}]
 Chapter 2.
+[7
+
+] [8]
+Chapter 3.
 [9
 
-] [10] [11] [12
-
-]
-Chapter 3.
-[13]
-Package hyperref Info: bookmark level for unknown lstlisting defaults to 0 on i
-nput line 288.
-LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <9> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 289.
- [14]
+] [10]
 Chapter 4.
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [15
+[11
 
 ]
-[16]
 Chapter 5.
-[17
+[12
 
-] [18
+] [13]
+Chapter 6.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <12> on input line 383.
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 383.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 383.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 386.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 386.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 389.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `subscript' on input line 389.
+
+
+Package hyperref Warning: Token not allowed in a PDF string (Unicode):
+(hyperref)                removing `math shift' on input line 389.
+
+[14
 
 ]
-Chapter 6.
-[19] [20]
 Chapter 7.
-[21
-
-] [22
+[15
 
 ]
 Chapter 8.
 
-Overfull \hbox (30.42668pt too wide) in paragraph at lines 485--486
-[]\T1/lmr/m/n/10.95 (-20) Engineered an ultra-high-throughput stream-ing en-gin
-e ca-pa-ble of pro-cess-ing $\OML/lmm/m/it/10.95 > \OT1/lmr/m/n/10.95 (-20) 713
-\OML/lmm/m/it/10.95 ; \OT1/lmr/m/n/10.95 (-20) 000[]$\T1/lmr/m/n/10.95 (-20) . 
-
+Overfull \hbox (3.68115pt too wide) in paragraph at lines 423--424
+\T1/lmr/m/n/10.95 (-20) To achieve stream-ing through-puts ex-ceed-ing $\OT1/lm
+r/m/n/10.95 (-20) 500\OML/lmm/m/it/10.95 ; \OT1/lmr/m/n/10.95 (-20) 000[]$\T1/l
+mr/m/n/10.95 (-20) , \T1/lmtt/m/n/10.95 Ex4pmEngine.StreamingEngine
  []
 
-[23] [24
+[16
 
-] [25
+]
+Chapter 9.
+
+Overfull \hbox (40.29536pt too wide) in paragraph at lines 435--458
+ [][] 
+ []
+
+
+Overfull \hbox (37.38026pt too wide) in paragraph at lines 467--488
+ [][] 
+ []
+
+[17
+
+] [18]
+Chapter 10.
+[19
+
+]
+Chapter 11.
+[20
+
+] [21
 
 ] (/Users/sac/ex4pm/docs/thesis/phd_thesis.aux)
  ***********
@@ -806,38 +846,40 @@ LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-02-20>
  ***********
 Package rerunfilecheck Info: File `phd_thesis.out' has not changed.
-(rerunfilecheck)             Checksum: BA358F7406D5B3D9DD56D612CB7A5B2C;7627.
+(rerunfilecheck)             Checksum: 153B830CC7154369672B0DA47350FFCC;9482.
  ) 
 Here is how much of TeX's memory you used:
- 16614 strings out of 474116
- 254520 string characters out of 5743681
- 2142187 words of memory out of 5000000
- 38396 multiletter control sequences out of 15000+600000
- 656628 words of font info for 197 fonts, out of 8000000 for 9000
+ 16245 strings out of 474116
+ 251103 string characters out of 5743681
+ 1938187 words of memory out of 5000000
+ 38030 multiletter control sequences out of 15000+600000
+ 666478 words of font info for 210 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,14n,79p,1036b,1346s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,20n,79p,1036b,642s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/lo
 cal/texlive/2024/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/local/texliv
-e/2024/texmf-dist/fonts/type1/public/lm/lmex10.pfb></usr/local/texlive/2024/tex
-mf-dist/fonts/type1/public/lm/lmmi10.pfb></usr/local/texlive/2024/texmf-dist/fo
-nts/type1/public/lm/lmmi6.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/p
-ublic/lm/lmmi8.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lm
-r10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmr12.pfb></u
-sr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmr6.pfb></usr/local/tex
-live/2024/texmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/local/texlive/2024/te
-xmf-dist/fonts/type1/public/lm/lmri10.pfb></usr/local/texlive/2024/texmf-dist/f
-onts/type1/public/lm/lmsy10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1
-/public/lm/lmsy6.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/
-lmsy8.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmtk10.pfb>
-</usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></usr/loca
-l/texlive/2024/texmf-dist/fonts/type1/public/lm/lmtt9.pfb></usr/local/texlive/2
-024/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/local/texli
-ve/2024/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on /Users/sac/ex4pm/docs/thesis/phd_thesis.pdf (25 pages, 390492
+e/2024/texmf-dist/fonts/type1/public/lm/lmbx8.pfb></usr/local/texlive/2024/texm
+f-dist/fonts/type1/public/lm/lmex10.pfb></usr/local/texlive/2024/texmf-dist/fon
+ts/type1/public/lm/lmmi10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/p
+ublic/lm/lmmi12.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/l
+mmi6.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></
+usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/local/t
+exlive/2024/texmf-dist/fonts/type1/public/lm/lmr12.pfb></usr/local/texlive/2024
+/texmf-dist/fonts/type1/public/lm/lmr6.pfb></usr/local/texlive/2024/texmf-dist/
+fonts/type1/public/lm/lmr8.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/
+public/lm/lmri10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/
+lmri8.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmsy10.pfb>
+</usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmsy6.pfb></usr/local
+/texlive/2024/texmf-dist/fonts/type1/public/lm/lmsy8.pfb></usr/local/texlive/20
+24/texmf-dist/fonts/type1/public/lm/lmtk10.pfb></usr/local/texlive/2024/texmf-d
+ist/fonts/type1/public/lm/lmtt10.pfb></usr/local/texlive/2024/texmf-dist/fonts/
+type1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2024/texmf-dist/fo
+nts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on /Users/sac/ex4pm/docs/thesis/phd_thesis.pdf (22 pages, 399759
  bytes).
 PDF statistics:
- 497 PDF objects out of 1000 (max. 8388607)
- 423 compressed objects within 5 object streams
- 147 named destinations out of 1000 (max. 500000)
- 60129 words of extra memory for PDF output out of 61914 (max. 10000000)
+ 500 PDF objects out of 1000 (max. 8388607)
+ 425 compressed objects within 5 object streams
+ 124 named destinations out of 1000 (max. 500000)
+ 63265 words of extra memory for PDF output out of 74296 (max. 10000000)
 
