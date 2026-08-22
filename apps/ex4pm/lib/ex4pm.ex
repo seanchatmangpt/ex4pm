@@ -65,6 +65,23 @@ defmodule Ex4pm do
     end
   end
 
+  def plan(problem, opts \\ [])
+
+  def plan(problem, opts) when is_map(problem) do
+    opts = Keyword.put_new(opts, :engine, :ex4pm_plan)
+
+    with {:ok, engine_result} <- Engine.execute(:plan, problem, opts) do
+      receipted_run(:plan, Ex4pm.Core.Hash.digest(problem), engine_result, opts)
+    end
+  end
+
+  def plan(other, _opts) do
+    {:error,
+     Refusal.new(:invalid_planning_problem, "plan requires an admitted planning problem map",
+       subject: other
+     )}
+  end
+
   def operate(subject, authority, opts \\ [])
 
   def operate(%POWL{} = model, authority, opts) do
