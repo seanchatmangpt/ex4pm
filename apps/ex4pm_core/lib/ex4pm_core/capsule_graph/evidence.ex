@@ -8,8 +8,12 @@ defmodule Ex4pmCore.CapsuleGraph.Evidence do
   defstruct [:subject, :kind, :outcome, :identity]
 
   def new(%Subject{} = subject, kind, outcome, identity)
-      when kind in @kinds and outcome in Standing.outcomes() and is_binary(identity) and identity != "" do
-    {:ok, %__MODULE__{subject: subject, kind: kind, outcome: outcome, identity: identity}}
+      when kind in @kinds and is_binary(identity) and identity != "" do
+    if outcome in Standing.outcomes() do
+      {:ok, %__MODULE__{subject: subject, kind: kind, outcome: outcome, identity: identity}}
+    else
+      {:error, {:refused, :invalid_capsule_evidence, {kind, outcome, identity}}}
+    end
   end
 
   def new(_, kind, outcome, identity),
