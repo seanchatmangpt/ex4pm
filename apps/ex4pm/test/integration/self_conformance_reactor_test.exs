@@ -19,6 +19,8 @@ defmodule Ex4pm.Integration.SelfConformanceReactorTest do
         assert report.total_events == 1000
         assert report.discovered_activities >= 2
         assert report.conformance.fitness >= 0.85
+        assert report.ocpq_satisfied == true
+        assert report.median_duration_ms > 0
         assert String.contains?(report.earl_turtle, "earl:Assertion")
         assert is_struct(report.receipt, Ex4pmDomain.CapabilityReceipt)
       else

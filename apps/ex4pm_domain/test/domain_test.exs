@@ -190,5 +190,51 @@ defmodule Ex4pm.DomainTest do
              })
 
     assert audit.passed? == true
+
+    # 11. OcpqQuery
+    assert {:ok, ocpq} =
+             Ash.create(Ex4pmDomain.OcpqQuery, %{
+               name: "order_package_ocpq",
+               satisfied?: true
+             })
+
+    assert ocpq.name == "order_package_ocpq"
+
+    # 12. SurvivalModel
+    assert {:ok, surv} =
+             Ash.create(Ex4pmDomain.SurvivalModel, %{
+               name: "incident_survival",
+               sample_size: 100,
+               median_duration_ms: 15_000
+             })
+
+    assert surv.median_duration_ms == 15_000
+
+    # 13. CausalModel
+    assert {:ok, causal} =
+             Ash.create(Ex4pmDomain.CausalModel, %{
+               name: "pipeline_causal",
+               edge_count: 4
+             })
+
+    assert causal.edge_count == 4
+
+    # 14. MarkovModel
+    assert {:ok, markov} =
+             Ash.create(Ex4pmDomain.MarkovModel, %{
+               name: "pipeline_markov",
+               state_count: 5
+             })
+
+    assert markov.state_count == 5
+
+    # 15. CriticalPathSchedule
+    assert {:ok, cpm} =
+             Ash.create(Ex4pmDomain.CriticalPathSchedule, %{
+               name: "dispatch_dag",
+               total_duration_ms: 45
+             })
+
+    assert cpm.total_duration_ms == 45
   end
 end

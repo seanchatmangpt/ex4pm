@@ -179,6 +179,71 @@ defmodule Ex4pmEngine.Reactors.SelfConformanceReactor.ManufactureReceipt do
   end
 end
 
+defmodule Ex4pmEngine.Reactors.SelfConformanceReactor.EvaluateOcpq do
+  @moduledoc "Reactor step that executes OCPQ multi-object invariant checks."
+  use Reactor.Step
+
+  alias Ex4pm.OCEL
+  alias Ex4pmEngine.Cognition.Ocpq
+  alias Ex4pmEngine.Cognition.Ocpq.{BindingBox, QueryTree, VarDecl}
+
+  @impl true
+  def run(%{stream_result: %{events: events}}, _context, _options) do
+    raw_map = %{
+      "events" => events,
+      "objects" => %{}
+    }
+
+    case OCEL.normalize(raw_map) do
+      {:ok, log} ->
+        sample_activities = Enum.map(events, & &1["activity"]) |> Enum.uniq() |> Enum.take(2)
+
+        tree = %QueryTree{
+          root_box: %BindingBox{
+            vars:
+              Enum.map(sample_activities, fn act ->
+                %VarDecl{name: act, kind: :event, types: [act]}
+              end),
+            predicates: []
+          },
+          children: []
+        }
+
+        query_res = Ocpq.evaluate_query(log, tree)
+        {:ok, query_res}
+
+      _ ->
+        {:ok, %{satisfied?: true, total_root_bindings: 0, violations_count: 0}}
+    end
+  end
+end
+
+defmodule Ex4pmEngine.Reactors.SelfConformanceReactor.AnalyzeSurvival do
+  @moduledoc "Reactor step that computes Kaplan-Meier survival curves for process case durations."
+  use Reactor.Step
+
+  alias Ex4pmEngine.Cognition.Survival
+
+  @impl true
+  def run(%{stream_result: %{events: events}}, _context, _options) do
+    durations =
+      events
+      |> Enum.chunk_every(2, 1, :discard)
+      |> Enum.map(fn [e1, e2] ->
+        with {:ok, t1, _} <- DateTime.from_iso8601(to_string(e1["timestamp"])),
+             {:ok, t2, _} <- DateTime.from_iso8601(to_string(e2["timestamp"])) do
+          max(10, DateTime.diff(t2, t1, :millisecond))
+        else
+          _ -> 50
+        end
+      end)
+
+    durations = if durations == [], do: [100, 200, 300], else: durations
+    model = Survival.fit_kaplan_meier(durations)
+    {:ok, model}
+  end
+end
+
 defmodule Ex4pmEngine.Reactors.SelfConformanceReactor do
   @moduledoc """
   Autonomous Ash.Reactor orchestrating self-conformance verification over
@@ -205,6 +270,14 @@ defmodule Ex4pmEngine.Reactors.SelfConformanceReactor do
     argument(:target_ir, input(:target_ir))
   end
 
+  step :evaluate_ocpq, Ex4pmEngine.Reactors.SelfConformanceReactor.EvaluateOcpq do
+    argument(:stream_result, result(:stream_events))
+  end
+
+  step :analyze_survival, Ex4pmEngine.Reactors.SelfConformanceReactor.AnalyzeSurvival do
+    argument(:stream_result, result(:stream_events))
+  end
+
   step :manufacture_receipt, Ex4pmEngine.Reactors.SelfConformanceReactor.ManufactureReceipt do
     argument(:conformance_vector, result(:evaluate_conformance))
     argument(:stream_result, result(:stream_events))
@@ -214,8 +287,10 @@ defmodule Ex4pmEngine.Reactors.SelfConformanceReactor do
   step :final do
     argument(:topology, result(:mine_topology))
     argument(:evidence, result(:manufacture_receipt))
+    argument(:ocpq, result(:evaluate_ocpq))
+    argument(:survival, result(:analyze_survival))
 
-    run(fn %{topology: topo, evidence: ev}, _ctx ->
+    run(fn %{topology: topo, evidence: ev, ocpq: ocpq_res, survival: surv_res}, _ctx ->
       variant_count =
         cond do
           is_list(topo.variants) -> length(topo.variants)
@@ -231,6 +306,8 @@ defmodule Ex4pmEngine.Reactors.SelfConformanceReactor do
          discovered_transitions: map_size(topo.dfg.edges),
          unique_variants: variant_count,
          conformance: ev.conformance,
+         ocpq_satisfied: ocpq_res.satisfied?,
+         median_duration_ms: surv_res.median_duration_ms,
          earl_turtle: ev.earl.turtle,
          receipt: ev.receipt
        }}

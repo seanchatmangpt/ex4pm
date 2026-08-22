@@ -10,6 +10,18 @@ defmodule Ex4pm.ObjectRef do
   defstruct [:id, :type, attributes: %{}]
 end
 
+defmodule Ex4pm.ObjectRelationship do
+  @moduledoc "Canonical Object-to-Object (O2O) relationship."
+  @enforce_keys [:source_id, :target_id, :qualifier]
+  defstruct [:source_id, :target_id, :qualifier, attributes: %{}]
+end
+
+defmodule Ex4pm.EventRelationship do
+  @moduledoc "Canonical Event-to-Object (E2O) relationship."
+  @enforce_keys [:object_id, :qualifier]
+  defstruct [:object_id, :qualifier, attributes: %{}]
+end
+
 defmodule Ex4pm.EventLog do
   @moduledoc "Admitted event-log semantic IR."
   @enforce_keys [:events, :objects, :subject]

@@ -32,5 +32,10 @@ defmodule Ex4pmDomain do
     resource(Ex4pmDomain.ParetoFrontier)
     resource(Ex4pmDomain.InterviewSession)
     resource(Ex4pmDomain.AdversarialAudit)
+    resource(Ex4pmDomain.SurvivalModel)
+    resource(Ex4pmDomain.OcpqQuery)
+    resource(Ex4pmDomain.CriticalPathSchedule)
+    resource(Ex4pmDomain.MarkovModel)
+    resource(Ex4pmDomain.CausalModel)
   end
 end

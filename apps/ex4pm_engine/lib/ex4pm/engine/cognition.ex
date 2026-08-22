@@ -18,11 +18,16 @@ defmodule Ex4pm.Engine.Cognition do
   alias Ex4pmEngine.Cognition.{
     Adversarial,
     BayesianNetwork,
+    Causal,
     CostLaw,
+    CriticalPath,
     Interview,
+    Markov,
+    Ocpq,
     Pareto,
     Planner,
     Prolog,
+    Survival,
     Temporal
   }
 
@@ -184,5 +189,95 @@ defmodule Ex4pm.Engine.Cognition do
       {:error, err} ->
         {:error, err}
     end
+  end
+
+  def execute(:ocpq_query, {%Ex4pm.EventLog{} = log, %Ocpq.QueryTree{} = tree}, _opts) do
+    query_res = Ocpq.evaluate_query(log, tree)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :ocpq_object_centric_query,
+       subject_hash: log.subject.hash,
+       standing: if(query_res.satisfied?, do: :alive, else: :blocked),
+       value: query_res,
+       evidence: %{deterministic: true, satisfied: query_res.satisfied?}
+     }}
+  end
+
+  def execute(:survival_fit, durations_ms, _opts) when is_list(durations_ms) do
+    model = Survival.fit_kaplan_meier(durations_ms)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :kaplan_meier_survival,
+       subject_hash: Ex4pm.Core.Hash.digest(durations_ms),
+       standing: :alive,
+       value: model,
+       evidence: %{deterministic: true, sample_size: model.sample_size}
+     }}
+  end
+
+  def execute(:survival_predict, {model, elapsed_ms}, _opts) when is_map(model) do
+    prediction = Survival.predict_remaining_time(model, elapsed_ms)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :remaining_useful_life,
+       subject_hash: Ex4pm.Core.Hash.digest(%{m: model.median_duration_ms, e: elapsed_ms}),
+       standing: :alive,
+       value: prediction,
+       evidence: %{deterministic: true}
+     }}
+  end
+
+  def execute(:causal_discover, traces, _opts) do
+    causal_res = Causal.infer_causal_dependencies(traces)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :causal_dependency_matrix,
+       subject_hash: Ex4pm.Core.Hash.digest(traces),
+       standing: :alive,
+       value: causal_res,
+       evidence: %{deterministic: true, edge_count: causal_res.edge_count}
+     }}
+  end
+
+  def execute(:markov_fit, traces, _opts) do
+    markov_res = Markov.fit_markov_chain(traces)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :markov_transition_probability,
+       subject_hash: Ex4pm.Core.Hash.digest(traces),
+       standing: :alive,
+       value: markov_res,
+       evidence: %{deterministic: true, state_count: markov_res.state_count}
+     }}
+  end
+
+  def execute(:critical_path, tasks, _opts) when is_list(tasks) do
+    cpm_res = CriticalPath.analyze_schedule(tasks)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :critical_path_method,
+       subject_hash: Ex4pm.Core.Hash.digest(tasks),
+       standing: :alive,
+       value: cpm_res,
+       evidence: %{deterministic: true, total_duration_ms: cpm_res.total_duration_ms}
+     }}
   end
 end
