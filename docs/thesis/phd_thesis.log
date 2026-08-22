@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.10.26)  21 AUG 2026 23:00
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.10.26)  21 AUG 2026 23:14
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -699,12 +699,20 @@ Package microtype Info: Loading generic protrusion settings for font family
 (microtype)             For optimal results, create family-specific settings.
 (microtype)             See the microtype manual for details.
 
+Overfull \hbox (70.07465pt too wide) in paragraph at lines 124--125
+[]\T1/lmr/bx/n/10.95 (-20) The 5-Dimensional Con-for-mance Cal-cu-lus\T1/lmr/m/
+n/10.95 (-20) : $[]\OT1/lmr/m/n/10.95 (-20) (\OMS/lmsy/m/n/10.95 L\OML/lmm/m/it
+/10.95 ; \OMS/lmsy/m/n/10.95 M\OT1/lmr/m/n/10.95 (-20) ) = \OMS/lmsy/m/n/10.95 
+h[]\OML/lmm/m/it/10.95 ; []; []; []; []\OMS/lmsy/m/n/10.95 i$
+ []
+
+
 pdfTeX warning (ext4): destination with the same identifier (name{page.1}) has 
 been already used, duplicate ignored
 <to be read again> 
                    \relax 
-l.126     \item \textbf
-                       {Full-Scale Empirical Industrial Benchmark}: Comprehe...
+l.127     \item \textbf
+                       {Full-Scale Empirical Industrial Benchmark}: Direct m...
 [1
 
 {/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/loca
@@ -723,122 +731,74 @@ Chapter 1.
 
 ]
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 1
-56.
+57.
  (/usr/local/texlive/2024/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2015/05/01 v1.6.1 Font defs for Latin Modern
-)
-Underfull \hbox (badness 10000) in paragraph at lines 178--178
-[]|\T1/lmr/bx/n/10 (+20) Status-Quo Test-ing (\T1/lmtt/b/n/10 mix
- []
-
-
-Underfull \hbox (badness 1107) in paragraph at lines 178--178
-[]|\T1/lmr/bx/n/10 (+20) Autonomic Pro-cess In-tel-li-
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 178--178
-[]|\T1/lmr/m/n/10 (+20) Propositional Pred-i-cates
- []
-
-
-Underfull \hbox (badness 1796) in paragraph at lines 178--178
-[]|\T1/lmr/m/n/10 (+20) Petri Nets, 1-Safe Sound-ness,
- []
-
-
-Underfull \hbox (badness 2662) in paragraph at lines 178--178
-[]|\T1/lmr/m/n/10 (+20) W3C ODRL / Separation-of-
- []
-
-[6{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}]
+) [6{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}]
 Chapter 2.
 [7
 
-] [8]
+]
 Chapter 3.
-[9
 
-] [10]
+Overfull \hbox (55.51343pt too wide) in paragraph at lines 202--203
+[][]\T1/lmr/bx/n/10.95 (-20) Definition 3.1 \T1/lmr/m/n/10.95 (-20) (Ob-jec-t--
+Cen-tric Petri Net (OCPN))\T1/lmr/bx/n/10.95 (-20) . []\T1/lmr/m/n/10.95 (-20) 
+An OCPN is a tu-ple $\OMS/lmsy/m/n/10.95 N \OT1/lmr/m/n/10.95 (-20) = (\OML/lmm
+/m/it/10.95 P; T; F; \OMS/lmsy/m/n/10.95 T[]\OML/lmm/m/it/10.95 ; [][]; [][]; [
+]\OT1/lmr/m/n/10.95 (-20) )$
+ []
+
+[8
+
+]
 Chapter 4.
-[11
+[9
 
 ]
 Chapter 5.
-[12
+[10
 
-] [13]
+]
 Chapter 6.
-LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 383.
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 383.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 383.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 386.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 386.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 389.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `subscript' on input line 389.
-
-
-Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 389.
-
-[14
+[11
 
 ]
 Chapter 7.
-[15
+[12
 
 ]
 Chapter 8.
 
-Overfull \hbox (3.68115pt too wide) in paragraph at lines 423--424
-\T1/lmr/m/n/10.95 (-20) To achieve stream-ing through-puts ex-ceed-ing $\OT1/lm
-r/m/n/10.95 (-20) 500\OML/lmm/m/it/10.95 ; \OT1/lmr/m/n/10.95 (-20) 000[]$\T1/l
-mr/m/n/10.95 (-20) , \T1/lmtt/m/n/10.95 Ex4pmEngine.StreamingEngine
+Overfull \hbox (63.45319pt too wide) in paragraph at lines 293--294
+\T1/lmr/m/n/10.95 (-20) Emergent agent swarm work-flows are mod-eled as categor
+y-theoretic Topos Sheaves $\OMS/lmsy/m/n/10.95 F \OT1/lmr/m/n/10.95 (-20) : [] 
+\OMS/lmsy/m/n/10.95 !
  []
 
-[16
+[13
 
 ]
 Chapter 9.
+(/Users/sac/ex4pm/docs/thesis/chapters/generated_ocel_benchmark_tables.tex
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10> on input line 9.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <7> on input line 9.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <5> on input line 9.
+)
+[14
 
-Overfull \hbox (40.29536pt too wide) in paragraph at lines 435--458
- [][] 
- []
-
-
-Overfull \hbox (37.38026pt too wide) in paragraph at lines 467--488
- [][] 
- []
-
-[17
-
-] [18]
+] [15]
 Chapter 10.
-[19
+[16
 
 ]
 Chapter 11.
-[20
+[17
 
-] [21
+] [18
 
 ] (/Users/sac/ex4pm/docs/thesis/phd_thesis.aux)
  ***********
@@ -846,40 +806,38 @@ LaTeX2e <2023-11-01> patch level 1
 L3 programming layer <2024-02-20>
  ***********
 Package rerunfilecheck Info: File `phd_thesis.out' has not changed.
-(rerunfilecheck)             Checksum: 153B830CC7154369672B0DA47350FFCC;9482.
+(rerunfilecheck)             Checksum: DFD8E888FB2CE12CFD063C0516A7F17C;8354.
  ) 
 Here is how much of TeX's memory you used:
- 16245 strings out of 474116
- 251103 string characters out of 5743681
- 1938187 words of memory out of 5000000
- 38030 multiletter control sequences out of 15000+600000
- 666478 words of font info for 210 fonts, out of 8000000 for 9000
+ 16202 strings out of 474116
+ 250815 string characters out of 5743681
+ 1937187 words of memory out of 5000000
+ 38011 multiletter control sequences out of 15000+600000
+ 673145 words of font info for 205 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,20n,79p,1036b,642s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,20n,79p,1036b,574s stack positions out of 10000i,1000n,20000p,200000b,200000s
 </usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmbx10.pfb></usr/lo
 cal/texlive/2024/texmf-dist/fonts/type1/public/lm/lmbx12.pfb></usr/local/texliv
 e/2024/texmf-dist/fonts/type1/public/lm/lmbx8.pfb></usr/local/texlive/2024/texm
 f-dist/fonts/type1/public/lm/lmex10.pfb></usr/local/texlive/2024/texmf-dist/fon
 ts/type1/public/lm/lmmi10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/p
-ublic/lm/lmmi12.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/l
-mmi6.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></
-usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/local/t
-exlive/2024/texmf-dist/fonts/type1/public/lm/lmr12.pfb></usr/local/texlive/2024
-/texmf-dist/fonts/type1/public/lm/lmr6.pfb></usr/local/texlive/2024/texmf-dist/
-fonts/type1/public/lm/lmr8.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/
-public/lm/lmri10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/
-lmri8.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmsy10.pfb>
-</usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmsy6.pfb></usr/local
-/texlive/2024/texmf-dist/fonts/type1/public/lm/lmsy8.pfb></usr/local/texlive/20
-24/texmf-dist/fonts/type1/public/lm/lmtk10.pfb></usr/local/texlive/2024/texmf-d
-ist/fonts/type1/public/lm/lmtt10.pfb></usr/local/texlive/2024/texmf-dist/fonts/
-type1/public/amsfonts/symbols/msam10.pfb></usr/local/texlive/2024/texmf-dist/fo
-nts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on /Users/sac/ex4pm/docs/thesis/phd_thesis.pdf (22 pages, 399759
+ublic/lm/lmmi6.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lm
+mi8.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmr10.pfb></u
+sr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmr12.pfb></usr/local/te
+xlive/2024/texmf-dist/fonts/type1/public/lm/lmr6.pfb></usr/local/texlive/2024/t
+exmf-dist/fonts/type1/public/lm/lmr8.pfb></usr/local/texlive/2024/texmf-dist/fo
+nts/type1/public/lm/lmri10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/
+public/lm/lmri8.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/l
+msy10.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmsy6.pfb><
+/usr/local/texlive/2024/texmf-dist/fonts/type1/public/lm/lmsy8.pfb></usr/local/
+texlive/2024/texmf-dist/fonts/type1/public/lm/lmtt10.pfb></usr/local/texlive/20
+24/texmf-dist/fonts/type1/public/amsfonts/symbols/msam10.pfb></usr/local/texliv
+e/2024/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
+Output written on /Users/sac/ex4pm/docs/thesis/phd_thesis.pdf (19 pages, 346888
  bytes).
 PDF statistics:
- 500 PDF objects out of 1000 (max. 8388607)
- 425 compressed objects within 5 object streams
- 124 named destinations out of 1000 (max. 500000)
- 63265 words of extra memory for PDF output out of 74296 (max. 10000000)
+ 423 PDF objects out of 1000 (max. 8388607)
+ 356 compressed objects within 4 object streams
+ 97 named destinations out of 1000 (max. 500000)
+ 67825 words of extra memory for PDF output out of 74296 (max. 10000000)
 
