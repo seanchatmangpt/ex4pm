@@ -48,7 +48,9 @@ defmodule Ex4pm.Information do
      Ex4pm.Refusal.new(:invalid_capability_id, "capability id must be a string", subject: other)}
   end
 
-  def execute(request, opts \\ []) when is_map(request) do
+  def execute(request, opts \\ [])
+
+  def execute(request, opts) when is_map(request) do
     run_id = Hash.digest(%{information_request: request})
     {timeout, max_concurrency, async?} = Protocol.scheduler_limits(request, opts)
 
