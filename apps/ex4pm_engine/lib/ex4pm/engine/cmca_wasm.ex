@@ -20,7 +20,7 @@ defmodule Ex4pm.Engine.CmcaWasm do
   @bcinr_package "bcinr-cmca"
   @bcinr_version "26.7.28"
   @kernel "bcinr_cmca::allocator::allocate_single_lens"
-  @wasm4pm_source_sha "5d1dd98c32bb89f6f02e4c63d14953d203a94700"
+  @wasm4pm_source_sha "e9f38ef4312790ff52a8cf85c2b78b7cba5c0d9c"
   @authority "CONSTRUCT_ONLY"
 
   @impl true
