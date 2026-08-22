@@ -53,7 +53,9 @@ defmodule Ex4pm.Stream.Pipeline do
         concurrency: Keyword.get(opts, :producer_concurrency, 1)
       ],
       processors: [
-        default: [concurrency: Keyword.get(opts, :processor_concurrency, System.schedulers_online())]
+        default: [
+          concurrency: Keyword.get(opts, :processor_concurrency, System.schedulers_online())
+        ]
       ]
     )
   end

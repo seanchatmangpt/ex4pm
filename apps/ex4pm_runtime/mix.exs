@@ -20,6 +20,18 @@ defmodule Ex4pmRuntime.MixProject do
   end
 
   defp deps do
-    [{:ex4pm_core, in_umbrella: true}, {:ex4pm_evidence, in_umbrella: true}]
+    [
+      {:ex4pm_core, in_umbrella: true},
+      {:ex4pm_evidence, in_umbrella: true},
+      {:ex4pm_engine, in_umbrella: true},
+      {:ex4pm_domain, in_umbrella: true},
+      {:ex4pm_stream, in_umbrella: true},
+      {:phoenix, "~> 1.7"},
+      {:phoenix_live_view, "~> 1.0"},
+      {:phoenix_html, "~> 4.1"},
+      {:phoenix_pubsub, "~> 2.1"},
+      {:bandit, "~> 1.5"},
+      {:jason, "~> 1.4"}
+    ]
   end
 end

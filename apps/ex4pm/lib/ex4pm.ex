@@ -1,7 +1,16 @@
 defmodule Ex4pm.Run do
   @moduledoc "Public evidence envelope for an analytical ex4pm operation."
   @enforce_keys [:operation, :subject_hash, :standing, :value, :receipt]
-  defstruct [:operation, :subject_hash, :standing, :value, :receipt, :pending, :engine_result, projections: []]
+  defstruct [
+    :operation,
+    :subject_hash,
+    :standing,
+    :value,
+    :receipt,
+    :pending,
+    :engine_result,
+    projections: []
+  ]
 end
 
 defmodule Ex4pm do

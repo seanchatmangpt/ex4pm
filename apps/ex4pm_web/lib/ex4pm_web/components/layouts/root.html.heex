@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="csrf-token" content={get_csrf_token()} />
+    <title>ex4pm | Process Intelligence Control Plane</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              beam: {
+                50: '#f0fdf4',
+                500: '#22c55e',
+                900: '#14532d',
+                dark: '#0a0f1d'
+              }
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body class="bg-[#0b0f19] text-gray-100 min-h-screen antialiased">
+    <%= @inner_content %>
+  </body>
+</html>

@@ -20,6 +20,15 @@ defmodule Ex4pmStream.MixProject do
   end
 
   defp deps do
-    [{:ex4pm_core, in_umbrella: true}, {:broadway, "~> 1.3"}]
+    [
+      {:ex4pm_core, in_umbrella: true},
+      {:ex4pm_evidence, in_umbrella: true},
+      {:ex4pm_engine, in_umbrella: true},
+      {:ex4pm_domain, in_umbrella: true},
+      {:broadway, "~> 1.3"},
+      {:phoenix_pubsub, "~> 2.1"},
+      {:plug, "~> 1.14"},
+      {:jason, "~> 1.4"}
+    ]
   end
 end

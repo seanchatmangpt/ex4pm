@@ -20,7 +20,8 @@ defmodule Ex4pm.Engine do
   @callback id() :: atom()
   @callback supports?(atom(), keyword()) :: boolean()
   @callback available?(keyword()) :: boolean()
-  @callback execute(atom(), term(), keyword()) :: {:ok, Ex4pm.Engine.Result.t()} | {:error, term()}
+  @callback execute(atom(), term(), keyword()) ::
+              {:ok, Ex4pm.Engine.Result.t()} | {:error, term()}
 
   alias Ex4pm.Engine.Registry
 

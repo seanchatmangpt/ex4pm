@@ -99,7 +99,9 @@ defmodule Ex4pm.Contracts do
         else
           {:halt,
            {:error,
-            Refusal.new(:contract_terms_missing, "canonical contract artifact lacks required terms",
+            Refusal.new(
+              :contract_terms_missing,
+              "canonical contract artifact lacks required terms",
               details: %{id: id, missing: missing}
             )}}
         end

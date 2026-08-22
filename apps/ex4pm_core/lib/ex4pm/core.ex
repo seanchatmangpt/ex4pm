@@ -94,7 +94,10 @@ defmodule Ex4pm.Core.Hash do
   end
 
   def canonical(list) when is_list(list), do: Enum.map(list, &canonical/1)
-  def canonical(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> Enum.map(&canonical/1) |> List.to_tuple()
+
+  def canonical(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> Enum.map(&canonical/1) |> List.to_tuple()
+
   def canonical(value), do: value
 end
 
@@ -126,13 +129,21 @@ defmodule Ex4pm.Core.CapabilityGraph do
     graph
     |> Map.values()
     |> Enum.filter(&(&1.kind == kind))
-    |> Enum.sort_by(fn capability -> {-Ex4pm.Standing.rank(capability.standing), capability.id} end)
+    |> Enum.sort_by(fn capability ->
+      {-Ex4pm.Standing.rank(capability.standing), capability.id}
+    end)
   end
 
   def best(graph, kind) do
     case candidates(graph, kind) do
-      [candidate | _] -> {:ok, candidate}
-      [] -> {:error, Ex4pm.Refusal.new(:no_candidate, "no lawful capability candidate", details: %{kind: kind})}
+      [candidate | _] ->
+        {:ok, candidate}
+
+      [] ->
+        {:error,
+         Ex4pm.Refusal.new(:no_candidate, "no lawful capability candidate",
+           details: %{kind: kind}
+         )}
     end
   end
 end

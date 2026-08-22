@@ -7,7 +7,14 @@ defmodule Ex4pm.Umbrella.MixProject do
       version: "0.1.0",
       start_permanent: Mix.env() == :prod,
       deps: [],
-      aliases: aliases()
+      aliases: aliases(),
+      preferred_cli_env: [verify: :test]
+    ]
+  end
+
+  def cli do
+    [
+      preferred_envs: [verify: :test]
     ]
   end
 

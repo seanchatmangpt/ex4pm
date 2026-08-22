@@ -88,7 +88,15 @@ defmodule Ex4pm.Evidence.Store do
 
   def put(receipt, server \\ __MODULE__), do: GenServer.call(server, {:put, receipt})
   def get(hash, server \\ __MODULE__), do: GenServer.call(server, {:get, hash})
+
+  def get_by_subject(subject_hash, server \\ __MODULE__),
+    do: GenServer.call(server, {:get_by_subject, subject_hash})
+
+  def get_by_parent(parent_hash, server \\ __MODULE__),
+    do: GenServer.call(server, {:get_by_parent, parent_hash})
+
   def all(server \\ __MODULE__), do: GenServer.call(server, :all)
+  def history(limit \\ 50, server \\ __MODULE__), do: GenServer.call(server, {:history, limit})
 
   @impl true
   def init(_opts) do
@@ -112,8 +120,46 @@ defmodule Ex4pm.Evidence.Store do
     {:reply, reply, state}
   end
 
+  def handle_call({:get_by_subject, subject_hash}, _from, state) do
+    receipts =
+      state.table
+      |> :ets.tab2list()
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.filter(&(&1.subject_hash == subject_hash))
+      |> Enum.sort_by(& &1.started_at, :desc)
+
+    {:reply, receipts, state}
+  end
+
+  def handle_call({:get_by_parent, parent_hash}, _from, state) do
+    receipts =
+      state.table
+      |> :ets.tab2list()
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.filter(&(&1.parent_hash == parent_hash))
+      |> Enum.sort_by(& &1.started_at, :desc)
+
+    {:reply, receipts, state}
+  end
+
   def handle_call(:all, _from, state) do
-    receipts = state.table |> :ets.tab2list() |> Enum.map(&elem(&1, 1)) |> Enum.sort_by(& &1.started_at)
+    receipts =
+      state.table
+      |> :ets.tab2list()
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.sort_by(& &1.started_at, :desc)
+
+    {:reply, receipts, state}
+  end
+
+  def handle_call({:history, limit}, _from, state) do
+    receipts =
+      state.table
+      |> :ets.tab2list()
+      |> Enum.map(&elem(&1, 1))
+      |> Enum.sort_by(& &1.started_at, :desc)
+      |> Enum.take(limit)
+
     {:reply, receipts, state}
   end
 end
@@ -157,7 +203,8 @@ defmodule Ex4pm.Evidence.Replay do
   end
 
   def verify(other) do
-    {:error, Refusal.new(:invalid_receipt, "receipt replay requires a receipt struct", subject: other)}
+    {:error,
+     Refusal.new(:invalid_receipt, "receipt replay requires a receipt struct", subject: other)}
   end
 
   defp compare(actual, expected, receipt) do
@@ -195,7 +242,8 @@ defmodule Ex4pm.Evidence.BRCE do
     allowed = Map.get(authority, :allow) || Map.get(authority, "allow") || []
     operation_text = operation_text(operation)
 
-    if :do in capabilities or "do" in capabilities or operation in allowed or operation_text in allowed do
+    if :do in capabilities or "do" in capabilities or operation in allowed or
+         operation_text in allowed do
       :ok
     else
       {:error,
@@ -227,11 +275,25 @@ defmodule Ex4pm.Evidence.BRCE do
     rescue
       exception ->
         failure = %{exception: Exception.message(exception), module: exception.__struct__}
-        finalize_failure(pending, failure, exception, store, Map.put(metadata, :result, :exception))
+
+        finalize_failure(
+          pending,
+          failure,
+          exception,
+          store,
+          Map.put(metadata, :result, :exception)
+        )
     catch
       kind, reason ->
         failure = %{kind: kind, reason: inspect(reason)}
-        finalize_failure(pending, failure, {kind, reason}, store, Map.put(metadata, :result, :caught))
+
+        finalize_failure(
+          pending,
+          failure,
+          {kind, reason},
+          store,
+          Map.put(metadata, :result, :caught)
+        )
     end
   end
 
@@ -243,8 +305,7 @@ defmodule Ex4pm.Evidence.BRCE do
         {:error, %{error: original_error, pending: pending, receipt: outcome}}
 
       {:error, %Refusal{} = refusal} ->
-        {:error,
-         %{refusal | details: Map.put(refusal.details, :original_failure, failure)}}
+        {:error, %{refusal | details: Map.put(refusal.details, :original_failure, failure)}}
     end
   end
 

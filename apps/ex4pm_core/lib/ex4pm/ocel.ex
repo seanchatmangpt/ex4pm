@@ -1,7 +1,7 @@
 defmodule Ex4pm.Event do
   @moduledoc "Canonical event observation."
   @enforce_keys [:id, :activity, :timestamp]
-  defstruct [:id, :activity, :timestamp, object_ids: [], attributes: %{}]
+  defstruct [:id, :activity, :timestamp, object_ids: [], relationships: [], attributes: %{}]
 end
 
 defmodule Ex4pm.ObjectRef do
@@ -13,7 +13,14 @@ end
 defmodule Ex4pm.EventLog do
   @moduledoc "Admitted event-log semantic IR."
   @enforce_keys [:events, :objects, :subject]
-  defstruct [:events, :objects, :subject, source_format: :ocel_v2, metadata: %{}]
+  defstruct [
+    :events,
+    :objects,
+    :subject,
+    object_relationships: [],
+    source_format: :ocel_v2,
+    metadata: %{}
+  ]
 end
 
 defmodule Ex4pm.OCEL do
@@ -23,6 +30,14 @@ defmodule Ex4pm.OCEL do
 
   @event_keys ["events", :events]
   @object_keys ["objects", :objects]
+  @object_rel_keys [
+    "object_relationships",
+    :object_relationships,
+    "objectRelationships",
+    :objectRelationships,
+    "o2o",
+    :o2o
+  ]
 
   def normalize(%EventLog{} = log), do: {:ok, log}
 
@@ -31,13 +46,15 @@ defmodule Ex4pm.OCEL do
          {:ok, raw_objects} <- fetch_any(raw, @object_keys, :missing_objects),
          {:ok, objects} <- normalize_objects(raw_objects),
          {:ok, events} <- normalize_events(raw_events),
+         {:ok, object_rels} <- normalize_object_relationships(fetch_opt(raw, @object_rel_keys)),
          :ok <- validate_references(events, objects) do
-      normalized = %{events: events, objects: objects}
+      normalized = %{events: events, objects: objects, object_relationships: object_rels}
 
       {:ok,
        %EventLog{
          events: events,
          objects: objects,
+         object_relationships: object_rels,
          subject: Subject.new(:event_log, normalized),
          source_format: :ocel_v2,
          metadata: %{event_count: length(events), object_count: map_size(objects)}
@@ -49,7 +66,8 @@ defmodule Ex4pm.OCEL do
     {:error, Refusal.new(:invalid_observation, "event observation must be a map", subject: other)}
   end
 
-  def flatten(%EventLog{} = log, object_type) when is_binary(object_type) or is_atom(object_type) do
+  def flatten(%EventLog{} = log, object_type)
+      when is_binary(object_type) or is_atom(object_type) do
     selected =
       log.objects
       |> Map.values()
@@ -111,9 +129,14 @@ defmodule Ex4pm.OCEL do
     type = value(raw, ["type", :type, "ocel:type", :"ocel:type"])
 
     cond do
-      is_nil(id) -> {:error, Refusal.new(:missing_object_id, "object is missing identity", subject: raw)}
-      is_nil(type) -> {:error, Refusal.new(:missing_object_type, "object is missing type", subject: raw)}
-      true -> {:ok, %ObjectRef{id: to_string(id), type: type, attributes: drop_known_object_keys(raw)}}
+      is_nil(id) ->
+        {:error, Refusal.new(:missing_object_id, "object is missing identity", subject: raw)}
+
+      is_nil(type) ->
+        {:error, Refusal.new(:missing_object_type, "object is missing type", subject: raw)}
+
+      true ->
+        {:ok, %ObjectRef{id: to_string(id), type: type, attributes: drop_known_object_keys(raw)}}
     end
   end
 
@@ -155,14 +178,30 @@ defmodule Ex4pm.OCEL do
 
   defp normalize_event(raw, fallback_id) when is_map(raw) do
     id = value(raw, ["id", :id, "ocel:eid", :"ocel:eid"]) || fallback_id
-    activity = value(raw, ["activity", :activity, "type", :type, "ocel:activity", :"ocel:activity"])
-    timestamp = value(raw, ["timestamp", :timestamp, "time", :time, "ocel:timestamp", :"ocel:timestamp"])
-    object_ids = extract_object_ids(raw)
+
+    activity =
+      value(raw, ["activity", :activity, "type", :type, "ocel:activity", :"ocel:activity"])
+
+    timestamp =
+      value(raw, ["timestamp", :timestamp, "time", :time, "ocel:timestamp", :"ocel:timestamp"])
+
+    relationships = extract_relationships(raw)
+
+    object_ids =
+      if relationships != [],
+        do: Enum.map(relationships, & &1.object_id),
+        else: extract_object_ids(raw)
 
     cond do
-      is_nil(id) -> {:error, Refusal.new(:missing_event_id, "event is missing identity", subject: raw)}
-      is_nil(activity) -> {:error, Refusal.new(:missing_activity, "event is missing activity", subject: raw)}
-      is_nil(timestamp) -> {:error, Refusal.new(:missing_timestamp, "event is missing timestamp", subject: raw)}
+      is_nil(id) ->
+        {:error, Refusal.new(:missing_event_id, "event is missing identity", subject: raw)}
+
+      is_nil(activity) ->
+        {:error, Refusal.new(:missing_activity, "event is missing activity", subject: raw)}
+
+      is_nil(timestamp) ->
+        {:error, Refusal.new(:missing_timestamp, "event is missing timestamp", subject: raw)}
+
       true ->
         {:ok,
          %Event{
@@ -170,6 +209,7 @@ defmodule Ex4pm.OCEL do
            activity: to_string(activity),
            timestamp: normalize_timestamp(timestamp),
            object_ids: Enum.map(object_ids, &to_string/1) |> Enum.uniq() |> Enum.sort(),
+           relationships: relationships,
            attributes: drop_known_event_keys(raw)
          }}
     end
@@ -179,8 +219,42 @@ defmodule Ex4pm.OCEL do
     {:error, Refusal.new(:invalid_event, "event must be a map", subject: other)}
   end
 
+  defp extract_relationships(raw) do
+    raw
+    |> value(["relationships", :relationships, "event_objects", :event_objects])
+    |> List.wrap()
+    |> Enum.map(fn
+      rel when is_map(rel) ->
+        oid =
+          value(rel, [
+            "objectId",
+            :objectId,
+            "object_id",
+            :object_id,
+            "id",
+            :id,
+            "ocel:oid",
+            :"ocel:oid"
+          ])
+
+        qualifier =
+          value(rel, ["qualifier", :qualifier, "role", :role, "type", :type]) || "involved"
+
+        if oid do
+          %{object_id: to_string(oid), qualifier: to_string(qualifier)}
+        else
+          nil
+        end
+
+      _ ->
+        nil
+    end)
+    |> Enum.reject(&is_nil/1)
+  end
+
   defp extract_object_ids(raw) do
-    direct = value(raw, ["object_ids", :object_ids, "objects", :objects, "ocel:omap", :"ocel:omap"])
+    direct =
+      value(raw, ["object_ids", :object_ids, "objects", :objects, "ocel:omap", :"ocel:omap"])
 
     case direct do
       nil ->
@@ -188,8 +262,11 @@ defmodule Ex4pm.OCEL do
         |> value(["relationships", :relationships])
         |> List.wrap()
         |> Enum.map(fn
-          relationship when is_map(relationship) -> value(relationship, ["objectId", :objectId, "object_id", :object_id])
-          id -> id
+          relationship when is_map(relationship) ->
+            value(relationship, ["objectId", :objectId, "object_id", :object_id])
+
+          id ->
+            id
         end)
         |> Enum.reject(&is_nil/1)
 
@@ -205,6 +282,138 @@ defmodule Ex4pm.OCEL do
 
       single ->
         [single]
+    end
+  end
+
+  defp normalize_object_relationships(nil), do: {:ok, []}
+  defp normalize_object_relationships([]), do: {:ok, []}
+
+  defp normalize_object_relationships(rels) when is_list(rels) do
+    normalized =
+      Enum.reduce_while(rels, {:ok, []}, fn rel, {:ok, acc} ->
+        if is_map(rel) do
+          source =
+            value(rel, [
+              "source_id",
+              :source_id,
+              "sourceId",
+              :sourceId,
+              "source",
+              :source,
+              "objectId",
+              :objectId
+            ])
+
+          target = value(rel, ["target_id", :target_id, "targetId", :targetId, "target", :target])
+
+          qualifier =
+            value(rel, ["qualifier", :qualifier, "role", :role, "type", :type]) || "related"
+
+          if source && target do
+            {:cont,
+             {:ok,
+              [
+                %{
+                  source_id: to_string(source),
+                  target_id: to_string(target),
+                  qualifier: to_string(qualifier)
+                }
+                | acc
+              ]}}
+          else
+            {:halt,
+             {:error,
+              Refusal.new(
+                :invalid_object_relationship,
+                "object relationship must have source and target",
+                subject: rel
+              )}}
+          end
+        else
+          {:halt,
+           {:error,
+            Refusal.new(:invalid_object_relationship, "object relationship must be a map",
+              subject: rel
+            )}}
+        end
+      end)
+
+    case normalized do
+      {:ok, list} -> {:ok, Enum.reverse(list)}
+      error -> error
+    end
+  end
+
+  defp normalize_object_relationships(other) do
+    {:error,
+     Refusal.new(:invalid_object_relationships, "object relationships must be a list",
+       subject: other
+     )}
+  end
+
+  def validate_envelope(payload) when is_map(payload) do
+    schema = value(payload, ["schema", :schema])
+    producer = value(payload, ["producer", :producer])
+    sequence = value(payload, ["sequence", :sequence])
+    events = value(payload, ["events", :events])
+
+    cond do
+      is_nil(schema) ->
+        {:error,
+         Refusal.new(:missing_envelope_schema, "batch envelope missing 'schema' field",
+           subject: payload
+         )}
+
+      is_nil(producer) or not is_map(producer) ->
+        {:error,
+         Refusal.new(:missing_envelope_producer, "batch envelope missing valid 'producer' map",
+           subject: payload
+         )}
+
+      is_nil(sequence) or not is_integer(sequence) ->
+        {:error,
+         Refusal.new(
+           :missing_envelope_sequence,
+           "batch envelope missing valid integer 'sequence'",
+           subject: payload
+         )}
+
+      is_nil(events) or not (is_list(events) or is_map(events)) ->
+        {:error,
+         Refusal.new(:missing_envelope_events, "batch envelope missing 'events' list/map",
+           subject: payload
+         )}
+
+      true ->
+        {:ok,
+         %{
+           schema: to_string(schema),
+           producer: producer,
+           sequence: sequence,
+           previous_digest:
+             value(payload, [
+               "previous_digest",
+               :previous_digest,
+               "previousDigest",
+               :previousDigest
+             ]),
+           events: events,
+           objects: value(payload, ["objects", :objects]) || %{},
+           object_relationships: value(payload, @object_rel_keys) || []
+         }}
+    end
+  end
+
+  def validate_envelope(other) do
+    {:error, Refusal.new(:invalid_envelope, "envelope must be a map", subject: other)}
+  end
+
+  defp fetch_opt(map, keys) do
+    case Enum.find_value(keys, fn key ->
+           if Map.has_key?(map, key), do: {:found, Map.get(map, key)}
+         end) do
+      {:found, value} -> value
+      nil -> nil
     end
   end
 
@@ -227,7 +436,9 @@ defmodule Ex4pm.OCEL do
   end
 
   defp fetch_any(map, keys, code) do
-    case Enum.find_value(keys, fn key -> if Map.has_key?(map, key), do: {:found, Map.get(map, key)} end) do
+    case Enum.find_value(keys, fn key ->
+           if Map.has_key?(map, key), do: {:found, Map.get(map, key)}
+         end) do
       {:found, value} -> {:ok, value}
       nil -> {:error, Refusal.new(code, "required OCEL collection is missing")}
     end
@@ -246,31 +457,38 @@ defmodule Ex4pm.OCEL do
   end
 
   defp drop_known_event_keys(map) do
-    Map.drop(map, [
-      "id",
-      :id,
-      "ocel:eid",
-      :"ocel:eid",
-      "activity",
-      :activity,
-      "type",
-      :type,
-      "ocel:activity",
-      :"ocel:activity",
-      "timestamp",
-      :timestamp,
-      "time",
-      :time,
-      "ocel:timestamp",
-      :"ocel:timestamp",
-      "object_ids",
-      :object_ids,
-      "objects",
-      :objects,
-      "ocel:omap",
-      :"ocel:omap",
-      "relationships",
-      :relationships
-    ])
+    explicit_attrs = value(map, ["attributes", :attributes]) || %{}
+
+    top_level =
+      Map.drop(map, [
+        "id",
+        :id,
+        "ocel:eid",
+        :"ocel:eid",
+        "activity",
+        :activity,
+        "type",
+        :type,
+        "ocel:activity",
+        :"ocel:activity",
+        "timestamp",
+        :timestamp,
+        "time",
+        :time,
+        "ocel:timestamp",
+        :"ocel:timestamp",
+        "object_ids",
+        :object_ids,
+        "objects",
+        :objects,
+        "ocel:omap",
+        :"ocel:omap",
+        "relationships",
+        :relationships,
+        "attributes",
+        :attributes
+      ])
+
+    Map.merge(top_level, explicit_attrs)
   end
 end

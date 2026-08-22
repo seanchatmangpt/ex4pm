@@ -2,10 +2,28 @@ defmodule Ex4pm.Domain.Projector do
   @moduledoc "Explicit projection from canonical semantic/evidence objects into Ash resources."
 
   alias Ex4pm.Core.Hash
-  alias Ex4pm.Domain.{Dataset, EngineCapability, Intervention, ProcessModel, ReceiptProjection}
+
+  alias Ex4pm.Domain.{
+    Agent,
+    AgentRun,
+    ConformanceResult,
+    Dataset,
+    EngineCapability,
+    Event,
+    EventObject,
+    Intervention,
+    Object,
+    ObjectObject,
+    ProcessModel,
+    ProcessVariant,
+    ReceiptProjection,
+    Refusal
+  }
+
   alias Ex4pm.Engine.Result
   alias Ex4pm.EventLog
   alias Ex4pm.Evidence.Receipt
+  alias Ex4pm.Refusal, as: CoreRefusal
 
   def dataset(%EventLog{} = log) do
     create(Dataset, %{
@@ -16,6 +34,80 @@ defmodule Ex4pm.Domain.Projector do
       standing: :alive,
       metadata: log.metadata
     })
+  end
+
+  def event(%Ex4pm.Event{} = ev) do
+    create(Event, %{
+      event_id: ev.id,
+      activity: ev.activity,
+      lifecycle: Map.get(ev.attributes, "lifecycle", "stop"),
+      timestamp: ev.timestamp,
+      agent_id: Map.get(ev.attributes, "agent_id") || Map.get(ev.attributes, :agent_id),
+      run_id: Map.get(ev.attributes, "run_id") || Map.get(ev.attributes, :run_id),
+      tool: Map.get(ev.attributes, "tool") || Map.get(ev.attributes, :tool),
+      authority_domain: Map.get(ev.attributes, "authority_domain", "OBSERVE"),
+      standing: Map.get(ev.attributes, "standing", :alive),
+      attributes: ev.attributes
+    })
+  end
+
+  def object(%Ex4pm.ObjectRef{} = obj) do
+    create(Object, %{
+      object_id: obj.id,
+      type: to_string(obj.type),
+      attributes: obj.attributes
+    })
+  end
+
+  def event_object(event_id, object_id, qualifier \\ "involved") do
+    create(EventObject, %{
+      event_id: to_string(event_id),
+      object_id: to_string(object_id),
+      qualifier: to_string(qualifier)
+    })
+  end
+
+  def object_object(source_id, target_id, qualifier \\ "related") do
+    create(ObjectObject, %{
+      source_id: to_string(source_id),
+      target_id: to_string(target_id),
+      qualifier: to_string(qualifier)
+    })
+  end
+
+  def agent(attrs) when is_map(attrs) do
+    create(Agent, attrs)
+  end
+
+  def agent_run(attrs) when is_map(attrs) do
+    create(AgentRun, attrs)
+  end
+
+  def variant(path, count, object_type \\ nil) do
+    create(ProcessVariant, %{
+      path: Enum.map(path, &to_string/1),
+      count: count,
+      object_type: if(object_type, do: to_string(object_type), else: nil)
+    })
+  end
+
+  def conformance_result(attrs) when is_map(attrs) do
+    create(ConformanceResult, attrs)
+  end
+
+  def refusal(%CoreRefusal{} = refusal) do
+    create(Refusal, %{
+      code: refusal.code,
+      message: refusal.message,
+      agent_id: Map.get(refusal.details, :agent_id) || Map.get(refusal.details, "agent_id"),
+      run_id: Map.get(refusal.details, :run_id) || Map.get(refusal.details, "run_id"),
+      standing: :refused,
+      details: refusal.details
+    })
+  end
+
+  def refusal(attrs) when is_map(attrs) do
+    create(Refusal, attrs)
   end
 
   def process_model(%Result{operation: :discover} = result) do
@@ -60,6 +152,29 @@ defmodule Ex4pm.Domain.Projector do
       reason: capability.reason,
       evidence: capability.evidence
     })
+  end
+
+  def project_log(%EventLog{} = log) do
+    with {:ok, _ds} <- dataset(log) do
+      # Project objects
+      Enum.each(log.objects, fn {_id, obj} -> object(obj) end)
+
+      # Project events and E2O
+      Enum.each(log.events, fn ev ->
+        event(ev)
+
+        Enum.each(ev.relationships, fn rel ->
+          event_object(ev.id, rel.object_id, rel.qualifier)
+        end)
+      end)
+
+      # Project O2O
+      Enum.each(log.object_relationships, fn rel ->
+        object_object(rel.source_id, rel.target_id, rel.qualifier)
+      end)
+
+      {:ok, :projected}
+    end
   end
 
   defp create(resource, attrs) do

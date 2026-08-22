@@ -1,0 +1,63 @@
+# fly.toml app configuration file for ex4pm process-intelligence-control-plane
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+
+app = "ex4pm-control-plane"
+primary_region = "lax"
+kill_signal = "SIGTERM"
+kill_timeout = 5
+
+[experimental]
+  auto_rollback = true
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PHX_HOST = "ex4pm-control-plane.fly.dev"
+  PORT = "8080"
+  ECTO_IPV6 = "true"
+  ERL_AFLAGS = "-proto_dist inet6_tcp"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 8080
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 1000
+    soft_limit = 800
+
+  [[services.http_checks]]
+    interval = 10000
+    grace_period = "5s"
+    method = "get"
+    path = "/health"
+    protocol = "http"
+    timeout = 2000
+    tls_skip_verify = false
+
+  [[services.http_checks]]
+    interval = 15000
+    grace_period = "10s"
+    method = "get"
+    path = "/health/ready"
+    protocol = "http"
+    timeout = 3000
+    tls_skip_verify = false
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  cpus = 1
