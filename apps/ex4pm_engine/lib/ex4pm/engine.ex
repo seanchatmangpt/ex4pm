@@ -39,10 +39,10 @@ defmodule Ex4pm.Engine.Registry do
   @moduledoc "Preserves the lawful engine graph and performs explicit/evidence-ranked selection."
 
   alias Ex4pm.Core.Capability
-  alias Ex4pm.Engine.{Beam, Ex4pmPlan, Nif, Remote, Wasm}
+  alias Ex4pm.Engine.{Beam, CmcaWasm, Ex4pmPlan, Nif, Remote, Wasm}
   alias Ex4pm.Refusal
 
-  @engines [Beam, Ex4pmPlan, Wasm, Nif, Remote]
+  @engines [Beam, Ex4pmPlan, CmcaWasm, Wasm, Nif, Remote]
 
   def engines, do: @engines
 
@@ -120,9 +120,10 @@ defmodule Ex4pm.Engine.Registry do
 
   defp preference(:beam), do: 0
   defp preference(:ex4pm_plan), do: 1
-  defp preference(:wasm), do: 2
-  defp preference(:nif), do: 3
-  defp preference(:remote), do: 4
+  defp preference(:cmca_wasm), do: 2
+  defp preference(:wasm), do: 3
+  defp preference(:nif), do: 4
+  defp preference(:remote), do: 5
   defp preference(_), do: 99
 
   defp module_for(id), do: Enum.find(@engines, &(&1.id() == id))
