@@ -27,8 +27,7 @@ defmodule Ex4pmDomain.MixProject do
       {:ex4pm_core, in_umbrella: true},
       {:ex4pm_evidence, in_umbrella: true},
       {:ex4pm_engine, in_umbrella: true},
-      {:ash, "~> 3.31"},
-      {:stream_data, "~> 1.0", only: [:dev, :test]}
+      {:ash, "~> 3.31"}
     ]
   end
 end

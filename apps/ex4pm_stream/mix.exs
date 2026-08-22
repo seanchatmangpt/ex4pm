@@ -31,8 +31,7 @@ defmodule Ex4pmStream.MixProject do
       {:broadway, "~> 1.3"},
       {:phoenix_pubsub, "~> 2.1"},
       {:plug, "~> 1.14"},
-      {:jason, "~> 1.4"},
-      {:stream_data, "~> 1.0", only: [:dev, :test]}
+      {:jason, "~> 1.4"}
     ]
   end
 end

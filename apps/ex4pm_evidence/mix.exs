@@ -24,8 +24,7 @@ defmodule Ex4pmEvidence.MixProject do
 
   defp deps do
     [
-      {:ex4pm_core, in_umbrella: true},
-      {:stream_data, "~> 1.0", only: [:dev, :test]}
+      {:ex4pm_core, in_umbrella: true}
     ]
   end
 end

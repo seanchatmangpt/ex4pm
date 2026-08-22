@@ -6,7 +6,7 @@ defmodule Ex4pm.Umbrella.MixProject do
       apps_path: "apps",
       version: "0.1.0",
       start_permanent: Mix.env() == :prod,
-      deps: [],
+      deps: [{:stream_data, "~> 1.0"}],
       aliases: aliases(),
       preferred_cli_env: [verify: :test]
     ]

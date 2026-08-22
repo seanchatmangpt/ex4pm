@@ -24,8 +24,7 @@ defmodule Ex4pmCore.MixProject do
 
   defp deps do
     [
-      {:sweet_xml, "~> 0.7.5"},
-      {:stream_data, "~> 1.0", only: [:dev, :test]}
+      {:sweet_xml, "~> 0.7.5"}
     ]
   end
 end
