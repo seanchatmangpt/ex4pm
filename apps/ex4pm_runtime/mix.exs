@@ -26,6 +26,7 @@ defmodule Ex4pmRuntime.MixProject do
       {:ex4pm_engine, in_umbrella: true},
       {:ex4pm_domain, in_umbrella: true},
       {:ex4pm_stream, in_umbrella: true},
+      {:ash, "~> 3.31"},
       {:phoenix, "~> 1.7"},
       {:phoenix_live_view, "~> 1.0"},
       {:phoenix_html, "~> 4.1"},

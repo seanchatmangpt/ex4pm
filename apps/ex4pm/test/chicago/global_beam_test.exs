@@ -56,6 +56,13 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     {:ok, peers: peers, nodes: Enum.map(peers, &elem(&1, 1))}
   end
 
+  def concurrency_probe(parent, delay_ms) do
+    send(parent, {:distributed_probe_started, self(), Node.self()})
+    Process.sleep(delay_ms)
+    send(parent, {:distributed_probe_finished, self(), Node.self()})
+    :ok
+  end
+
   test "qualification observes exact BEAM identity and finite system limits", %{nodes: nodes} do
     observation = Ex4pm.Qualification.environment()
 
@@ -97,6 +104,8 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     assert Ex4pm.Qualification.execution_semantics(local) ==
              Ex4pm.Qualification.execution_semantics(distributed)
 
+    assert local.runtime == :reactor
+    assert distributed.runtime == :reactor_distributed
     assert length(distributed.receipt_hashes) == 6
     assert distributed.nodes == nodes
     assert MapSet.size(MapSet.new(Enum.map(distributed.placements, & &1.node))) == 3
@@ -104,19 +113,25 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     for layer <- distributed.layers, item <- layer do
       assert {:ok, %{replay: :match}} = Replay.verify(item.pending)
       assert {:ok, %{replay: :match}} = Replay.verify(item.receipt)
-      assert {:ok, mirrored} = Store.get(item.receipt.hash)
-      assert mirrored.hash == item.receipt.hash
+      assert {:ok, mirrored_pending} = Store.get(item.pending.hash)
+      assert {:ok, mirrored_outcome} = Store.get(item.receipt.hash)
+      assert mirrored_pending.hash == item.pending.hash
+      assert mirrored_outcome.hash == item.receipt.hash
     end
   end
 
-  test "high fan-out honors the coordinator concurrency cap and closes every receipt", %{nodes: nodes} do
+  test "high fan-out honors Reactor concurrency and closes every remote receipt", %{nodes: nodes} do
     task_count = 40
+    parent = self()
 
     tasks =
       for index <- 1..task_count do
         %{
           id: "fanout-#{index}",
-          intent: %{operation: :fanout_probe, mfa: {:timer, :sleep, [75]}}
+          intent: %{
+            operation: :fanout_probe,
+            mfa: {__MODULE__, :concurrency_probe, [parent, 75]}
+          }
         }
       end
 
@@ -132,7 +147,7 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
         )
       end)
 
-    peak = observe_peak_children(runner, 0)
+    peak = observe_peak_probes(runner, 0, 0)
     assert peak <= 4
     assert peak > 1
 
@@ -161,7 +176,7 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     assert dead_node in refusal.details.nodes
   end
 
-  test "connection loss during a remote DO is classified as ambiguous rather than success" do
+  test "connection loss during a remote DO remains an ambiguous typed refusal" do
     peer = Ex4pm.Chicago.Cluster.start_peer!()
     node = elem(peer, 1)
 
@@ -183,13 +198,13 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     Process.sleep(150)
     :ok = Ex4pm.Chicago.Cluster.stop_peer(peer)
 
-    assert {:error, %{failure: %Ex4pm.Refusal{} = refusal}} = Task.await(runner, 15_000)
-    assert refusal.code == :distributed_node_connection_lost
+    assert {:error, error} = Task.await(runner, 15_000)
+    assert {:ok, refusal} = find_refusal(error, :distributed_node_connection_lost)
     assert refusal.details.do_may_have_been_attempted == true
     assert refusal.details.node == node
   end
 
-  test "remote application exceptions terminate in a blocked receipt", %{nodes: [node | _]} do
+  test "remote application exceptions terminate in mirrored blocked receipts", %{nodes: [node | _]} do
     task = %{
       id: "explode",
       intent: %{operation: :explode, mfa: {:erlang, :error, [:chicago_boom]}}
@@ -197,17 +212,22 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
 
     {:ok, plan} = Runtime.compile(powl!([task], []))
 
-    assert {:error, %{failure: %{failure: failure}}} =
+    assert {:error, _error} =
              Distributed.execute(plan, %{id: "chicago", capabilities: [:do]},
                nodes: [node],
                timeout: 10_000
              )
 
-    assert failure.receipt.standing == :blocked
-    assert failure.receipt.parent_hash == failure.pending.hash
-    assert {:ok, %{replay: :match}} = Replay.verify(failure.receipt)
-    assert {:ok, mirrored} = Store.get(failure.receipt.hash)
-    assert mirrored.hash == failure.receipt.hash
+    blocked =
+      plan.subject_hash
+      |> Store.get_by_subject()
+      |> Enum.find(&(&1.phase == :outcome and &1.standing == :blocked))
+
+    assert blocked
+    assert {:ok, %{replay: :match}} = Replay.verify(blocked)
+    assert {:ok, pending} = Store.get(blocked.parent_hash)
+    assert pending.phase == :pending
+    assert {:ok, %{replay: :match}} = Replay.verify(pending)
   end
 
   @tag :tmp_dir
@@ -362,15 +382,46 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     model
   end
 
-  defp observe_peak_children(runner, peak) do
-    if Process.alive?(runner.pid) do
-      current = Ex4pm.Runtime.TaskSupervisor |> Task.Supervisor.children() |> length()
-      Process.sleep(10)
-      observe_peak_children(runner, max(peak, current))
+  defp observe_peak_probes(runner, active, peak) do
+    if Process.alive?(runner.pid) or active > 0 do
+      receive do
+        {:distributed_probe_started, _pid, _node} ->
+          next = active + 1
+          observe_peak_probes(runner, next, max(peak, next))
+
+        {:distributed_probe_finished, _pid, _node} ->
+          observe_peak_probes(runner, max(active - 1, 0), peak)
+      after
+        10 -> observe_peak_probes(runner, active, peak)
+      end
     else
       peak
     end
   end
+
+  defp find_refusal(%Ex4pm.Refusal{code: code} = refusal, code), do: {:ok, refusal}
+
+  defp find_refusal(value, code) when is_map(value) do
+    value
+    |> Map.values()
+    |> Enum.reduce_while(:error, fn nested, :error ->
+      case find_refusal(nested, code) do
+        {:ok, _refusal} = found -> {:halt, found}
+        :error -> {:cont, :error}
+      end
+    end)
+  end
+
+  defp find_refusal(value, code) when is_list(value) do
+    Enum.reduce_while(value, :error, fn nested, :error ->
+      case find_refusal(nested, code) do
+        {:ok, _refusal} = found -> {:halt, found}
+        :error -> {:cont, :error}
+      end
+    end)
+  end
+
+  defp find_refusal(_value, _code), do: :error
 
   defp wait_until(fun, attempts \\ 100)
 
