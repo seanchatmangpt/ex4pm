@@ -22,14 +22,15 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
 
   @impl true
   def supports?(:plan, opts) do
-    planner = Keyword.get(opts, :planner, :astar)
-    is_function(Keyword.get(opts, :ex4pm_plan_fun), 2) and planner in [:astar, "astar"]
+    Keyword.get(opts, :planner, :astar) in [:astar, "astar"]
   end
 
   def supports?(_operation, _opts), do: false
 
   @impl true
-  def available?(opts), do: supports?(:plan, opts)
+  def available?(opts) do
+    supports?(:plan, opts) and is_function(Keyword.get(opts, :ex4pm_plan_fun), 2)
+  end
 
   @impl true
   def execute(:plan, subject, opts) when is_map(subject) do
