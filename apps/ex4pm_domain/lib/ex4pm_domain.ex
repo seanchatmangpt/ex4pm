@@ -38,5 +38,8 @@ defmodule Ex4pmDomain do
     resource(Ex4pmDomain.MarkovModel)
     resource(Ex4pmDomain.CausalModel)
     resource(Ex4pmDomain.AlignmentRecord)
+    resource(Ex4pmDomain.PowlModel)
+    resource(Ex4pmDomain.LtlfConstraint)
+    resource(Ex4pmDomain.ChoreographyContract)
   end
 end

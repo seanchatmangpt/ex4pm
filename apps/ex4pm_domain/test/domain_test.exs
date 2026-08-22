@@ -251,5 +251,40 @@ defmodule Ex4pm.DomainTest do
 
     assert align_rec.case_id == "case_999"
     assert align_rec.fitness == 1.0
+
+    # 17. PowlModel
+    assert {:ok, powl_rec} =
+             Ash.create(Ex4pmDomain.PowlModel, %{
+               name: "governance_powl",
+               root_operator: :sequence,
+               node_count: 8,
+               sound_by_construction?: true
+             })
+
+    assert powl_rec.sound_by_construction? == true
+
+    # 18. LtlfConstraint
+    assert {:ok, ltlf_rec} =
+             Ash.create(Ex4pmDomain.LtlfConstraint, %{
+               name: "sec_approval_rule",
+               formula_type: "precedence",
+               source_activity: "security_scan",
+               target_activity: "deploy",
+               satisfied?: true
+             })
+
+    assert ltlf_rec.satisfied? == true
+
+    # 19. ChoreographyContract
+    assert {:ok, choreo_rec} =
+             Ash.create(Ex4pmDomain.ChoreographyContract, %{
+               name: "order_fulfillment_choreo",
+               participating_agents: ["customer", "merchant"],
+               channels_count: 2,
+               sound?: true,
+               deadlock_free?: true
+             })
+
+    assert choreo_rec.deadlock_free? == true
   end
 end

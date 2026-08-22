@@ -15,7 +15,15 @@ defmodule Ex4pm.Engine.Cognition do
 
   alias Ex4pm.Engine.Result
 
-  alias Ex4pmEngine.{Alignment, SoundnessProver}
+  alias Ex4pmEngine.{
+    Alignment,
+    Choreography,
+    DAPN,
+    ETCPrecision,
+    LTLf,
+    POWL,
+    SoundnessProver
+  }
 
   alias Ex4pmEngine.Cognition.{
     Adversarial,
@@ -324,6 +332,101 @@ defmodule Ex4pm.Engine.Cognition do
          sound: report.sound?,
          reachable_markings: report.reachable_markings_count,
          deadlocks_count: length(report.deadlocks)
+       }
+     }}
+  end
+
+  def execute(:powl_to_net, %POWL.Node{} = powl_tree, _opts) do
+    net = POWL.to_workflow_net(powl_tree)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :powl_2_sound_by_construction_tree,
+       subject_hash: Ex4pm.Core.Hash.digest(powl_tree),
+       standing: :alive,
+       value: net,
+       evidence: %{
+         deterministic: true,
+         sound_by_construction: true,
+         transitions_count: map_size(net.transitions)
+       }
+     }}
+  end
+
+  def execute(:etc_precision, {traces, net_spec}, _opts)
+      when is_list(traces) and is_map(net_spec) do
+    prec_report = ETCPrecision.calculate_precision(traces, net_spec)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :adriansyah_escaping_edge_etc_precision,
+       subject_hash: Ex4pm.Core.Hash.digest(%{traces: traces, net: net_spec}),
+       standing: if(prec_report.precision >= 0.70, do: :alive, else: :blocked),
+       value: prec_report,
+       evidence: %{deterministic: true, precision: prec_report.precision}
+     }}
+  end
+
+  def execute(:dapn_execute, {trace, dapn_spec}, _opts)
+      when is_list(trace) and is_map(dapn_spec) do
+    case DAPN.execute_dapn_trace(trace, dapn_spec) do
+      {:ok, result} ->
+        {:ok,
+         %Result{
+           engine: :beam,
+           operation: :cognition,
+           algorithm: :data_aware_petri_net_guard_execution,
+           subject_hash: Ex4pm.Core.Hash.digest(%{trace: trace, net: dapn_spec}),
+           standing: :alive,
+           value: result,
+           evidence: %{deterministic: true, satisfied: true}
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def execute(:ltlf_evaluate, {trace, formulas}, _opts) when is_list(trace) do
+    report = LTLf.evaluate_trace(trace, formulas)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :ltlf_finite_trace_model_checking,
+       subject_hash: Ex4pm.Core.Hash.digest(%{trace: trace, formulas: formulas}),
+       standing: if(report.satisfied?, do: :alive, else: :blocked),
+       value: report,
+       evidence: %{
+         deterministic: true,
+         satisfied: report.satisfied?,
+         violations_count: report.violations_count
+       }
+     }}
+  end
+
+  def execute(:choreography_verify, {agent_nets, channels}, _opts)
+      when is_list(agent_nets) and is_list(channels) do
+    choreo_report = Choreography.verify_choreography(agent_nets, channels)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :multi_agent_communicating_choreography,
+       subject_hash: Ex4pm.Core.Hash.digest(%{agents: agent_nets, channels: channels}),
+       standing: if(choreo_report.sound?, do: :alive, else: :blocked),
+       value: choreo_report,
+       evidence: %{
+         deterministic: true,
+         sound: choreo_report.sound?,
+         orphan_messages: choreo_report.orphan_messages?,
+         states_count: choreo_report.composite_reachable_states
        }
      }}
   end

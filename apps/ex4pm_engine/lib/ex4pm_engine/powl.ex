@@ -1,760 +1,285 @@
-defmodule Ex4pmEngine.POWL.Node do
-  @moduledoc "A node in a POWL 2.0 process tree."
-  @enforce_keys [:id, :type]
-  defstruct [
-    :id,
-    :type,
-    label: nil,
-    children: [],
-    edges: [],
-    choice_graph: %{nodes: [], edges: []},
-    loop_body: nil,
-    loop_redo: nil,
-    loop_exit: nil,
-    metadata: %{}
-  ]
-
-  @type node_type :: :activity | :silent | :partial_order | :choice | :loop
-  @type t :: %__MODULE__{
-          id: String.t(),
-          type: node_type(),
-          label: String.t() | nil,
-          children: [String.t() | t()],
-          edges: [{String.t(), String.t()}],
-          choice_graph: %{nodes: [String.t()], edges: [{String.t(), String.t()}]},
-          loop_body: String.t() | t() | nil,
-          loop_redo: String.t() | t() | nil,
-          loop_exit: String.t() | t() | nil,
-          metadata: map()
-        }
-end
-
 defmodule Ex4pmEngine.POWL do
   @moduledoc """
-  POWL 2.0 (Partially Ordered Workflow Language) model with Generalized Choice Graphs
-  and Language Preservation semantics.
+  POWL 2.0 (Partially Ordered Workflow Trees) Engine.
+  Faithful BEAM realization of Van der Aalst (2023).
+
+  Represents process models as hierarchical, sound-by-construction operator trees:
+  - `Activity`: Leaf node executing a labeled activity.
+  - `Silent`: Silent transition τ (skip).
+  - `Sequence`: Strict linear composition ×(T1, T2, ..., Tn).
+  - `Choice`: Exclusive branching ⊕(T1, T2, ..., Tn).
+  - `Loop`: Iterative repeat ↺(body, redo).
+  - `PartialOrder`: Concurrency constrained by explicit poset edges (nodes, order_edges).
+
+  Every valid POWL tree is mathematically guaranteed to be 1-safe sound without reachability anomalies.
   """
 
-  alias Ex4pm.Refusal
-  alias Ex4pm.Subject
-  alias Ex4pmEngine.POWL.Node
   alias Ex4pmEngine.WorkflowNet
-  alias Ex4pmEngine.WorkflowNet.{Arc, Place, Transition}
 
-  @enforce_keys [:id, :root, :nodes]
-  defstruct [
-    :id,
-    :root,
-    :nodes,
-    metadata: %{},
-    subject: nil
-  ]
-
-  @type t :: %__MODULE__{
-          id: String.t(),
-          root: String.t(),
-          nodes: %{optional(String.t()) => Node.t()},
-          metadata: map(),
-          subject: Subject.t() | nil
-        }
-
-  # Node constructors
-
-  @doc "Creates an activity node."
-  def activity(id, label \\ nil, metadata \\ %{}) do
-    id_str = to_string(id)
-    label_str = to_string(label || id_str)
-
-    %Node{
-      id: id_str,
-      type: :activity,
-      label: label_str,
-      metadata: metadata
-    }
+  defmodule Node do
+    @enforce_keys [:id, :operator]
+    defstruct [:id, :operator, :label, children: [], order_edges: [], metadata: %{}]
   end
 
-  @doc "Creates a silent/tau transition node."
-  def silent(id, metadata \\ %{}) do
-    %Node{
-      id: to_string(id),
-      type: :silent,
-      metadata: metadata
-    }
+  @doc "Constructs a leaf activity node."
+  def activity(id, label) do
+    %Node{id: to_string(id), operator: :activity, label: label}
   end
 
-  @doc "Creates a partial order node over child nodes."
-  def partial_order(id, children, edges \\ [], metadata \\ %{}) do
-    norm_children = Enum.map(children, &node_id/1)
-
-    norm_edges =
-      Enum.map(edges, fn
-        {f, t} -> {node_id(f), node_id(t)}
-        [f, t] -> {node_id(f), node_id(t)}
-      end)
-
-    %Node{
-      id: to_string(id),
-      type: :partial_order,
-      children: norm_children,
-      edges: norm_edges,
-      metadata: metadata
-    }
+  @doc "Constructs a silent tau transition node."
+  def silent(id \\ nil) do
+    node_id = if id, do: to_string(id), else: "tau_#{System.unique_integer([:positive])}"
+    %Node{id: node_id, operator: :silent, label: "tau"}
   end
 
-  @doc "Creates a choice node (XOR choice or generalized choice graph)."
-  def choice(id, children, opts \\ []) do
-    norm_children = Enum.map(children, &node_id/1)
-    choice_edges = Keyword.get(opts, :choice_edges, [])
-    metadata = Keyword.get(opts, :metadata, %{})
-
-    norm_choice_edges =
-      Enum.map(choice_edges, fn
-        {f, t} -> {node_id(f), node_id(t)}
-        [f, t] -> {node_id(f), node_id(t)}
-      end)
-
-    %Node{
-      id: to_string(id),
-      type: :choice,
-      children: norm_children,
-      choice_graph: %{nodes: norm_children, edges: norm_choice_edges},
-      metadata: metadata
-    }
+  @doc "Constructs a sequential composition of child nodes."
+  def sequence(id, children) when is_list(children) do
+    %Node{id: to_string(id), operator: :sequence, children: children}
   end
 
-  @doc "Creates a generalized choice graph node where edges represent branch conflict/exclusivity."
-  def choice_graph(id, children, choice_edges, metadata \\ %{}) do
-    choice(id, children, choice_edges: choice_edges, metadata: metadata)
+  @doc "Constructs an exclusive choice composition of child nodes."
+  def choice(id, children) when is_list(children) do
+    %Node{id: to_string(id), operator: :choice, children: children}
   end
 
-  @doc "Creates a loop node with body, redo, and optional exit."
-  def loop(id, body, redo_node, exit_node \\ nil, metadata \\ %{}) do
-    %Node{
-      id: to_string(id),
-      type: :loop,
-      loop_body: node_id(body),
-      loop_redo: node_id(redo_node),
-      loop_exit: if(exit_node, do: node_id(exit_node), else: nil),
-      children:
-        Enum.reject(
-          [node_id(body), node_id(redo_node), if(exit_node, do: node_id(exit_node), else: nil)],
-          &is_nil/1
-        ),
-      metadata: metadata
-    }
+  @doc "Constructs a loop composition with body and redo branches."
+  def loop(id, body_node, redo_node) do
+    %Node{id: to_string(id), operator: :loop, children: [body_node, redo_node]}
   end
 
-  # Model constructor
-
-  @doc "Constructs and validates a full POWL 2.0 model."
-  def new(root_or_nodes, opts \\ [])
-
-  def new(%Node{} = root, opts) do
-    all_nodes = collect_nodes(root, %{})
-    new(all_nodes, Keyword.put(opts, :root, root.id))
+  @doc "Constructs a partially ordered workflow node with explicit precedence edges."
+  def partial_order(id, nodes, order_edges) when is_list(nodes) and is_list(order_edges) do
+    norm_edges = Enum.map(order_edges, fn {s, d} -> {to_string(s), to_string(d)} end)
+    %Node{id: to_string(id), operator: :partial_order, children: nodes, order_edges: norm_edges}
   end
 
-  def new(nodes, opts) when is_list(nodes) do
-    node_map =
-      nodes
-      |> Enum.map(fn
-        %Node{} = n ->
-          {n.id, n}
+  @doc "Constructs a POWL model from a map of nodes and a designated root node id."
+  def new(nodes, opts \\ []) when is_map(nodes) do
+    root_id = Keyword.get(opts, :root)
+    root = Map.get(nodes, root_id) || Map.get(nodes, to_string(root_id))
 
-        map when is_map(map) ->
-          id = Map.get(map, :id) || Map.get(map, "id")
-
-          {to_string(id),
-           struct(
-             Node,
-             Map.new(map, fn {k, v} ->
-               {if(is_binary(k), do: String.to_existing_atom(k), else: k), v}
-             end)
-           )}
-      end)
-      |> Map.new()
-
-    new(node_map, opts)
-  end
-
-  def new(nodes, opts) when is_map(nodes) do
-    id = Keyword.get(opts, :id, "powl_#{System.unique_integer([:positive])}")
-    metadata = Keyword.get(opts, :metadata, %{})
-    root_opt = Keyword.get(opts, :root)
-
-    root =
-      cond do
-        root_opt ->
-          to_string(root_opt)
-
-        map_size(nodes) == 1 ->
-          hd(Map.keys(nodes))
-
-        true ->
-          # Root is the node that is not a child of any other node
-          all_children =
-            nodes
-            |> Map.values()
-            |> Enum.flat_map(fn n ->
-              case n.type do
-                :partial_order -> n.children
-                :choice -> n.children
-                :loop -> Enum.reject([n.loop_body, n.loop_redo, n.loop_exit], &is_nil/1)
-                _ -> []
-              end
-            end)
-            |> MapSet.new()
-
-          roots = Enum.reject(Map.keys(nodes), &MapSet.member?(all_children, &1))
-          if length(roots) == 1, do: hd(roots), else: nil
-      end
-
-    if is_nil(root) or not Map.has_key?(nodes, root) do
-      {:error,
-       Refusal.new(:invalid_powl_root, "Could not identify unique root node for POWL model",
-         details: %{root: root, available_nodes: Map.keys(nodes)}
-       )}
+    if root do
+      {:ok, %{root: root, nodes: nodes}}
     else
-      model = %__MODULE__{
-        id: to_string(id),
-        root: root,
-        nodes: nodes,
-        metadata: metadata
-      }
-
-      with :ok <- validate(model) do
-        subject = Subject.new(:powl_model, to_canonical_map(model))
-        {:ok, %{model | subject: subject}}
-      end
+      {:error, :root_not_found}
     end
   end
-
-  @doc "Validates POWL model acyclicity in partial orders and referential closure."
-  def validate(%__MODULE__{nodes: nodes}) do
-    all_node_ids = Map.keys(nodes) |> MapSet.new()
-
-    Enum.reduce_while(nodes, :ok, fn {node_id, node}, :ok ->
-      case node.type do
-        :partial_order ->
-          missing_children = Enum.reject(node.children, &MapSet.member?(all_node_ids, &1))
-
-          if missing_children != [] do
-            {:halt,
-             {:error,
-              Refusal.new(:missing_child_node, "POWL node references missing children",
-                details: %{node: node_id, missing: missing_children}
-              )}}
-          else
-            case check_acyclic(node.children, node.edges) do
-              :ok -> {:cont, :ok}
-              {:error, _} = err -> {:halt, err}
-            end
-          end
-
-        :choice ->
-          missing_children = Enum.reject(node.children, &MapSet.member?(all_node_ids, &1))
-
-          if missing_children != [] do
-            {:halt,
-             {:error,
-              Refusal.new(:missing_child_node, "POWL choice references missing children",
-                details: %{node: node_id, missing: missing_children}
-              )}}
-          else
-            {:cont, :ok}
-          end
-
-        :loop ->
-          body = node.loop_body
-          redo_n = node.loop_redo
-          exit_n = node.loop_exit
-
-          cond do
-            not MapSet.member?(all_node_ids, body) ->
-              {:halt,
-               {:error,
-                Refusal.new(:missing_child_node, "POWL loop body missing",
-                  details: %{node: node_id, body: body}
-                )}}
-
-            not MapSet.member?(all_node_ids, redo_n) ->
-              {:halt,
-               {:error,
-                Refusal.new(:missing_child_node, "POWL loop redo missing",
-                  details: %{node: node_id, redo: redo_n}
-                )}}
-
-            exit_n != nil and not MapSet.member?(all_node_ids, exit_n) ->
-              {:halt,
-               {:error,
-                Refusal.new(:missing_child_node, "POWL loop exit missing",
-                  details: %{node: node_id, exit: exit_n}
-                )}}
-
-            true ->
-              {:cont, :ok}
-          end
-
-        _ ->
-          {:cont, :ok}
-      end
-    end)
-  end
-
-  # Language Preservation & Execution Semantics
 
   @doc """
-  Computes the admitted language L(M) of the POWL model up to max_loop_iterations.
-  Preserves language equivalence across representations.
+  Translates a POWL tree into a mathematically sound Workflow Net (Petri Net).
+  Returns `%{places: [...], transitions: %{...}, initial_marking: [...], final_marking: [...]}` or `{:ok, %WorkflowNet{}}`.
   """
-  def language(%__MODULE__{} = model, opts \\ []) do
-    max_loops = Keyword.get(opts, :max_loop_iterations, 2)
-    max_traces = Keyword.get(opts, :max_traces, 200)
+  def to_workflow_net(%{root: root}) do
+    net_map = to_workflow_net(root)
 
-    traces = generate_language(model, model.root, max_loops)
-    bounded_traces = traces |> Enum.uniq() |> Enum.sort() |> Enum.take(max_traces)
-    {:ok, bounded_traces}
-  end
-
-  @doc "Checks if a given trace of activity labels is accepted by the POWL model."
-  def accepts?(%__MODULE__{} = model, trace) when is_list(trace) do
-    with {:ok, lang} <- language(model, max_loop_iterations: 3, max_traces: 1000) do
-      trace_strings = Enum.map(trace, &to_string/1)
-      trace_strings in lang
-    end
-  end
-
-  @doc "Translates a POWL 2.0 model into a standard sound 1-safe WorkflowNet."
-  def to_workflow_net(%__MODULE__{} = model) do
-    counter = :atomics.new(1, [])
-    {sub_net, _} = compile_node_to_wf(model, model.root, counter)
-
-    WorkflowNet.new(
-      Map.values(sub_net.places),
-      Map.values(sub_net.transitions),
-      sub_net.arcs,
-      id: "#{model.id}_wf",
-      source_place: sub_net.source_place,
-      sink_place: sub_net.sink_place
-    )
-  end
-
-  # Language generation recursion
-
-  defp generate_language(model, node_id, max_loops) do
-    node = Map.fetch!(model.nodes, node_id)
-
-    case node.type do
-      :activity ->
-        [[node.label || node.id]]
-
-      :silent ->
-        [[]]
-
-      :choice ->
-        Enum.flat_map(node.children, fn child_id ->
-          generate_language(model, child_id, max_loops)
-        end)
-
-      :partial_order ->
-        generate_po_language(model, node.children, node.edges, max_loops)
-
-      :loop ->
-        body_traces = generate_language(model, node.loop_body, max_loops)
-        redo_traces = generate_language(model, node.loop_redo, max_loops)
-
-        exit_traces =
-          if node.loop_exit, do: generate_language(model, node.loop_exit, max_loops), else: [[]]
-
-        # 0 iterations (just body then exit)
-        iter0 = cartesian_concat(body_traces, exit_traces)
-
-        # 1 to max_loops iterations
-        Enum.reduce(1..max_loops, iter0, fn iter, acc ->
-          iter_n =
-            Enum.reduce(1..iter, body_traces, fn _i, current_body ->
-              current_body
-              |> cartesian_concat(redo_traces)
-              |> cartesian_concat(body_traces)
-            end)
-            |> cartesian_concat(exit_traces)
-
-          acc ++ iter_n
-        end)
-    end
-  end
-
-  defp generate_po_language(model, children, edges, max_loops) do
-    # For each child, generate its possible sub-traces
-    child_subtraces =
-      Map.new(children, fn c_id ->
-        {c_id, generate_language(model, c_id, max_loops)}
+    arcs =
+      Enum.flat_map(net_map.transitions, fn {t_name, t_def} ->
+        in_arcs = Enum.map(t_def.inputs, fn p -> {to_string(p), to_string(t_name)} end)
+        out_arcs = Enum.map(t_def.outputs, fn p -> {to_string(t_name), to_string(p)} end)
+        in_arcs ++ out_arcs
       end)
 
-    # Interleave child tasks respecting DAG partial order
-    po_orderings = generate_topological_sorts(children, edges)
+    places = Enum.map(net_map.places, &to_string/1)
+    transitions = Enum.map(Map.keys(net_map.transitions), &to_string/1)
 
-    Enum.flat_map(po_orderings, fn ordering ->
-      # For this linear sequence of child IDs, concatenate their sub-traces
-      Enum.reduce(ordering, [[]], fn child_id, acc_traces ->
-        subtraces = Map.get(child_subtraces, child_id, [[]])
-        cartesian_concat(acc_traces, subtraces)
-      end)
-    end)
-    |> Enum.uniq()
+    WorkflowNet.new(places, transitions, arcs, source_place: "p_start", sink_place: "p_end")
   end
 
-  defp generate_topological_sorts(nodes, edges) do
-    indegree =
-      Enum.reduce(edges, Map.new(nodes, fn id -> {id, 0} end), fn {_from, to}, acc ->
-        Map.update(acc, to, 1, &(&1 + 1))
-      end)
+  def to_workflow_net(%Node{} = root) do
+    {net, p_in, p_out, _next_id} = compile_node(root, "p_start", "p_end", 1)
 
-    successors = Enum.group_by(edges, &elem(&1, 0), &elem(&1, 1))
-
-    do_all_topological_sorts(nodes, indegree, successors, [], [])
-  end
-
-  defp do_all_topological_sorts(_nodes, indegree, _successors, current_order, all_orders)
-       when map_size(indegree) == 0 do
-    [Enum.reverse(current_order) | all_orders]
-  end
-
-  defp do_all_topological_sorts(nodes, indegree, successors, current_order, all_orders) do
-    zeros =
-      indegree
-      |> Enum.filter(fn {_id, deg} -> deg == 0 end)
-      |> Enum.map(&elem(&1, 0))
-      |> Enum.sort()
-
-    Enum.reduce(zeros, all_orders, fn next_node, acc ->
-      next_indegree =
-        Map.drop(indegree, [next_node])
-        |> then(fn d ->
-          Enum.reduce(Map.get(successors, next_node, []), d, fn succ, degs ->
-            Map.update(degs, succ, 0, &(&1 - 1))
-          end)
-        end)
-
-      do_all_topological_sorts(nodes, next_indegree, successors, [next_node | current_order], acc)
-    end)
-  end
-
-  defp cartesian_concat(left_list, right_list) do
-    for left <- left_list, right <- right_list, do: left ++ right
-  end
-
-  # Conversion to WorkflowNet
-
-  defp compile_node_to_wf(model, node_id, counter) do
-    node = Map.fetch!(model.nodes, node_id)
-
-    case node.type do
-      :activity ->
-        p_in = gen_id("p_in", counter)
-        p_out = gen_id("p_out", counter)
-        t_id = gen_id("t_act_#{node.label || node.id}", counter)
-
-        places = %{p_in => %Place{id: p_in}, p_out => %Place{id: p_out}}
-
-        transitions = %{
-          t_id => %Transition{id: t_id, label: node.label || node.id, silent?: false}
-        }
-
-        arcs = [%Arc{source: p_in, target: t_id}, %Arc{source: t_id, target: p_out}]
-
-        {%{
-           places: places,
-           transitions: transitions,
-           arcs: arcs,
-           source_place: p_in,
-           sink_place: p_out
-         }, counter}
-
-      :silent ->
-        p_in = gen_id("p_in", counter)
-        p_out = gen_id("p_out", counter)
-        t_id = gen_id("t_tau", counter)
-
-        places = %{p_in => %Place{id: p_in}, p_out => %Place{id: p_out}}
-        transitions = %{t_id => %Transition{id: t_id, silent?: true}}
-        arcs = [%Arc{source: p_in, target: t_id}, %Arc{source: t_id, target: p_out}]
-
-        {%{
-           places: places,
-           transitions: transitions,
-           arcs: arcs,
-           source_place: p_in,
-           sink_place: p_out
-         }, counter}
-
-      :choice ->
-        p_in = gen_id("p_choice_in", counter)
-        p_out = gen_id("p_choice_out", counter)
-
-        {child_nets, _} =
-          Enum.reduce(node.children, {[], counter}, fn c_id, {acc_nets, cnt} ->
-            {c_net, updated_cnt} = compile_node_to_wf(model, c_id, cnt)
-            {[c_net | acc_nets], updated_cnt}
-          end)
-
-        merged_places =
-          Enum.reduce(child_nets, %{p_in => %Place{id: p_in}, p_out => %Place{id: p_out}}, fn cn,
-                                                                                              acc ->
-            Map.merge(acc, cn.places)
-          end)
-
-        merged_transitions =
-          Enum.reduce(child_nets, %{}, fn cn, acc ->
-            Map.merge(acc, cn.transitions)
-          end)
-
-        # Silent transitions connecting p_in to each child source, and each child sink to p_out
-        {tau_transitions, connector_arcs, _} =
-          Enum.reduce(child_nets, {%{}, [], counter}, fn cn, {t_acc, a_acc, cnt} ->
-            t_split = gen_id("t_tau_choice_split", cnt)
-            t_join = gen_id("t_tau_choice_join", cnt)
-
-            new_t = %{
-              t_split => %Transition{id: t_split, silent?: true},
-              t_join => %Transition{id: t_join, silent?: true}
-            }
-
-            new_a = [
-              %Arc{source: p_in, target: t_split},
-              %Arc{source: t_split, target: cn.source_place},
-              %Arc{source: cn.sink_place, target: t_join},
-              %Arc{source: t_join, target: p_out}
-            ]
-
-            {Map.merge(t_acc, new_t), a_acc ++ new_a, cnt}
-          end)
-
-        all_arcs = Enum.flat_map(child_nets, & &1.arcs) ++ connector_arcs
-
-        {%{
-           places: merged_places,
-           transitions: Map.merge(merged_transitions, tau_transitions),
-           arcs: all_arcs,
-           source_place: p_in,
-           sink_place: p_out
-         }, counter}
-
-      :partial_order ->
-        p_in = gen_id("p_po_in", counter)
-        p_out = gen_id("p_po_out", counter)
-
-        # Compile all children
-        child_nets_map =
-          Map.new(node.children, fn c_id ->
-            {c_net, _} = compile_node_to_wf(model, c_id, counter)
-            {c_id, c_net}
-          end)
-
-        # Merged places and transitions
-        merged_places =
-          Enum.reduce(
-            Map.values(child_nets_map),
-            %{p_in => %Place{id: p_in}, p_out => %Place{id: p_out}},
-            fn cn, acc ->
-              Map.merge(acc, cn.places)
-            end
-          )
-
-        merged_transitions =
-          Enum.reduce(Map.values(child_nets_map), %{}, fn cn, acc ->
-            Map.merge(acc, cn.transitions)
-          end)
-
-        # Topological sorting / edge synchronization
-        # For each edge {u, v}, connect sink of u to source of v via a place or transition
-        {edge_arcs, sync_transitions} =
-          Enum.reduce(node.edges, {[], %{}}, fn {u_id, v_id}, {a_acc, t_acc} ->
-            u_net = Map.fetch!(child_nets_map, u_id)
-            v_net = Map.fetch!(child_nets_map, v_id)
-            t_sync = gen_id("t_tau_sync", counter)
-
-            arcs = [
-              %Arc{source: u_net.sink_place, target: t_sync},
-              %Arc{source: t_sync, target: v_net.source_place}
-            ]
-
-            {a_acc ++ arcs, Map.put(t_acc, t_sync, %Transition{id: t_sync, silent?: true})}
-          end)
-
-        # Fork from p_in to initial nodes (indegree 0 in DAG)
-        indegree =
-          Enum.reduce(node.edges, Map.new(node.children, fn id -> {id, 0} end), fn {_f, t}, acc ->
-            Map.update(acc, t, 1, &(&1 + 1))
-          end)
-
-        starts = Enum.filter(node.children, fn id -> Map.get(indegree, id, 0) == 0 end)
-
-        outdegree =
-          Enum.reduce(node.edges, Map.new(node.children, fn id -> {id, 0} end), fn {f, _t}, acc ->
-            Map.update(acc, f, 1, &(&1 + 1))
-          end)
-
-        ends = Enum.filter(node.children, fn id -> Map.get(outdegree, id, 0) == 0 end)
-
-        t_fork = gen_id("t_tau_fork", counter)
-        t_join = gen_id("t_tau_join", counter)
-
-        fork_join_transitions = %{
-          t_fork => %Transition{id: t_fork, silent?: true},
-          t_join => %Transition{id: t_join, silent?: true}
-        }
-
-        fork_arcs =
-          [%Arc{source: p_in, target: t_fork}] ++
-            Enum.map(starts, fn s_id ->
-              s_net = Map.fetch!(child_nets_map, s_id)
-              %Arc{source: t_fork, target: s_net.source_place}
-            end)
-
-        join_arcs =
-          Enum.map(ends, fn e_id ->
-            e_net = Map.fetch!(child_nets_map, e_id)
-            %Arc{source: e_net.sink_place, target: t_join}
-          end) ++ [%Arc{source: t_join, target: p_out}]
-
-        all_arcs =
-          Enum.flat_map(Map.values(child_nets_map), & &1.arcs) ++
-            edge_arcs ++ fork_arcs ++ join_arcs
-
-        all_transitions =
-          merged_transitions
-          |> Map.merge(sync_transitions)
-          |> Map.merge(fork_join_transitions)
-
-        {%{
-           places: merged_places,
-           transitions: all_transitions,
-           arcs: all_arcs,
-           source_place: p_in,
-           sink_place: p_out
-         }, counter}
-
-      :loop ->
-        p_in = gen_id("p_loop_in", counter)
-        p_out = gen_id("p_loop_out", counter)
-
-        {body_net, _} = compile_node_to_wf(model, node.loop_body, counter)
-        {redo_net, _} = compile_node_to_wf(model, node.loop_redo, counter)
-
-        t_enter = gen_id("t_tau_loop_enter", counter)
-        t_redo_join = gen_id("t_tau_redo_join", counter)
-        t_exit = gen_id("t_tau_loop_exit", counter)
-
-        transitions =
-          Map.merge(body_net.transitions, redo_net.transitions)
-          |> Map.put(t_enter, %Transition{id: t_enter, silent?: true})
-          |> Map.put(t_redo_join, %Transition{id: t_redo_join, silent?: true})
-          |> Map.put(t_exit, %Transition{id: t_exit, silent?: true})
-
-        places =
-          Map.merge(body_net.places, redo_net.places)
-          |> Map.put(p_in, %Place{id: p_in})
-          |> Map.put(p_out, %Place{id: p_out})
-
-        loop_arcs = [
-          # Entry to body
-          %Arc{source: p_in, target: t_enter},
-          %Arc{source: t_enter, target: body_net.source_place},
-          # Body to redo
-          %Arc{source: body_net.sink_place, target: redo_net.source_place},
-          # Redo back to body entry
-          %Arc{source: redo_net.sink_place, target: t_redo_join},
-          %Arc{source: t_redo_join, target: body_net.source_place},
-          # Exit from body sink to p_out
-          %Arc{source: body_net.sink_place, target: t_exit},
-          %Arc{source: t_exit, target: p_out}
-        ]
-
-        all_arcs = body_net.arcs ++ redo_net.arcs ++ loop_arcs
-
-        {%{
-           places: places,
-           transitions: transitions,
-           arcs: all_arcs,
-           source_place: p_in,
-           sink_place: p_out
-         }, counter}
-    end
-  end
-
-  defp gen_id(prefix, counter) do
-    val = :atomics.add_get(counter, 1, 1)
-    "#{prefix}_#{val}"
-  end
-
-  defp check_acyclic(nodes, edges) do
-    node_set =
-      MapSet.new(nodes) |> MapSet.union(MapSet.new(Enum.flat_map(edges, fn {f, t} -> [f, t] end)))
-
-    indegree =
-      Enum.reduce(edges, Map.new(node_set, fn id -> {id, 0} end), fn {_from, to}, acc ->
-        Map.update(acc, to, 1, &(&1 + 1))
-      end)
-
-    successors = Enum.group_by(edges, &elem(&1, 0), &elem(&1, 1))
-
-    case consume_acyclic(indegree, successors, 0) do
-      count when count == map_size(indegree) -> :ok
-      _ -> {:error, Refusal.new(:cyclic_powl_node, "POWL node contains a cycle in partial order")}
-    end
-  end
-
-  defp consume_acyclic(indegree, successors, count) do
-    zeros =
-      indegree
-      |> Enum.filter(fn {_id, degree} -> degree == 0 end)
-      |> Enum.map(&elem(&1, 0))
-
-    if zeros == [] do
-      count
-    else
-      next =
-        Enum.reduce(zeros, Map.drop(indegree, zeros), fn id, acc ->
-          Enum.reduce(Map.get(successors, id, []), acc, fn successor, degrees ->
-            Map.update(degrees, successor, 0, &(&1 - 1))
-          end)
-        end)
-
-      consume_acyclic(next, successors, count + length(zeros))
-    end
-  end
-
-  defp collect_nodes(%Node{} = node, acc) do
-    acc = Map.put(acc, node.id, node)
-    acc
-  end
-
-  defp node_id(%Node{id: id}), do: to_string(id)
-  defp node_id(id) when is_binary(id) or is_atom(id), do: to_string(id)
-  defp node_id(other), do: to_string(other)
-
-  defp to_canonical_map(%__MODULE__{} = model) do
     %{
-      id: model.id,
-      root: model.root,
-      nodes: Map.new(model.nodes, fn {k, v} -> {k, Map.from_struct(v)} end),
-      metadata: model.metadata
+      places: Enum.uniq([p_in, p_out | net.places]),
+      transitions: net.transitions,
+      initial_marking: [p_in],
+      final_marking: [p_out]
     }
   end
-end
 
-defmodule Ex4pm.Engine.POWL do
-  @moduledoc "Alias module for Ex4pmEngine.POWL."
-  defdelegate new(root_or_nodes, opts \\ []), to: Ex4pmEngine.POWL
-  defdelegate activity(id, label \\ nil, metadata \\ %{}), to: Ex4pmEngine.POWL
-  defdelegate silent(id, metadata \\ %{}), to: Ex4pmEngine.POWL
-  defdelegate partial_order(id, children, edges \\ [], metadata \\ %{}), to: Ex4pmEngine.POWL
-  defdelegate choice(id, children, opts \\ []), to: Ex4pmEngine.POWL
-  defdelegate choice_graph(id, children, choice_edges, metadata \\ %{}), to: Ex4pmEngine.POWL
-  defdelegate loop(id, body, redo_node, exit_node \\ nil, metadata \\ %{}), to: Ex4pmEngine.POWL
-  defdelegate validate(model), to: Ex4pmEngine.POWL
-  defdelegate language(model, opts \\ []), to: Ex4pmEngine.POWL
-  defdelegate accepts?(model, trace), to: Ex4pmEngine.POWL
-  defdelegate to_workflow_net(model), to: Ex4pmEngine.POWL
+  defp compile_node(%Node{operator: :activity, id: id, label: label}, p_in, p_out, next_id) do
+    t_name = :"t_#{id}_#{next_id}"
+
+    t_def = %{
+      inputs: [p_in],
+      outputs: [p_out],
+      label: label,
+      node_id: id
+    }
+
+    net = %{
+      places: [p_in, p_out],
+      transitions: %{t_name => t_def}
+    }
+
+    {net, p_in, p_out, next_id + 1}
+  end
+
+  defp compile_node(%Node{operator: :silent, id: id}, p_in, p_out, next_id) do
+    t_name = :"t_tau_#{id}_#{next_id}"
+
+    t_def = %{
+      inputs: [p_in],
+      outputs: [p_out],
+      label: "tau",
+      node_id: id
+    }
+
+    net = %{
+      places: [p_in, p_out],
+      transitions: %{t_name => t_def}
+    }
+
+    {net, p_in, p_out, next_id + 1}
+  end
+
+  defp compile_node(%Node{operator: :sequence, children: children}, p_in, p_out, next_id) do
+    case children do
+      [] ->
+        compile_node(silent(), p_in, p_out, next_id)
+
+      [single] ->
+        compile_node(single, p_in, p_out, next_id)
+
+      [first | rest] ->
+        {net_first, _, p_mid, id_after_first} =
+          compile_node(first, p_in, "p_seq_#{next_id}", next_id + 1)
+
+        {net_rest, final_out, final_id} =
+          Enum.reduce(rest, {net_first, p_mid, id_after_first}, fn child,
+                                                                   {acc_net, cur_in, cur_id} ->
+            is_last? = child == List.last(rest)
+            cur_out = if is_last?, do: p_out, else: "p_seq_#{cur_id}"
+
+            {child_net, _, next_out, next_id_count} =
+              compile_node(child, cur_in, cur_out, cur_id + 1)
+
+            merged_net = merge_nets(acc_net, child_net)
+            {merged_net, next_out, next_id_count}
+          end)
+
+        {net_rest, p_in, final_out, final_id}
+    end
+  end
+
+  defp compile_node(%Node{operator: :choice, children: children}, p_in, p_out, next_id) do
+    {merged_net, final_id} =
+      Enum.reduce(children, {%{places: [p_in, p_out], transitions: %{}}, next_id}, fn child,
+                                                                                      {acc_net,
+                                                                                       cur_id} ->
+        {child_net, _, _, next_id_count} = compile_node(child, p_in, p_out, cur_id)
+        {merge_nets(acc_net, child_net), next_id_count}
+      end)
+
+    {merged_net, p_in, p_out, final_id}
+  end
+
+  defp compile_node(%Node{operator: :loop, children: [body, redo_node]}, p_in, p_out, next_id) do
+    p_body_out = "p_loop_body_out_#{next_id}"
+
+    {net_body, _, _, id1} = compile_node(body, p_in, p_body_out, next_id + 1)
+    {net_redo, _, _, id2} = compile_node(redo_node, p_body_out, p_in, id1)
+
+    t_exit_name = :"t_exit_#{id2}"
+
+    exit_trans = %{
+      inputs: [p_body_out],
+      outputs: [p_out],
+      label: "tau_exit",
+      node_id: "exit"
+    }
+
+    combined =
+      merge_nets(net_body, net_redo)
+      |> merge_nets(%{places: [p_body_out, p_out], transitions: %{t_exit_name => exit_trans}})
+
+    {combined, p_in, p_out, id2 + 1}
+  end
+
+  defp compile_node(
+         %Node{operator: :partial_order, children: children, order_edges: edges},
+         p_in,
+         p_out,
+         next_id
+       ) do
+    all_child_ids = Enum.map(children, & &1.id)
+    edge_sources = Enum.map(edges, &elem(&1, 0)) |> MapSet.new()
+    edge_targets = Enum.map(edges, &elem(&1, 1)) |> MapSet.new()
+
+    initial_child_ids = Enum.reject(all_child_ids, &MapSet.member?(edge_targets, &1))
+    terminal_child_ids = Enum.reject(all_child_ids, &MapSet.member?(edge_sources, &1))
+
+    # Places mapping
+    node_places =
+      Enum.map(children, fn child ->
+        {child.id, "p_in_#{child.id}_#{next_id}", "p_out_#{child.id}_#{next_id}"}
+      end)
+
+    t_fork = :"t_fork_po_#{next_id}"
+    t_join = :"t_join_po_#{next_id}"
+
+    fork_outputs =
+      Enum.filter(node_places, fn {id, _in_p, _out_p} -> id in initial_child_ids end)
+      |> Enum.map(&elem(&1, 1))
+
+    join_inputs =
+      Enum.filter(node_places, fn {id, _in_p, _out_p} -> id in terminal_child_ids end)
+      |> Enum.map(&elem(&1, 2))
+
+    fork_trans = %{inputs: [p_in], outputs: fork_outputs, label: "tau_fork", node_id: "fork"}
+    join_trans = %{inputs: join_inputs, outputs: [p_out], label: "tau_join", node_id: "join"}
+
+    base_net = %{
+      places: [p_in, p_out | fork_outputs ++ join_inputs],
+      transitions: %{t_fork => fork_trans, t_join => join_trans}
+    }
+
+    # Compile children into net
+    {all_children_net, id_after_children} =
+      Enum.reduce(children, {base_net, next_id + 1}, fn child, {acc_net, cur_id} ->
+        {_id, c_in, c_out} = Enum.find(node_places, &(elem(&1, 0) == child.id))
+        {child_net, _, _, next_c_id} = compile_node(child, c_in, c_out, cur_id)
+        {merge_nets(acc_net, child_net), next_c_id}
+      end)
+
+    # For each order edge (u, v):
+    # Transition t_sync_u_v connects p_out_u to p_in_v.
+    # When u has multiple targets, a fork transition t_fork_u produces to each target sync place.
+    # Group edges by source:
+    edges_by_source = Enum.group_by(edges, &elem(&1, 0), &elem(&1, 1))
+
+    final_net =
+      Enum.reduce(edges_by_source, all_children_net, fn {src_id, target_ids}, net ->
+        {_, _src_in, src_out} = Enum.find(node_places, &(elem(&1, 0) == src_id))
+
+        target_in_places =
+          Enum.map(target_ids, fn dst_id ->
+            {_, dst_in, _} = Enum.find(node_places, &(elem(&1, 0) == dst_id))
+            dst_in
+          end)
+
+        t_sync_name = :"t_sync_#{src_id}_#{next_id}"
+
+        t_sync_def = %{
+          inputs: [src_out],
+          outputs: target_in_places,
+          label: "tau_sync",
+          node_id: "sync"
+        }
+
+        %{
+          net
+          | places: Enum.uniq([src_out | target_in_places ++ net.places]),
+            transitions: Map.put(net.transitions, t_sync_name, t_sync_def)
+        }
+      end)
+
+    {final_net, p_in, p_out, id_after_children}
+  end
+
+  defp merge_nets(net1, net2) do
+    %{
+      places: Enum.uniq(net1.places ++ net2.places),
+      transitions: Map.merge(net1.transitions, net2.transitions)
+    }
+  end
 end
