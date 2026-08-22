@@ -16,7 +16,7 @@ jobs:
     env:
       MIX_ENV: test
       EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      EX4PM_PLAN_SHA: 7bbb814011172f9eb3d73d853385f9fb3f410f9e
+      EX4PM_PLAN_SHA: ebbf5d91d6b2e29ef2d88d13b8cbd2f827899452
     steps:
       - uses: actions/checkout@v4
         with:
