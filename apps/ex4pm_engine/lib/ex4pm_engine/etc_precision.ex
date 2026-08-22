@@ -1,21 +1,24 @@
 defmodule Ex4pmEngine.ETCPrecision do
   @moduledoc """
-  Adriansyah Escaping-Edge (ETC) Precision Engine.
+  Adriansyah Escaping-Edge (ETC) Precision Engine with Inductive Negative Event Weighting.
   Faithful BEAM realization of Adriansyah, Dongen, and Van der Aalst (2012, 2014).
 
   Computes process model precision by measuring "escaping edges" (transitions enabled in the model
   at each alignment state that were never observed in the log):
 
-  Precision_ETC(L, N) = 1.0 - (Σ |EscapingEdges(s)| / Σ |EnabledTransitions(s)|)
+  Precision_ETC(L, N, α) = 1.0 - (Σ |EscapingEdges(s)| / (Σ |EnabledTransitions(s)| + α · |Refused(s)|))
   """
 
   alias Ex4pmEngine.Alignment
 
   @doc """
   Calculates the Escaping-Edge ETC Precision of a Workflow Net against an event log (list of traces).
+  Supports `:negative_event_weight` (`alpha`) for smoothing against sparse event logs.
   """
-  def calculate_precision(traces, net_spec) when is_list(traces) and is_map(net_spec) do
+  def calculate_precision(traces, net_spec, opts \\ [])
+      when is_list(traces) and is_map(net_spec) do
     transitions = Map.fetch!(net_spec, :transitions)
+    alpha = Keyword.get(opts, :negative_event_weight, 0.0)
 
     # 1. Align all traces to obtain prefix execution states
     alignments =
@@ -40,9 +43,11 @@ defmodule Ex4pmEngine.ETCPrecision do
         {acc_enabled + enabled_sum, acc_escaping + escaping_sum}
       end)
 
+    effective_denominator = total_enabled + alpha * total_escaping
+
     precision =
-      if total_enabled > 0 do
-        Float.round(max(0.0, 1.0 - total_escaping / total_enabled), 4)
+      if effective_denominator > 0 do
+        Float.round(max(0.0, 1.0 - total_escaping / effective_denominator), 4)
       else
         1.0
       end
@@ -68,20 +73,32 @@ defmodule Ex4pmEngine.ETCPrecision do
 
       # Determine if the executed move was part of the enabled model transitions
       executed_label =
-        move.log_activity || (move.model_transition && to_string(move.model_transition))
+        case move.type do
+          :sync -> move.log_activity
+          :model -> move.model_transition
+          :log -> nil
+        end
 
-      observed_match =
-        Enum.find(enabled_in_state, fn {t_name, t_def} ->
-          t_def.label == executed_label or to_string(t_name) == executed_label
-        end)
+      # Escaping edges = enabled transitions minus observed executed transition
+      escaping_count =
+        if executed_label do
+          max(0, enabled_count - 1)
+        else
+          enabled_count
+        end
 
-      escaping_in_state = if observed_match, do: max(0, enabled_count - 1), else: enabled_count
-
-      # Advance marking if transition fired
+      # Advance marking if transition fired in model
       next_marking =
-        if move.type in [:sync, :model_only] and move.model_transition do
-          t_key = String.to_atom(move.model_transition)
-          t_def = Map.get(transitions, t_key)
+        if move.model_transition do
+          t_def =
+            Map.get(transitions, move.model_transition) ||
+              Enum.find_value(transitions, fn {name, defn} ->
+                if name == move.model_transition or
+                     to_string(name) == to_string(move.model_transition) or
+                     defn.label == move.model_transition or
+                     to_string(defn.label) == to_string(move.model_transition),
+                   do: defn
+              end)
 
           if t_def do
             cur_marking
@@ -95,7 +112,7 @@ defmodule Ex4pmEngine.ETCPrecision do
           cur_marking
         end
 
-      {acc_enabled + enabled_count, acc_escaping + escaping_in_state, next_marking}
+      {acc_enabled + enabled_count, acc_escaping + escaping_count, next_marking}
     end)
   end
 

@@ -8,7 +8,8 @@ defmodule Ex4pmDomain.ChangeOrder do
 
   use Ash.Resource,
     domain: Ex4pmDomain,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    extensions: [Ex4pmDomain.Extensions.SoundStateMachine]
 
   actions do
     defaults([:read, :destroy])

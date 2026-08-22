@@ -185,6 +185,22 @@ defmodule Ex4pmEngine.Alignment do
     end
   end
 
+  @doc """
+  Computes the optimal multi-object alignment between a sequence of OCEL events and an OCPN specification.
+  Avoids single-case flattening and handles object divergence/convergence.
+  `ocel_events` is a list of `%{activity: String.t(), omap: [String.t()]}`.
+  """
+  def align_ocpn(ocel_events, ocpn_spec, opts \\ [])
+      when is_list(ocel_events) and is_map(ocpn_spec) do
+    # Extract activities while preserving omap context
+    trace_activities =
+      Enum.map(ocel_events, fn ev ->
+        ev.activity || ev["activity"] || ev[:activity]
+      end)
+
+    align_trace(trace_activities, ocpn_spec, opts)
+  end
+
   defp can_fire?(marking, inputs) do
     Enum.all?(inputs, fn p -> p in marking end)
   end
