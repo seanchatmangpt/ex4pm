@@ -69,9 +69,9 @@ defmodule Ex4pm.Engine.Ex4pmPlanTest do
              )
   end
 
-  test "registry exposes ex4pm-plan only when an explicit transport exists" do
+  test "registry preserves supported-but-unavailable planner as BLOCKED" do
     blocked = Engine.candidates(:plan)
-    assert %{id: :ex4pm_plan, standing: :unsupported} = Enum.find(blocked, &(&1.id == :ex4pm_plan))
+    assert %{id: :ex4pm_plan, standing: :blocked} = Enum.find(blocked, &(&1.id == :ex4pm_plan))
 
     transport = fn _request, _opts -> {:ok, worker_response()} end
     candidates = Engine.candidates(:plan, ex4pm_plan_fun: transport)
