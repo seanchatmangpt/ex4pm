@@ -6,7 +6,8 @@ defmodule Ex4pm.Engine.CmcaWasm do
   transport is injected explicitly so this adapter has no filesystem, scheduler,
   cloud, credential, or BRCE authority. A result reaches `:alive` only when the
   response binds the exact BCINR source and construct-only receipt contract and
-  the transport reports the exact wasm4pm source plus an observed WASM digest.
+  the transport reports the exact wasm4pm source, observed WASM digest, and a
+  separately executed successful CMCA replay.
   """
 
   @behaviour Ex4pm.Engine
@@ -19,7 +20,7 @@ defmodule Ex4pm.Engine.CmcaWasm do
   @bcinr_package "bcinr-cmca"
   @bcinr_version "26.7.28"
   @kernel "bcinr_cmca::allocator::allocate_single_lens"
-  @wasm4pm_source_sha "b27bfed6290285e76fb03db9c404c6d627377b6e"
+  @wasm4pm_source_sha "5d1dd98c32bb89f6f02e4c63d14953d203a94700"
   @authority "CONSTRUCT_ONLY"
 
   @impl true
@@ -127,6 +128,7 @@ defmodule Ex4pm.Engine.CmcaWasm do
            request_blake3: request_hash,
            result_blake3: result_hash,
            cmca_receipt_blake3: receipt_hash,
+           cmca_replay_verified: field(identity, :cmca_replay_verified) == true,
            transport_identity: identity,
            identity_observed: observed?,
            executed: true
@@ -164,19 +166,31 @@ defmodule Ex4pm.Engine.CmcaWasm do
   end
 
   defp validate_observed_identity(identity) do
-    if observed_identity?(identity) and field(identity, :wasm4pm_source_sha) != @wasm4pm_source_sha do
-      {:error,
-       Refusal.new(:cmca_wasm_identity_mismatch, "observed wasm4pm source does not match the pinned CMCA export head",
-         details: %{expected: @wasm4pm_source_sha, observed: field(identity, :wasm4pm_source_sha)}
-       )}
-    else
-      :ok
+    cond do
+      not observed_identity?(identity) ->
+        :ok
+
+      field(identity, :wasm4pm_source_sha) != @wasm4pm_source_sha ->
+        {:error,
+         Refusal.new(:cmca_wasm_identity_mismatch, "observed wasm4pm source does not match the pinned CMCA export head",
+           details: %{expected: @wasm4pm_source_sha, observed: field(identity, :wasm4pm_source_sha)}
+         )}
+
+      field(identity, :cmca_replay_verified) != true ->
+        {:error,
+         Refusal.new(:cmca_wasm_replay_unverified, "observed CMCA execution did not establish WASM receipt replay",
+           details: %{observed: field(identity, :cmca_replay_verified)}
+         )}
+
+      true ->
+        :ok
     end
   end
 
   defp exact_observed_identity?(identity) do
     observed_identity?(identity) and
       field(identity, :wasm4pm_source_sha) == @wasm4pm_source_sha and
+      field(identity, :cmca_replay_verified) == true and
       is_binary(nonempty(field(identity, :wasm_sha256)))
   end
 
