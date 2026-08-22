@@ -14,7 +14,7 @@ defmodule Ex4pm.Umbrella.MixProject do
   defp aliases do
     [
       verify: ["format --check-formatted", "compile --warnings-as-errors", "test"],
-      chicago: ["test --only chicago --seed 0"]
+      chicago: ["do --app ex4pm test --only chicago --seed 0"]
     ]
   end
 end

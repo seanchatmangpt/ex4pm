@@ -43,23 +43,24 @@ jobs:
       - name: Compile with warnings as errors
         run: mix compile --warnings-as-errors
 
-      - name: Run umbrella tests
-        run: mix test
+      - name: Run umbrella tests on a named BEAM node
+        run: elixir --sname ex4pm_verify --cookie ex4pm_chicago_cookie -S mix test
 
       - name: Run Chicago global BEAM crown
-        run: mix chicago
+        run: elixir --sname ex4pm_chicago --cookie ex4pm_chicago_cookie -S mix chicago
 
       - name: Manufacture Chicago execution receipt
         run: |
           mkdir -p .ci
           export EX4PM_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
-          mix run -e '
+          elixir --sname ex4pm_receipt --cookie ex4pm_chicago_cookie -S mix run -e '
             receipt = %{
               source_sha: System.fetch_env!("EX4PM_SUBJECT_SHA"),
               tree_sha: System.fetch_env!("EX4PM_TREE_SHA"),
-              command: "mix chicago",
+              command: "elixir --sname ex4pm_chicago --cookie <redacted> -S mix chicago",
               exit_status: 0,
               topology: "three same-host OTP peer nodes plus origin",
+              evidence_mode: "post-crown observation with identical non-TLS distribution flags",
               environment: Ex4pm.Qualification.environment(),
               network_security: Ex4pm.Runtime.Distributed.security_posture()
             }
@@ -159,18 +160,19 @@ jobs:
           echo "ERL_AFLAGS=-proto_dist inet_tls -ssl_dist_optfile $PWD/.ci/tls/ssl_dist.conf" >> "$GITHUB_ENV"
 
       - name: Run Chicago crown over TLS Erlang distribution
-        run: mix chicago
+        run: elixir --sname ex4pm_chicago_tls --cookie ex4pm_chicago_cookie -S mix chicago
 
       - name: Manufacture TLS Chicago receipt
         run: |
           export EX4PM_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
-          mix run -e '
+          elixir --sname ex4pm_tls_receipt --cookie ex4pm_chicago_cookie -S mix run -e '
             receipt = %{
               source_sha: System.fetch_env!("EX4PM_SUBJECT_SHA"),
               tree_sha: System.fetch_env!("EX4PM_TREE_SHA"),
-              command: "mix chicago",
+              command: "elixir --sname ex4pm_chicago_tls --cookie <redacted> -S mix chicago",
               exit_status: 0,
               topology: "three same-host OTP peer nodes plus origin over inet_tls",
+              evidence_mode: "post-crown observation with identical TLS distribution flags",
               environment: Ex4pm.Qualification.environment(),
               network_security: Ex4pm.Runtime.Distributed.security_posture()
             }
