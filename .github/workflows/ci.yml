@@ -160,7 +160,7 @@ jobs:
             {:ok, run} = Ex4pm.plan(problem, ex4pm_plan_fun: transport)
             :alive = run.standing
             2.0 = run.value["total_cost"]
-            {:ok, %{replay: :match}} = Ex4pm.replay(run.receipt.hash)
+            {:ok, %{replay: :chain_match}} = Ex4pm.replay(run.receipt.hash)
             IO.puts("ex4pm-plan exact capsule -> Ex4pm.plan -> receipt replay: ALIVE")
           '
 
