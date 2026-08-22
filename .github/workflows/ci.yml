@@ -97,7 +97,8 @@ jobs:
             "ex4pm.information/1" = response["protocol"]
             "26.8.22" = response["version"]
             "ok" = response["status"]
-            receipt when is_binary(receipt) <- response["receipts"]["information"]
+            receipt = response["receipts"]["information"]
+            true = is_binary(receipt)
             true = Enum.any?(response["result"], &(&1["id"] == "beam"))
             true = Enum.any?(response["result"], &(&1["id"] == "wasm"))
             IO.puts("external escript -> JSONL -> Reactor -> receipt envelope: ALIVE #{receipt}")
