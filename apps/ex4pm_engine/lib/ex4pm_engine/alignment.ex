@@ -19,7 +19,15 @@ defmodule Ex4pmEngine.Alignment do
   end
 
   defmodule Result do
-    @enforce_keys [:moves, :total_cost, :fitness, :trace_length, :model_moves_count, :log_moves_count, :sync_moves_count]
+    @enforce_keys [
+      :moves,
+      :total_cost,
+      :fitness,
+      :trace_length,
+      :model_moves_count,
+      :log_moves_count,
+      :sync_moves_count
+    ]
     defstruct [
       :moves,
       :total_cost,
@@ -115,9 +123,16 @@ defmodule Ex4pmEngine.Alignment do
                 t_def.label == current_event or to_string(t_name) == current_event,
                 can_fire?(marking, t_def.inputs) do
               new_marking = fire_transition(marking, t_def.inputs, t_def.outputs)
-              move = %Move{type: :sync, log_activity: current_event, model_transition: to_string(t_name), cost: 0.0}
+
+              move = %Move{
+                type: :sync,
+                log_activity: current_event,
+                model_transition: to_string(t_name),
+                cost: 0.0
+              }
+
               new_g = g + 0.0
-              new_h = (length(trace) - (idx + 1)) + length(new_marking -- final_marking)
+              new_h = length(trace) - (idx + 1) + length(new_marking -- final_marking)
               {new_g + new_h, new_g, {idx + 1, new_marking}, [move | moves]}
             end
           else
@@ -127,9 +142,15 @@ defmodule Ex4pmEngine.Alignment do
         # 2. Log-only move: advance trace index without firing model (cost = 1.0)
         log_neighbors =
           if current_event do
-            move = %Move{type: :log_only, log_activity: current_event, model_transition: nil, cost: 1.0}
+            move = %Move{
+              type: :log_only,
+              log_activity: current_event,
+              model_transition: nil,
+              cost: 1.0
+            }
+
             new_g = g + 1.0
-            new_h = (length(trace) - (idx + 1)) + length(marking -- final_marking)
+            new_h = length(trace) - (idx + 1) + length(marking -- final_marking)
             [{new_g + new_h, new_g, {idx + 1, marking}, [move | moves]}]
           else
             []
@@ -139,9 +160,16 @@ defmodule Ex4pmEngine.Alignment do
         model_neighbors =
           for {t_name, t_def} <- transitions, can_fire?(marking, t_def.inputs) do
             new_marking = fire_transition(marking, t_def.inputs, t_def.outputs)
-            move = %Move{type: :model_only, log_activity: nil, model_transition: to_string(t_name), cost: 1.0}
+
+            move = %Move{
+              type: :model_only,
+              log_activity: nil,
+              model_transition: to_string(t_name),
+              cost: 1.0
+            }
+
             new_g = g + 1.0
-            new_h = (length(trace) - idx) + length(new_marking -- final_marking)
+            new_h = length(trace) - idx + length(new_marking -- final_marking)
             {new_g + new_h, new_g, {idx, new_marking}, [move | moves]}
           end
 
@@ -170,6 +198,7 @@ defmodule Ex4pmEngine.Alignment do
   end
 
   defp remove_tokens(marking, []), do: marking
+
   defp remove_tokens(marking, [p | rest]) do
     case List.delete(marking, p) do
       new_m -> remove_tokens(new_m, rest)

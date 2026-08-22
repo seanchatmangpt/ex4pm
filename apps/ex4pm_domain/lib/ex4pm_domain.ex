@@ -37,5 +37,6 @@ defmodule Ex4pmDomain do
     resource(Ex4pmDomain.CriticalPathSchedule)
     resource(Ex4pmDomain.MarkovModel)
     resource(Ex4pmDomain.CausalModel)
+    resource(Ex4pmDomain.AlignmentRecord)
   end
 end

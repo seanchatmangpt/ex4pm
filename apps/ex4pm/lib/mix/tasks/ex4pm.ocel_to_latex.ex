@@ -29,7 +29,8 @@ defmodule Mix.Tasks.Ex4pm.OcelToLatex do
         [] -> "/Users/sac/xaas/priv/ocel/ash-actions.ndjson"
       end
 
-    output_path = Keyword.get(opts, :output, "docs/thesis/chapters/generated_ocel_benchmark_tables.tex")
+    output_path =
+      Keyword.get(opts, :output, "docs/thesis/chapters/generated_ocel_benchmark_tables.tex")
 
     Mix.shell().info("==> Ingesting IEEE OCEL 2.0 log: #{input_path}")
     {:ok, content} = Ex4pmEngine.OcelToLatex.export_latex(input_path, output: output_path)

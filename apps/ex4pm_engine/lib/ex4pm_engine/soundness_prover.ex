@@ -64,14 +64,18 @@ defmodule Ex4pmEngine.SoundnessProver do
     # 4. Check Proper Completion: Every marking containing final_marking must equal final_marking
     lingering_markings =
       Enum.filter(reachable_markings, fn marking ->
-        MapSet.subset?(MapSet.new(final_marking), MapSet.new(marking)) and marking != final_marking
+        MapSet.subset?(MapSet.new(final_marking), MapSet.new(marking)) and
+          marking != final_marking
       end)
 
     proper_completion? = lingering_markings == []
 
     # 5. Check Dead Transitions: All transitions must fire in at least one reachable marking
     all_transition_names = Map.keys(transitions) |> MapSet.new()
-    dead_transitions = MapSet.difference(all_transition_names, fired_transitions) |> MapSet.to_list()
+
+    dead_transitions =
+      MapSet.difference(all_transition_names, fired_transitions) |> MapSet.to_list()
+
     no_dead_transitions? = dead_transitions == []
 
     # 6. Deadlocks: Reachable markings with 0 outgoing transitions that are not final_marking
@@ -176,6 +180,7 @@ defmodule Ex4pmEngine.SoundnessProver do
   end
 
   defp remove_tokens(marking, []), do: marking
+
   defp remove_tokens(marking, [p | rest]) do
     case List.delete(marking, p) do
       new_m -> remove_tokens(new_m, rest)

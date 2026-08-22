@@ -62,11 +62,12 @@ defmodule Ex4pmEngine.QuantumProcess do
         {p, if(p == sink, do: 1.0, else: 0.0)}
       end)
 
-    {:ok, %{
-      collapsed_marking: [sink],
-      collapse_probability: Float.round(prob, 4),
-      sound_terminal?: true,
-      quantum_state: %{qstate | amplitudes: collapsed_amps}
-    }}
+    {:ok,
+     %{
+       collapsed_marking: [sink],
+       collapse_probability: Float.round(prob, 4),
+       sound_terminal?: true,
+       quantum_state: %{qstate | amplitudes: collapsed_amps}
+     }}
   end
 end

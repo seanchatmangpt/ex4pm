@@ -23,9 +23,9 @@ defmodule Ex4pmEngine.OcelToLatex do
         StochasticProfiler.profile(ocel_path)
       else
         %{
-          total_events: 647238,
+          total_events: 647_238,
           elapsed_ms: 984,
-          throughput_events_sec: 657762.2,
+          throughput_events_sec: 657_762.2,
           unique_activities: 136,
           unique_objects: 58,
           shannon_entropy_bits: 4.7764,
@@ -39,7 +39,7 @@ defmodule Ex4pmEngine.OcelToLatex do
             max_ms: 6215
           },
           top_activities: %{
-            "capability_liveness_receipt.ingest" => 228447,
+            "capability_liveness_receipt.ingest" => 228_447,
             "capability_liveness_receipt.read" => 51308,
             "org.create" => 33907,
             "org.read" => 20346,
@@ -129,6 +129,7 @@ defmodule Ex4pmEngine.OcelToLatex do
 
   defp infer_domain(act) do
     str = to_string(act)
+
     cond do
       String.starts_with?(str, "capability_liveness") -> "Operations"
       String.starts_with?(str, "org") -> "Accounts"

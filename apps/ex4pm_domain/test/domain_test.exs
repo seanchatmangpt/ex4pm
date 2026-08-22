@@ -236,5 +236,20 @@ defmodule Ex4pm.DomainTest do
              })
 
     assert cpm.total_duration_ms == 45
+
+    # 16. AlignmentRecord
+    assert {:ok, align_rec} =
+             Ash.create(Ex4pmDomain.AlignmentRecord, %{
+               case_id: "case_999",
+               trace_length: 5,
+               total_cost: 0.0,
+               fitness: 1.0,
+               sync_moves: 5,
+               log_moves: 0,
+               model_moves: 0
+             })
+
+    assert align_rec.case_id == "case_999"
+    assert align_rec.fitness == 1.0
   end
 end

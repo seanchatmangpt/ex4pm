@@ -56,13 +56,14 @@ defmodule Ex4pmEngine.ZkOcpn do
       end)
 
     if claims_match? and zk_proof.verified? do
-      {:ok, %{
-        verified?: true,
-        circuit_id: zk_proof.circuit_id,
-        constraints_checked: zk_proof.constraints_count,
-        verification_time_us: 42,
-        zero_knowledge_soundness: :proven
-      }}
+      {:ok,
+       %{
+         verified?: true,
+         circuit_id: zk_proof.circuit_id,
+         constraints_checked: zk_proof.constraints_count,
+         verification_time_us: 42,
+         zero_knowledge_soundness: :proven
+       }}
     else
       {:error, :zk_proof_invalid}
     end

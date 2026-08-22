@@ -15,6 +15,8 @@ defmodule Ex4pm.Engine.Cognition do
 
   alias Ex4pm.Engine.Result
 
+  alias Ex4pmEngine.{Alignment, SoundnessProver}
+
   alias Ex4pmEngine.Cognition.{
     Adversarial,
     BayesianNetwork,
@@ -278,6 +280,51 @@ defmodule Ex4pm.Engine.Cognition do
        standing: :alive,
        value: cpm_res,
        evidence: %{deterministic: true, total_duration_ms: cpm_res.total_duration_ms}
+     }}
+  end
+
+  def execute(:optimal_alignment, {trace, net_spec}, opts)
+      when is_list(trace) and is_map(net_spec) do
+    case Alignment.align_trace(trace, net_spec, opts) do
+      {:ok, alignment} ->
+        {:ok,
+         %Result{
+           engine: :beam,
+           operation: :cognition,
+           algorithm: :a_star_optimal_alignment,
+           subject_hash: Ex4pm.Core.Hash.digest(%{trace: trace, net: net_spec}),
+           standing: if(alignment.fitness >= 0.85, do: :alive, else: :blocked),
+           value: alignment,
+           evidence: %{
+             deterministic: true,
+             total_cost: alignment.total_cost,
+             fitness: alignment.fitness,
+             moves_count: length(alignment.moves)
+           }
+         }}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def execute(:prove_soundness, net_spec, _opts) when is_map(net_spec) do
+    report = SoundnessProver.verify_soundness(net_spec)
+
+    {:ok,
+     %Result{
+       engine: :beam,
+       operation: :cognition,
+       algorithm: :reachability_graph_1_safe_soundness,
+       subject_hash: Ex4pm.Core.Hash.digest(net_spec),
+       standing: if(report.sound?, do: :alive, else: :blocked),
+       value: report,
+       evidence: %{
+         deterministic: true,
+         sound: report.sound?,
+         reachable_markings: report.reachable_markings_count,
+         deadlocks_count: length(report.deadlocks)
+       }
      }}
   end
 end
