@@ -38,6 +38,37 @@ defmodule Ex4pmEngine.SoundnessProver do
   Formally verifies the 1-safe soundness of a Workflow Net.
   `net_spec` is a map with `:places`, `:transitions`, `:initial_marking`, and `:final_marking`.
   """
+  def verify_soundness(%Ex4pmEngine.WorkflowNet{} = net) do
+    # Adapt %WorkflowNet{} struct into net_spec with input/output lists
+    places = Map.keys(net.places)
+
+    transitions =
+      Map.new(net.transitions, fn {t_id, t_struct} ->
+        in_places =
+          Enum.filter(net.arcs, fn arc -> arc.target == t_id end)
+          |> Enum.map(& &1.source)
+
+        out_places =
+          Enum.filter(net.arcs, fn arc -> arc.source == t_id end)
+          |> Enum.map(& &1.target)
+
+        {String.to_atom(t_id),
+         %{
+           inputs: in_places,
+           outputs: out_places,
+           label: t_struct.label,
+           node_id: t_id
+         }}
+      end)
+
+    verify_soundness(%{
+      places: places,
+      transitions: transitions,
+      initial_marking: [net.source_place],
+      final_marking: [net.sink_place]
+    })
+  end
+
   def verify_soundness(net_spec) when is_map(net_spec) do
     transitions = Map.fetch!(net_spec, :transitions)
     initial_marking = Map.get(net_spec, :initial_marking, ["p_in"]) |> Enum.sort()

@@ -1,24 +1,28 @@
 defmodule Ex4pmEngine.POWL do
   @moduledoc """
-  POWL 2.0 (Partially Ordered Workflow Trees) Engine.
-  Faithful BEAM realization of Van der Aalst (2023).
+  POWL 2.0 (Partially Ordered Workflow Language) Engine.
+  Exact Mathematical Realization of:
+  - [BPM25] Kourani, Park, van der Aalst (2025). Unlocking Non-Block-Structured Decisions: Inductive Mining with Choice Graphs. BPM 2025, LNCS 16044, pp. 144–161.
+  - [PETRI25] Kourani, Park, van der Aalst (2025). Hierarchical Decomposition of Separable Workflow-Nets. PETRI NETS 2025, LNCS 15714, pp. 242–264.
 
   Represents process models as hierarchical, sound-by-construction operator trees:
-  - `Activity`: Leaf node executing a labeled activity.
-  - `Silent`: Silent transition τ (skip).
-  - `Sequence`: Strict linear composition ×(T1, T2, ..., Tn).
-  - `Choice`: Exclusive branching ⊕(T1, T2, ..., Tn).
-  - `Loop`: Iterative repeat ↺(body, redo).
-  - `PartialOrder`: Concurrency constrained by explicit poset edges (nodes, order_edges).
+  - `Activity`: Leaf node executing a labeled transition $t \\in T$ with $l(t) \\in \\Sigma$.
+  - `Silent`: Silent transition $t$ with $l(t) = \\tau$ (skip).
+  - `Sequence`: Strict linear composition $\\times(T_1, T_2, \\dots, T_n)$.
+  - `Choice`: Exclusive branching $\\oplus(T_1, T_2, \\dots, T_n)$ or ChoiceGraph $G = (N, E)$.
+  - `ChoiceGraph`: POWL 2.0 directed choice graph $G = (N, E)$ with artificial delimiters $▷, □$.
+  - `Loop`: Iterative repeat $\\circlearrowleft(body, redo)$ / $\\looparrowright$.
+  - `PartialOrder`: Concurrency constrained by explicit poset edges $(nodes, order\\_edges)$ with order-preserving shuffle $\\prec\\hspace{-0.6em}\\odot$.
 
-  Every valid POWL tree is mathematically guaranteed to be 1-safe sound without reachability anomalies.
+  Every valid POWL 2.0 tree is mathematically guaranteed to be 1-safe sound without reachability anomalies.
   """
 
+  alias Ex4pmEngine.POWL.ChoiceGraph
   alias Ex4pmEngine.WorkflowNet
 
   defmodule Node do
     @enforce_keys [:id, :operator]
-    defstruct [:id, :operator, :label, children: [], order_edges: [], metadata: %{}]
+    defstruct [:id, :operator, :label, children: [], order_edges: [], choice_graph: nil, metadata: %{}]
   end
 
   @doc "Constructs a leaf activity node."
@@ -40,6 +44,21 @@ defmodule Ex4pmEngine.POWL do
   @doc "Constructs an exclusive choice composition of child nodes."
   def choice(id, children) when is_list(children) do
     %Node{id: to_string(id), operator: :choice, children: children}
+  end
+
+  @doc """
+  Constructs a POWL 2.0 Choice Graph node $G = (N, E)$ with delimiters $▷, □$:
+  - Definition 1 [BPM25, p. 7]
+  - Definition 3.6 [PETRI25, p. 8]
+  """
+  def choice_graph(id, nodes, edges) when is_list(nodes) and is_list(edges) do
+    case ChoiceGraph.new(nodes, edges, %{id: to_string(id)}) do
+      {:ok, cg} ->
+        %Node{id: to_string(id), operator: :choice_graph, children: nodes, choice_graph: cg}
+
+      {:error, reason} ->
+        raise ArgumentError, "Invalid POWL 2.0 Choice Graph: #{reason}"
+    end
   end
 
   @doc "Constructs a loop composition with body and redo branches."
@@ -70,7 +89,7 @@ defmodule Ex4pmEngine.POWL do
   Returns `%{places: [...], transitions: %{...}, initial_marking: [...], final_marking: [...]}` or `{:ok, %WorkflowNet{}}`.
   """
   def to_workflow_net(%{root: root}) do
-    net_map = to_workflow_net(root)
+    net_map = compile_to_net_map(root)
 
     arcs =
       Enum.flat_map(net_map.transitions, fn {t_name, t_def} ->
@@ -86,6 +105,13 @@ defmodule Ex4pmEngine.POWL do
   end
 
   def to_workflow_net(%Node{} = root) do
+    case to_workflow_net(%{root: root}) do
+      {:ok, wn} -> wn
+      error -> error
+    end
+  end
+
+  def compile_to_net_map(%Node{} = root) do
     {net, p_in, p_out, _next_id} = compile_node(root, "p_start", "p_end", 1)
 
     %{
@@ -173,14 +199,85 @@ defmodule Ex4pmEngine.POWL do
     {merged_net, p_in, p_out, final_id}
   end
 
+  defp compile_node(%Node{operator: :choice_graph, children: children, choice_graph: cg}, p_in, p_out, next_id) do
+    # Section 4.1 [BPM25 p. 9]:
+    # (i) Unique source p_in and sink p_out
+    # (ii) Recursively convert each submodel
+    # (iii) Add silent tau-transitions according to edges of the choice graph
+    node_places =
+      Enum.map(children, fn child ->
+        {child.id, "p_in_cg_#{child.id}_#{next_id}", "p_out_cg_#{child.id}_#{next_id}"}
+      end)
+
+    # Compile children into isolated subnets
+    {children_net, id_after_children} =
+      Enum.reduce(children, {%{places: [p_in, p_out], transitions: %{}}, next_id + 1}, fn child, {acc_net, cur_id} ->
+        {_id, c_in, c_out} = Enum.find(node_places, &(elem(&1, 0) == child.id))
+        {child_net, _, _, next_c_id} = compile_node(child, c_in, c_out, cur_id)
+        {merge_nets(acc_net, child_net), next_c_id}
+      end)
+
+    # Add connecting tau transitions for all edges in cg.edges
+    start_del = ChoiceGraph.start_delimiter()
+    end_del = ChoiceGraph.end_delimiter()
+
+    {final_net, final_id} =
+      Enum.reduce(cg.edges, {children_net, id_after_children}, fn {src, dst}, {acc_net, cur_id} ->
+        src_place =
+          case src do
+            ^start_del -> p_in
+            other ->
+              {_, _, out_p} = Enum.find(node_places, &(elem(&1, 0) == other))
+              out_p
+          end
+
+        dst_place =
+          case dst do
+            ^end_del -> p_out
+            other ->
+              {_, in_p, _} = Enum.find(node_places, &(elem(&1, 0) == other))
+              in_p
+          end
+
+        t_edge_name = :"t_cg_edge_#{src}_to_#{dst}_#{cur_id}"
+        t_edge_def = %{
+          inputs: [src_place],
+          outputs: [dst_place],
+          label: "tau_cg",
+          node_id: "cg_edge"
+        }
+
+        new_net = %{
+          acc_net
+          | places: Enum.uniq([src_place, dst_place | acc_net.places]),
+            transitions: Map.put(acc_net.transitions, t_edge_name, t_edge_def)
+        }
+
+        {new_net, cur_id + 1}
+      end)
+
+    {final_net, p_in, p_out, final_id}
+  end
+
   defp compile_node(%Node{operator: :loop, children: [body, redo_node]}, p_in, p_out, next_id) do
+    # Formal loop: unique source p_in -> t_init -> p_loop_in -> body -> p_loop_body_out
+    # p_loop_body_out -> redo_node -> p_loop_in
+    # p_loop_body_out -> t_exit -> p_out
+    p_loop_in = "p_loop_in_#{next_id}"
     p_body_out = "p_loop_body_out_#{next_id}"
 
-    {net_body, _, _, id1} = compile_node(body, p_in, p_body_out, next_id + 1)
-    {net_redo, _, _, id2} = compile_node(redo_node, p_body_out, p_in, id1)
+    t_init_name = :"t_init_loop_#{next_id}"
+    t_init_def = %{
+      inputs: [p_in],
+      outputs: [p_loop_in],
+      label: "tau_init",
+      node_id: "loop_init"
+    }
+
+    {net_body, _, _, id1} = compile_node(body, p_loop_in, p_body_out, next_id + 1)
+    {net_redo, _, _, id2} = compile_node(redo_node, p_body_out, p_loop_in, id1)
 
     t_exit_name = :"t_exit_#{id2}"
-
     exit_trans = %{
       inputs: [p_body_out],
       outputs: [p_out],
@@ -190,7 +287,10 @@ defmodule Ex4pmEngine.POWL do
 
     combined =
       merge_nets(net_body, net_redo)
-      |> merge_nets(%{places: [p_body_out, p_out], transitions: %{t_exit_name => exit_trans}})
+      |> merge_nets(%{
+        places: [p_in, p_loop_in, p_body_out, p_out],
+        transitions: %{t_init_name => t_init_def, t_exit_name => exit_trans}
+      })
 
     {combined, p_in, p_out, id2 + 1}
   end
