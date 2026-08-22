@@ -1,0 +1,102 @@
+name: ChatGPT Cloud Qualification
+
+on:
+  pull_request:
+  push:
+    branches: [main, "feat/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+
+      - name: Verify exact subject identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          observed="$(git rev-parse HEAD)"
+          printf 'admitted=%s\nobserved=%s\n' "$SUBJECT_SHA" "$observed"
+          test "$observed" = "$SUBJECT_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Resolve exact locked dependencies
+        run: mix deps.get --check-locked
+
+      - name: Execute repository verification crown
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p tmp/chatgpt-cloud
+          mix verify 2>&1 | tee tmp/chatgpt-cloud/verify.log
+
+      - name: Manufacture exact-head qualification receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SUBJECT_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
+          export LOCK_SHA256="$(sha256sum mix.lock | awk '{print $1}')"
+          export VERIFY_LOG_SHA256="$(sha256sum tmp/chatgpt-cloud/verify.log | awk '{print $1}')"
+          export OBSERVED_ELIXIR="$(elixir -e 'IO.write(System.version())')"
+          export OBSERVED_OTP="$(erl -noshell -eval 'io:format("~s", [erlang:system_info(otp_release)]), halt().')"
+          python3 - <<'PY'
+          import json, os, tomllib
+
+          with open('.chatgpt-cloud-elixir.toml', 'rb') as f:
+              contract = tomllib.load(f)
+
+          receipt = {
+              'schema_version': 1,
+              'subject': contract['subject'],
+              'subject_sha': os.environ['SUBJECT_SHA'],
+              'subject_tree_sha': os.environ['SUBJECT_TREE_SHA'],
+              'runtime': {
+                  'expected_otp': contract['runtime']['otp'],
+                  'observed_otp': os.environ['OBSERVED_OTP'],
+                  'expected_elixir': contract['runtime']['elixir'],
+                  'observed_elixir': os.environ['OBSERVED_ELIXIR'],
+              },
+              'lock_sha256': os.environ['LOCK_SHA256'],
+              'commands': ['mix verify'],
+              'exit_codes': {'mix_verify': 0},
+              'log_sha256': {'mix_verify': os.environ['VERIFY_LOG_SHA256']},
+              'operations': contract['process_intelligence']['operations'],
+              'interchange': contract['process_intelligence']['interchange'],
+              'excluded_external_crowns': contract['external_crowns']['excluded'],
+              'standing_scope': contract['standing_scope'],
+              'standing': 'ALIVE',
+          }
+
+          with open('tmp/chatgpt-cloud/qualification-receipt.json', 'w') as f:
+              json.dump(receipt, f, indent=2, sort_keys=True)
+              f.write('\n')
+          PY
+
+      - name: Upload qualification receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-chatgpt-cloud-${{ env.SUBJECT_SHA }}
+          path: |
+            tmp/chatgpt-cloud/qualification-receipt.json
+            tmp/chatgpt-cloud/verify.log
+          if-no-files-found: error
+          retention-days: 14
