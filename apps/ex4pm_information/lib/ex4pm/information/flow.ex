@@ -1,62 +1,3 @@
-defmodule Ex4pm.Information.Flow do
-  @moduledoc """
-  Default Reactor DAG for all non-trivial ex4pm information requests.
-
-  Admission completes before the pending execution receipt is manufactured.
-  Once a handler is attempted, success, refusal, runtime error, exception, throw,
-  and exit values are captured as data so the normal path can manufacture a
-  terminal outcome receipt.
-  """
-
-  use Reactor
-
-  input :request
-
-  step :normalize, Ex4pm.Information.Step.Normalize do
-    argument :request, input(:request)
-    async? false
-    max_retries 0
-  end
-
-  step :admit, Ex4pm.Information.Step.Admit do
-    argument :request, result(:normalize)
-    async? false
-    max_retries 0
-  end
-
-  step :pending_receipt, Ex4pm.Information.Step.PendingReceipt do
-    argument :admitted, result(:admit)
-    async? false
-    max_retries 0
-  end
-
-  step :execute, Ex4pm.Information.Step.Execute do
-    argument :admitted, result(:admit)
-    wait_for :pending_receipt
-    async? false
-    max_retries 0
-  end
-
-  step :outcome_receipt, Ex4pm.Information.Step.OutcomeReceipt do
-    argument :admitted, result(:admit)
-    argument :pending, result(:pending_receipt)
-    argument :execution, result(:execute)
-    async? false
-    max_retries 0
-  end
-
-  step :envelope, Ex4pm.Information.Step.Envelope do
-    argument :admitted, result(:admit)
-    argument :pending, result(:pending_receipt)
-    argument :execution, result(:execute)
-    argument :outcome, result(:outcome_receipt)
-    async? false
-    max_retries 0
-  end
-
-  return :envelope
-end
-
 defmodule Ex4pm.Information.Step.Normalize do
   @moduledoc false
   use Reactor.Step
@@ -264,4 +205,63 @@ defmodule Ex4pm.Information.Step.Envelope do
       ) do
     {:ok, Ex4pm.Information.Protocol.response(admitted, execution, pending, outcome)}
   end
+end
+
+defmodule Ex4pm.Information.Flow do
+  @moduledoc """
+  Default Reactor DAG for all non-trivial ex4pm information requests.
+
+  Admission completes before the pending execution receipt is manufactured.
+  Once a handler is attempted, success, refusal, runtime error, exception, throw,
+  and exit values are captured as data so the normal path can manufacture a
+  terminal outcome receipt.
+  """
+
+  use Reactor
+
+  input :request
+
+  step :normalize, Ex4pm.Information.Step.Normalize do
+    argument :request, input(:request)
+    async? false
+    max_retries 0
+  end
+
+  step :admit, Ex4pm.Information.Step.Admit do
+    argument :request, result(:normalize)
+    async? false
+    max_retries 0
+  end
+
+  step :pending_receipt, Ex4pm.Information.Step.PendingReceipt do
+    argument :admitted, result(:admit)
+    async? false
+    max_retries 0
+  end
+
+  step :execute, Ex4pm.Information.Step.Execute do
+    argument :admitted, result(:admit)
+    wait_for :pending_receipt
+    async? false
+    max_retries 0
+  end
+
+  step :outcome_receipt, Ex4pm.Information.Step.OutcomeReceipt do
+    argument :admitted, result(:admit)
+    argument :pending, result(:pending_receipt)
+    argument :execution, result(:execute)
+    async? false
+    max_retries 0
+  end
+
+  step :envelope, Ex4pm.Information.Step.Envelope do
+    argument :admitted, result(:admit)
+    argument :pending, result(:pending_receipt)
+    argument :execution, result(:execute)
+    argument :outcome, result(:outcome_receipt)
+    async? false
+    max_retries 0
+  end
+
+  return :envelope
 end
