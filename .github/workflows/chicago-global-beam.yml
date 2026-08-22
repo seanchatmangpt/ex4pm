@@ -1,0 +1,122 @@
+name: ex4pm-chicago-global-beam
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - feat/**
+
+permissions:
+  contents: read
+
+jobs:
+  chicago:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+      - name: Verify exact subject identity
+        run: test "$(git rev-parse HEAD)" = "$EX4PM_SUBJECT_SHA"
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+      - name: Resolve locked dependencies
+        run: mix deps.get --check-locked
+      - name: Compile with warnings as errors
+        run: mix compile --warnings-as-errors
+      - name: Run Chicago crown
+        run: elixir --sname ex4pm_chicago --cookie ex4pm_chicago_cookie -S mix chicago
+      - name: Manufacture Chicago receipt
+        run: |
+          mkdir -p .ci
+          export EX4PM_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
+          elixir --sname ex4pm_receipt --cookie ex4pm_chicago_cookie -S mix run -e '
+            receipt = %{
+              source_sha: System.fetch_env!("EX4PM_SUBJECT_SHA"),
+              tree_sha: System.fetch_env!("EX4PM_TREE_SHA"),
+              command: "elixir --sname ex4pm_chicago --cookie <redacted> -S mix chicago",
+              exit_status: 0,
+              topology: "three same-host OTP peer nodes plus origin",
+              evidence_mode: "post-crown observation",
+              environment: Ex4pm.Qualification.environment(),
+              network_security: Ex4pm.Runtime.Distributed.security_posture()
+            }
+            File.write!(".ci/chicago-receipt.json", Jason.encode!(receipt, pretty: true))
+          '
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chicago-receipt-${{ env.EX4PM_SUBJECT_SHA }}
+          path: .ci/chicago-receipt.json
+          if-no-files-found: error
+
+  chicago-tls-distribution:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+      - name: Verify exact subject identity
+        run: test "$(git rev-parse HEAD)" = "$EX4PM_SUBJECT_SHA"
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+      - name: Resolve locked dependencies
+        run: mix deps.get --check-locked
+      - name: Compile with warnings as errors
+        run: mix compile --warnings-as-errors
+      - name: Manufacture ephemeral TLS distribution identity
+        run: |
+          mkdir -p .ci/tls
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout "$PWD/.ci/tls/key.pem" \
+            -out "$PWD/.ci/tls/cert.pem" \
+            -days 1 \
+            -subj '/CN=ex4pm-chicago'
+          cat > "$PWD/.ci/tls/ssl_dist.conf" <<CONF
+          [{server,[{certfile,"$PWD/.ci/tls/cert.pem"},
+                    {keyfile,"$PWD/.ci/tls/key.pem"},
+                    {verify,verify_none}]},
+           {client,[{verify,verify_none}]}].
+          CONF
+          echo "ERL_AFLAGS=-proto_dist inet_tls -ssl_dist_optfile $PWD/.ci/tls/ssl_dist.conf" >> "$GITHUB_ENV"
+      - name: Run Chicago crown over TLS distribution
+        run: elixir --sname ex4pm_chicago_tls --cookie ex4pm_chicago_cookie -S mix chicago
+      - name: Manufacture TLS Chicago receipt
+        run: |
+          export EX4PM_TREE_SHA="$(git rev-parse 'HEAD^{tree}')"
+          elixir --sname ex4pm_tls_receipt --cookie ex4pm_chicago_cookie -S mix run -e '
+            receipt = %{
+              source_sha: System.fetch_env!("EX4PM_SUBJECT_SHA"),
+              tree_sha: System.fetch_env!("EX4PM_TREE_SHA"),
+              command: "elixir --sname ex4pm_chicago_tls --cookie <redacted> -S mix chicago",
+              exit_status: 0,
+              topology: "three same-host OTP peer nodes plus origin over inet_tls",
+              evidence_mode: "post-crown observation",
+              environment: Ex4pm.Qualification.environment(),
+              network_security: Ex4pm.Runtime.Distributed.security_posture()
+            }
+            File.write!(".ci/tls/chicago-tls-receipt.json", Jason.encode!(receipt, pretty: true))
+          '
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chicago-tls-receipt-${{ env.EX4PM_SUBJECT_SHA }}
+          path: .ci/tls/chicago-tls-receipt.json
+          if-no-files-found: error
