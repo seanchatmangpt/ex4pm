@@ -14,6 +14,7 @@ defmodule Ex4pmWeb.Application do
     end
 
     children = [
+      Ex4pmWeb.Telemetry,
       {Phoenix.PubSub, name: Ex4pmWeb.PubSub},
       {Ex4pm.Engine.OnlineMiner, [name: Ex4pm.Engine.OnlineMiner, subscriber: broadcast_fn]},
       Ex4pmWeb.Endpoint

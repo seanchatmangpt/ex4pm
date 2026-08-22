@@ -42,6 +42,8 @@ defmodule Ex4pmWeb.MixProject do
       {:ash_admin, "~> 0.12"},
       {:plug_cowboy, "~> 2.7"},
       {:jason, "~> 1.4"},
+      {:telemetry_metrics, "~> 0.6 or ~> 1.0"},
+      {:telemetry_poller, "~> 1.0"},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:floki, ">= 0.30.0", only: :test}
     ]
@@ -49,7 +51,10 @@ defmodule Ex4pmWeb.MixProject do
 
   defp aliases do
     [
-      setup: ["deps.get"]
+      setup: ["deps.get"],
+      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
+      "assets.build": ["tailwind default", "esbuild default"],
+      "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"]
     ]
   end
 end
