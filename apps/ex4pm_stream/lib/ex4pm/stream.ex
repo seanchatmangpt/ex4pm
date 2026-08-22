@@ -9,7 +9,7 @@ defmodule Ex4pm.Stream.Producer do
   @impl true
   def init(opts) do
     events = opts |> Keyword.fetch!(:events) |> Enum.to_list()
-    {:producer, %{events: events}}
+    {:producer, %{events: events, ack_target: Keyword.get(opts, :ack_target)}}
   end
 
   @impl true
@@ -20,7 +20,7 @@ defmodule Ex4pm.Stream.Producer do
       Enum.map(to_emit, fn event ->
         %Broadway.Message{
           data: event,
-          acknowledger: {__MODULE__, make_ref(), nil}
+          acknowledger: {__MODULE__, state.ack_target || make_ref(), nil}
         }
       end)
 
@@ -28,6 +28,11 @@ defmodule Ex4pm.Stream.Producer do
   end
 
   @impl Broadway.Acknowledger
+  def ack(target, successful, failed) when is_pid(target) do
+    send(target, {:ex4pm_stream_ack, successful, failed})
+    :ok
+  end
+
   def ack(_ack_ref, _successful, _failed), do: :ok
 end
 
@@ -49,11 +54,17 @@ defmodule Ex4pm.Stream.Pipeline do
       name: name,
       context: %{sink: sink, objects: objects},
       producer: [
-        module: {Ex4pm.Stream.Producer, [events: events]},
+        module:
+          {Ex4pm.Stream.Producer,
+           [events: events, ack_target: Keyword.get(opts, :ack_target)]},
         concurrency: Keyword.get(opts, :producer_concurrency, 1)
       ],
       processors: [
-        default: [concurrency: Keyword.get(opts, :processor_concurrency, System.schedulers_online())]
+        default: [
+          concurrency: Keyword.get(opts, :processor_concurrency, System.schedulers_online()),
+          max_demand: Keyword.get(opts, :max_demand, 10),
+          min_demand: Keyword.get(opts, :min_demand, 5)
+        ]
       ]
     )
   end
