@@ -711,6 +711,8 @@ defmodule Ex4pmEvidence.Conformance do
 
     Map.get(attrs, "resource") ||
       Map.get(attrs, :resource) ||
+      Map.get(attrs, "actor") ||
+      Map.get(attrs, :actor) ||
       Map.get(attrs, "user") ||
       Map.get(attrs, :user) ||
       Map.get(attrs, "performer") ||
