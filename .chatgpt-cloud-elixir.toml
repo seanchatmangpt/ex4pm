@@ -1,0 +1,56 @@
+schema_version = 1
+subject = "ex4pm"
+repository = "https://github.com/seanchatmangpt/ex4pm.git"
+standing_scope = "offline_in_memory_process_intelligence"
+
+[runtime]
+otp = "27.3.4"
+elixir = "1.18.4"
+
+[identity]
+source = "git_commit_and_tree"
+lockfile = "mix.lock"
+
+[build]
+network_required = true
+commands = [
+  "mix deps.get --check-locked",
+  "mix compile --warnings-as-errors",
+  "mix test",
+  "mix format --check-formatted"
+]
+
+[offline]
+commands = [
+  "mix compile --warnings-as-errors",
+  "mix test",
+  "mix format --check-formatted"
+]
+public_modules = [
+  "Ex4pm",
+  "Ex4pm.Ocel",
+  "Ex4pm.Engine",
+  "Ex4pm.Evidence.BRCE"
+]
+
+[process_intelligence]
+operations = ["ingest", "discover", "conform", "simulate"]
+interchange = ["ocel2_json", "json_receipts"]
+
+[authority]
+select_construct_do_separate = true
+do_authority = "Ex4pm.Evidence.BRCE"
+
+[external_crowns]
+excluded = ["postgresql", "ontop", "docker", "multi_host_global_network"]
+
+[receipt]
+required_fields = [
+  "subject_sha",
+  "subject_tree_sha",
+  "runtime",
+  "lock_sha256",
+  "commands",
+  "exit_codes",
+  "standing"
+]
