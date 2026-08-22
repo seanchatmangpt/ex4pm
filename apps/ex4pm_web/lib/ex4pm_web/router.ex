@@ -34,6 +34,7 @@ defmodule Ex4pmWeb.Router do
 
     get("/", HealthController, :health)
     live("/process-intelligence/live", ProcessIntelligenceLive)
+    live("/powl-miner", PowlMinerLive)
   end
 
   scope "/" do
