@@ -19,7 +19,8 @@ defmodule Ex4pm do
   alias Ex4pm.Domain.Projector
   alias Ex4pm.Engine
   alias Ex4pm.Engine.Differential
-  alias Ex4pm.Evidence.{Receipt, Replay, Store}
+  alias Ex4pm.Evidence.{Receipt, Store}
+  alias Ex4pm.Evidence.Replay.Chain
   alias Ex4pm.{EventLog, OCEL, POWL, Refusal, Run, XES}
 
   def contracts, do: Ex4pm.Contracts.verify()
@@ -102,7 +103,7 @@ defmodule Ex4pm do
 
     case Store.get(hash, store) do
       {:ok, receipt} ->
-        Replay.verify(receipt)
+        Chain.verify(receipt, store)
 
       :error ->
         {:error,

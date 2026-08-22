@@ -34,7 +34,7 @@ defmodule Ex4pmTest do
     assert {:ok, log} = Ex4pm.ingest(@raw)
     assert {:ok, discovery} = Ex4pm.discover(log, object_type: "Order")
     assert discovery.standing == :alive
-    assert {:ok, %{replay: :match}} = Ex4pm.replay(discovery.receipt.hash)
+    assert {:ok, %{replay: :chain_match}} = Ex4pm.replay(discovery.receipt.hash)
 
     assert {:ok, conformance} = Ex4pm.conform(log, discovery.value, object_type: "Order")
     assert conformance.value.fitness == 1.0
