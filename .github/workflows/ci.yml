@@ -79,6 +79,30 @@ jobs:
             .formatter.exs
           if-no-files-found: error
 
+      - name: Build CLI escript
+        run: |
+          cd apps/ex4pm_cli
+          mix escript.build
+          test -x ex4pm
+
+      - name: Exercise external JSONL information boundary
+        run: |
+          request='{"protocol":"ex4pm.information/1","version":"26.8.22","capability":"engine.candidates","input":{"operation":"discover"}}'
+          printf '%s\n' "$request" | ./apps/ex4pm_cli/ex4pm stdio > /tmp/ex4pm-information.jsonl
+          cat /tmp/ex4pm-information.jsonl
+          test "$(wc -l < /tmp/ex4pm-information.jsonl)" -eq 1
+          mix run -e '
+            [line] = File.read!("/tmp/ex4pm-information.jsonl") |> String.split("\n", trim: true)
+            response = Jason.decode!(line)
+            "ex4pm.information/1" = response["protocol"]
+            "26.8.22" = response["version"]
+            "ok" = response["status"]
+            receipt when is_binary(receipt) <- response["receipts"]["information"]
+            true = Enum.any?(response["result"], &(&1["id"] == "beam"))
+            true = Enum.any?(response["result"], &(&1["id"] == "wasm"))
+            IO.puts("external escript -> JSONL -> Reactor -> receipt envelope: ALIVE #{receipt}")
+          '
+
       - name: Checkout exact ex4pm-plan source
         uses: actions/checkout@v4
         with:
