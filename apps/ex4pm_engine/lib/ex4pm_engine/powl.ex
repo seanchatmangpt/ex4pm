@@ -222,7 +222,10 @@ defmodule Ex4pmEngine.POWL do
   `▷ → ψᵢ → □` path.
   """
   def choice(id, children, opts \\ []) do
-    metadata = Keyword.get(opts, :metadata, %{})
+    metadata =
+      opts
+      |> Keyword.get(:metadata, %{})
+      |> Map.put_new(:derived_operator, :xor)
 
     edges =
       case Keyword.fetch(opts, :choice_edges) do
@@ -242,6 +245,7 @@ defmodule Ex4pmEngine.POWL do
   """
   def choice_graph(id, children, choice_edges, metadata \\ %{}) do
     {child_ids, embedded} = normalize_children(children)
+    metadata = Map.put_new(metadata, :choice_graph_semantics, :directed_paths)
 
     %Node{
       id: to_string(id),
@@ -335,7 +339,9 @@ defmodule Ex4pmEngine.POWL do
     all_ids = Map.keys(nodes) |> MapSet.new()
 
     with true <- MapSet.member?(all_ids, root) || invalid_root(root, all_ids) do
-      Enum.reduce_while(nodes, :ok, fn {id, node}, :ok ->
+      nodes
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.reduce_while(:ok, fn {id, node}, :ok ->
         case validate_node(id, node, all_ids) do
           :ok -> {:cont, :ok}
           {:error, _} = error -> {:halt, error}
@@ -852,7 +858,7 @@ defmodule Ex4pmEngine.POWL do
         {child, compile_node_to_wf(model, child, counter)}
       end)
 
-    relation = MapSet.new(node.edges)
+    relation = node.edges
 
     incoming =
       Map.new(node.children, fn child ->
@@ -1062,8 +1068,12 @@ defmodule Ex4pmEngine.POWL do
           %{nodes: node.children, edges: xor_edges(node.children)}
       end
 
+    directed_graph? =
+      Map.get(node.metadata, :choice_graph_semantics) == :directed_paths or
+        Map.get(node.metadata, "choice_graph_semantics") in [:directed_paths, "directed_paths"]
+
     graph =
-      if graph.edges == [] and node.children != [] do
+      if graph.edges == [] and node.children != [] and not directed_graph? do
         %{nodes: node.children, edges: xor_edges(node.children)}
       else
         graph
