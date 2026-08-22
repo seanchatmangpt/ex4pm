@@ -15,7 +15,7 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
   alias Ex4pm.Refusal
 
   @protocol "ex4pm-plan/v1"
-  @source_sha "7bbb814011172f9eb3d73d853385f9fb3f410f9e"
+  @source_sha "ebbf5d91d6b2e29ef2d88d13b8cbd2f827899452"
 
   @impl true
   def id, do: :ex4pm_plan
