@@ -182,7 +182,9 @@ defmodule Ex4pm.Information.Interop do
     Map.new(map, fn {key, val} -> {to_string(key), val} end)
   end
 
-  defp value(map, key, default \\ nil) when is_map(map) and is_binary(key) do
+  defp value(map, key, default \\ nil)
+
+  defp value(map, key, default) when is_map(map) and is_binary(key) do
     case Map.fetch(map, key) do
       {:ok, val} ->
         val
