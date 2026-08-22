@@ -2,6 +2,18 @@ defmodule Ex4pmEngine.ZkOcpn do
   @moduledoc """
   Vision 2040 Zero-Knowledge Non-Interactive OCPN Constraint Compiler (zk-OCPN).
 
+  FORMALISM CLASSIFICATION (per adversarial review):
+  This module implements a structural R1CS constraint matrix specification —
+  a deterministic algebraic encoding of OCPN token firing rules into polynomial
+  constraint triples (A, B, C). It does NOT invoke a real zk-SNARK prover
+  (e.g. Groth16, PLONK, or Plonky3) over an elliptic curve pairing group
+  (e.g. BN254 or BLS12-381). A full zk-SNARK implementation requires:
+  - A trusted setup ceremony (or transparent setup for STARKs)
+  - Lagrange polynomial interpolation over a prime field F_p
+  - Kate-Zaverucha-Goldberg (KZG) polynomial commitments
+  - Bilinear pairing verification: e(A,B) = e(alpha*G1, beta*G2) * e(C, delta*G2)
+  This module is a 2040-horizon architectural specification and simulation.
+
   Compiles Object-Centric Petri Net firing rules, token conservation laws,
   and Separation-of-Duties (SoD) policies into Rank-1 Constraint System (R1CS)
   arithmetic circuits:

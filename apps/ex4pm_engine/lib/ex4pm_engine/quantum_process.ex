@@ -2,7 +2,18 @@ defmodule Ex4pmEngine.QuantumProcess do
   @moduledoc """
   Vision 2040 Quantum Superpositional Petri Net Engine.
 
-  Represents process state as a normalized complex state vector in Hilbert space:
+  FORMALISM CLASSIFICATION (per adversarial review):
+  This module implements a Continuous-Time Stochastic Branching Simulation over
+  normalized real-valued amplitude vectors — a structural analogue to quantum
+  superposition for multi-path concurrent process exploration. It is NOT a true
+  quantum circuit and does NOT execute on a quantum processing unit (QPU).
+  A full quantum implementation would require complex-valued density matrices
+  rho = sum_i p_i |psi_i><psi_i|, non-separable tensor product states for
+  multi-object entanglement, and Lindblad master equation decoherence modeling.
+  This module is a 2040-horizon architectural prototype and specification.
+
+  Represents process state as a normalized real-valued amplitude vector
+  analogous to a projected Hilbert space marking state:
   |M⟩ = sum_k alpha_k |k⟩ in C^|P| where sum |alpha_k|^2 = 1.0
 
   Features:

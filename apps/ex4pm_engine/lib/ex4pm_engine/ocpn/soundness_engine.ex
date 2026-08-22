@@ -1,13 +1,18 @@
 defmodule Ex4pmEngine.OCPN.SoundnessEngine do
   @moduledoc """
-  Formal Reachability Analysis and Soundness Verification Engine for
-  Object-Centric Petri Nets (OCPN) and 1-Safe Workflow Nets.
+  Formal Reachability Analysis, Soundness Verification, and Cross-Object Deadlock
+  Detection Engine for Object-Centric Petri Nets (OCPN) and 1-Safe Workflow Nets.
 
-  Verifies:
+  Verifies per object-type sub-net projection:
   1. Option to Complete: for all reachable markings M in [M_0>, [M_end] in [M>
   2. Proper Completion: for all M in [M_0>, sink in M implies M == [M_end]
   3. Absence of Dead Transitions: for all t in T, exists M in [M_0> such that M[t>
   4. 1-Safety: for all M in [M_0>, for all p in P, M(p) <= 1
+
+  Additionally performs cross-object global deadlock detection via Resource
+  Allocation Graph (RAG) cycle detection — addressing the critical gap identified
+  by Prof. Marco Montali: two sub-nets individually sound may globally deadlock
+  if transition synchronization over multiple object types creates circular waits.
 
   Emits explicit minimal counter-example trace sequences on violation.
   """
@@ -43,7 +48,6 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
         initial_marking = MapSet.new([init_id])
         terminal_marking = MapSet.new([term_id])
 
-        # BFS state space exploration
         explore_state_space(
           initial_marking,
           terminal_marking,
@@ -55,8 +59,103 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
     end
   end
 
+  @doc """
+  Cross-Object Global Deadlock Detection via Resource Allocation Graph (RAG) Cycle Analysis.
+
+  Addresses the critical theoretical gap identified in adversarial review:
+  Two sub-nets individually verified as 1-safe sound may globally deadlock when
+  transition synchronization over multiple object types creates circular waits.
+
+  A cross-object deadlock requires a cycle in which distinct transitions form a
+  mutual circular wait: T1 holds OT_A and waits for OT_B, while T2 holds OT_B
+  and waits for OT_A — i.e. a cycle of length >= 4 in the bipartite RAG.
+
+  A single transition consuming and producing the same object type is NOT a cycle;
+  it is simply a token pass-through (sound by token conservation).
+  """
+  def detect_global_deadlock(%OCPN{} = net) do
+    transitions = net.transitions
+    arcs = net.arcs
+
+    # For each transition, compute:
+    # - consumed types: what object types it takes tokens FROM (input arcs)
+    # - produced types: what object types it puts tokens TO (output arcs)
+    trans_consumed =
+      Map.new(transitions, fn {t_id, _t} ->
+        consumed =
+          Enum.filter(arcs, fn arc ->
+            arc.target == t_id and Map.has_key?(transitions, t_id)
+          end)
+          |> Enum.map(& &1.object_type)
+          |> MapSet.new()
+
+        {t_id, consumed}
+      end)
+
+    trans_produced =
+      Map.new(transitions, fn {t_id, _t} ->
+        produced =
+          Enum.filter(arcs, fn arc ->
+            arc.source == t_id and Map.has_key?(transitions, t_id)
+          end)
+          |> Enum.map(& &1.object_type)
+          |> MapSet.new()
+
+        {t_id, produced}
+      end)
+
+    # Circular wait exists iff there exist distinct transitions T1, T2 such that:
+    # T1 waits for an OT that T2 holds, AND T2 waits for an OT that T1 holds
+    trans_ids = Map.keys(transitions)
+
+    circular_waits =
+      for t1 <- trans_ids, t2 <- trans_ids, t1 != t2 do
+        t1_consumed = Map.get(trans_consumed, t1, MapSet.new())
+        t2_consumed = Map.get(trans_consumed, t2, MapSet.new())
+        t1_produced = Map.get(trans_produced, t1, MapSet.new())
+        t2_produced = Map.get(trans_produced, t2, MapSet.new())
+
+        # T1 waits for something T2 is producing AND T2 waits for something T1 is producing
+        t1_waits_on_t2 = not MapSet.disjoint?(t1_consumed, t2_produced)
+        t2_waits_on_t1 = not MapSet.disjoint?(t2_consumed, t1_produced)
+
+        if t1_waits_on_t2 and t2_waits_on_t1 do
+          shared_t1_needs = MapSet.intersection(t1_consumed, t2_produced)
+          shared_t2_needs = MapSet.intersection(t2_consumed, t1_produced)
+          {t1, t2, shared_t1_needs, shared_t2_needs}
+        else
+          nil
+        end
+      end
+      |> Enum.reject(&is_nil/1)
+
+    if circular_waits == [] do
+      rag_edges_count =
+        Enum.sum(Enum.map(trans_ids, fn t ->
+          MapSet.size(Map.get(trans_consumed, t, MapSet.new())) +
+            MapSet.size(Map.get(trans_produced, t, MapSet.new()))
+        end))
+
+      {:ok,
+       %{
+         global_deadlock_free?: true,
+         rag_nodes: length(trans_ids) + length(Map.keys(net.places)),
+         rag_edges: rag_edges_count
+       }}
+    else
+      {t1, t2, t1_needs, t2_needs} = hd(circular_waits)
+
+      {:error,
+       %{
+         violation: :global_cross_object_deadlock,
+         cycle_path: [t1, MapSet.to_list(t1_needs), t2, MapSet.to_list(t2_needs)],
+         message:
+           "Cross-object circular wait: #{t1} needs #{inspect(MapSet.to_list(t1_needs))} held by #{t2}, and #{t2} needs #{inspect(MapSet.to_list(t2_needs))} held by #{t1}"
+       }}
+    end
+  end
+
   defp explore_state_space(m0, m_end, _places, transitions, arcs, max_states) do
-    # Queue stores {current_marking, trace_path}
     queue = :queue.from_list([{m0, []}])
     visited = MapSet.new([m0])
     fired_transitions = MapSet.new()
@@ -67,7 +166,6 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
   defp loop_explore(queue, visited, fired_transitions, m_end, transitions, arcs, max_states) do
     case :queue.out(queue) do
       {:empty, _} ->
-        # Check if all transitions were fired
         all_trans_ids = MapSet.new(Map.keys(transitions))
         dead_transitions = MapSet.difference(all_trans_ids, fired_transitions)
 
@@ -92,7 +190,6 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
         if MapSet.size(visited) > max_states do
           {:error, {:state_space_cutoff_exceeded, max_states}}
         else
-          # Check proper completion: if sink in current_marking, must be exactly m_end
           sink_id = Enum.at(MapSet.to_list(m_end), 0)
 
           if MapSet.member?(current_marking, sink_id) and current_marking != m_end do
@@ -103,7 +200,6 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
                counter_example_trace: Enum.reverse(trace)
              }}
           else
-            # Find enabled transitions
             enabled =
               Enum.filter(transitions, fn {t_id, _} ->
                 in_places =
@@ -116,7 +212,6 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
               end)
 
             if enabled == [] and current_marking != m_end do
-              # Reachable Deadlock!
               {:error,
                %{
                  violation: :deadlock,
@@ -124,38 +219,39 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
                  counter_example_trace: Enum.reverse(trace)
                }}
             else
-              # Fire transitions and produce new markings
               {new_queue, new_visited, new_fired} =
-                Enum.reduce(enabled, {rest_queue, visited, fired_transitions}, fn {t_id, _},
-                                                                                  {q_acc, v_acc,
-                                                                                   f_acc} ->
-                  in_places =
-                    arcs
-                    |> Enum.filter(&(&1.target == t_id))
-                    |> Enum.map(& &1.source)
-                    |> MapSet.new()
+                Enum.reduce(
+                  enabled,
+                  {rest_queue, visited, fired_transitions},
+                  fn {t_id, _}, {q_acc, v_acc, f_acc} ->
+                    in_places =
+                      arcs
+                      |> Enum.filter(&(&1.target == t_id))
+                      |> Enum.map(& &1.source)
+                      |> MapSet.new()
 
-                  out_places =
-                    arcs
-                    |> Enum.filter(&(&1.source == t_id))
-                    |> Enum.map(& &1.target)
-                    |> MapSet.new()
+                    out_places =
+                      arcs
+                      |> Enum.filter(&(&1.source == t_id))
+                      |> Enum.map(& &1.target)
+                      |> MapSet.new()
 
-                  next_marking =
-                    current_marking
-                    |> MapSet.difference(in_places)
-                    |> MapSet.union(out_places)
+                    next_marking =
+                      current_marking
+                      |> MapSet.difference(in_places)
+                      |> MapSet.union(out_places)
 
-                  new_f = MapSet.put(f_acc, t_id)
+                    new_f = MapSet.put(f_acc, t_id)
 
-                  if MapSet.member?(v_acc, next_marking) do
-                    {q_acc, v_acc, new_f}
-                  else
-                    new_q = :queue.in({next_marking, [t_id | trace]}, q_acc)
-                    new_v = MapSet.put(v_acc, next_marking)
-                    {new_q, new_v, new_f}
+                    if MapSet.member?(v_acc, next_marking) do
+                      {q_acc, v_acc, new_f}
+                    else
+                      new_q = :queue.in({next_marking, [t_id | trace]}, q_acc)
+                      new_v = MapSet.put(v_acc, next_marking)
+                      {new_q, new_v, new_f}
+                    end
                   end
-                end)
+                )
 
               loop_explore(
                 new_queue,
