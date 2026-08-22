@@ -90,6 +90,14 @@ defmodule Ex4pmEngine.POWLTest do
     assert language == [["A", "B"], ["C"]]
   end
 
+  test "explicit empty directed choice graph is refused rather than normalized to XOR" do
+    a = POWL.activity("a", "A")
+    b = POWL.activity("b", "B")
+    graph = POWL.choice_graph("g", [a, b], [])
+
+    assert {:error, %Refusal{code: :invalid_choice_graph}} = POWL.new(graph)
+  end
+
   test "order-preserving shuffle matches the POWL 2.0 paper example at event level" do
     a = POWL.activity("a", "a")
     b = POWL.activity("b", "b")
