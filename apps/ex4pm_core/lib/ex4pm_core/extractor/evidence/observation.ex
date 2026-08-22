@@ -7,6 +7,8 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Evidence.Observation do
   @standings [:unknown, :partial_alive, :alive, :blocked, :build_broken, :unsupported]
 
   def new(extractor, capability, source_digest, standing, metadata \\ %{})
+
+  def new(extractor, capability, source_digest, standing, metadata)
       when is_atom(extractor) and is_atom(capability) and is_binary(source_digest) and is_map(metadata) do
     if standing in @standings do
       {:ok,
