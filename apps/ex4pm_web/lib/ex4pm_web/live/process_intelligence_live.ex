@@ -360,6 +360,58 @@ defmodule Ex4pmWeb.ProcessIntelligenceLive do
               </div>
             </div>
           </div>
+
+          <!-- Formal Process Science & Aalst-Daniel Engine Verification -->
+          <div class="bg-[#121829] border border-gray-800 rounded-xl overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-gray-800 flex items-center justify-between bg-[#151c30]">
+              <h2 class="text-sm font-bold uppercase tracking-wider text-emerald-300 flex items-center gap-2 font-mono">
+                <span>🛡️ Aalst-Daniel Formal Verification Engines</span>
+                <span class="text-xs text-emerald-400 font-normal bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-800">Mathematically Proven</span>
+              </h2>
+            </div>
+            <div class="p-5 grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">A* Optimal Alignment</div>
+                <div class="text-emerald-400 font-bold">Sync / Model / Log</div>
+                <div class="text-[10px] text-gray-500">Min cost state-space search</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">POWL 2.0 Trees</div>
+                <div class="text-cyan-400 font-bold">Sound-by-Construction</div>
+                <div class="text-[10px] text-gray-500">×, ⊕, ↺, ≤ operator trees</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">1-Safe Soundness</div>
+                <div class="text-indigo-400 font-bold">Zero Deadlocks</div>
+                <div class="text-[10px] text-gray-500">Option to complete verified</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">ETC Precision</div>
+                <div class="text-amber-400 font-bold">Escaping-Edge Check</div>
+                <div class="text-[10px] text-gray-500">Over-generalization test</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">DAPN Data Guards</div>
+                <div class="text-pink-400 font-bold">First-Order Guards</div>
+                <div class="text-[10px] text-gray-500">vmap attribute satisfaction</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">LTLf Model Checker</div>
+                <div class="text-yellow-400 font-bold">Trace Temporal Logic</div>
+                <div class="text-[10px] text-gray-500">Response / Precedence rules</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">Choreography Net</div>
+                <div class="text-rose-400 font-bold">Communicating Sound</div>
+                <div class="text-[10px] text-gray-500">Zero orphan messages</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">State Machine Ash</div>
+                <div class="text-teal-400 font-bold">Incidents & Orders</div>
+                <div class="text-[10px] text-gray-500">Typed transition lifecycles</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Right Col: Live Event Feed & Refusals -->
