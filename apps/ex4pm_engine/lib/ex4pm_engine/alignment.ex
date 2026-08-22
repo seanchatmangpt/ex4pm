@@ -35,8 +35,21 @@ defmodule Ex4pmEngine.Alignment do
       :trace_length,
       :model_moves_count,
       :log_moves_count,
-      :sync_moves_count
+      :sync_moves_count,
+      cost: 0.0,
+      exact_match?: false
     ]
+  end
+
+  @doc """
+  Direct alignment API for trace and Petri Net / Workflow Net.
+  Returns `%Result{}` with `.cost` and `.exact_match?`.
+  """
+  def align(trace, net_spec, opts \\ []) do
+    case align_trace(trace, net_spec, opts) do
+      {:ok, result} -> result
+      error -> error
+    end
   end
 
   @doc """
@@ -73,11 +86,14 @@ defmodule Ex4pmEngine.Alignment do
 
         worst_case_cost = trace_len * 1.0 + max(1, map_size(transitions) * 0.5)
         fitness = max(0.0, Float.round(1.0 - cost / worst_case_cost, 4))
+        rounded_cost = Float.round(cost, 2)
 
         {:ok,
          %Result{
            moves: reversed_moves,
-           total_cost: Float.round(cost, 2),
+           total_cost: rounded_cost,
+           cost: rounded_cost,
+           exact_match?: cost == 0.0,
            fitness: fitness,
            trace_length: trace_len,
            sync_moves_count: sync_count,
