@@ -87,4 +87,108 @@ defmodule Ex4pm.DomainTest do
     assert {:ok, projected_refusal} = Ex4pm.Domain.Projector.refusal(refusal)
     assert projected_refusal.code == :no_authority
   end
+
+  test "creates and queries all 10 Cognition and AutoSystems Ash resources" do
+    # 1. CognitionBreed
+    assert {:ok, breed} =
+             Ash.create(Ex4pmDomain.CognitionBreed, %{
+               name: "bayesian_network",
+               category: :probabilistic,
+               formalism: "DAG directed graphical model with CPTs",
+               complexity: "NP-hard exact, polynomial poly-trees"
+             })
+
+    assert breed.name == "bayesian_network"
+    assert breed.category == :probabilistic
+
+    # 2. CognitionSession
+    assert {:ok, session} =
+             Ash.create(Ex4pmDomain.CognitionSession, %{
+               agent_id: "agent-cognition-1",
+               run_id: "run-cog-1",
+               working_memory: %{"context" => "flight_dispatch"},
+               goals: ["satisfy_invariants"]
+             })
+
+    assert session.agent_id == "agent-cognition-1"
+    assert session.status == :active
+
+    # 3. BayesianNetwork
+    assert {:ok, bn} =
+             Ash.create(Ex4pmDomain.BayesianNetwork, %{
+               name: "dispatch_risk_bn",
+               nodes: ["Weather", "Traffic", "Delay"],
+               cpts: %{"Weather" => %{"clear" => 0.8, "storm" => 0.2}}
+             })
+
+    assert bn.name == "dispatch_risk_bn"
+
+    # 4. PrologKb
+    assert {:ok, kb} =
+             Ash.create(Ex4pmDomain.PrologKb, %{
+               name: "compliance_kb",
+               clause_count: 5
+             })
+
+    assert kb.name == "compliance_kb"
+
+    # 5. Plan
+    assert {:ok, plan} =
+             Ash.create(Ex4pmDomain.Plan, %{
+               goal: ["receipt_minted"],
+               initial_state: ["unverified"],
+               steps: ["admit", "construct", "brce", "do"]
+             })
+
+    assert length(plan.steps) == 4
+
+    # 6. BlackboardHypothesis
+    assert {:ok, hyp} =
+             Ash.create(Ex4pmDomain.BlackboardHypothesis, %{
+               level: "process",
+               content: "Deadlock detected in branch B",
+               confidence: 0.95,
+               session_id: session.id
+             })
+
+    assert hyp.confidence == 0.95
+
+    # 7. TemporalModel
+    assert {:ok, tm} =
+             Ash.create(Ex4pmDomain.TemporalModel, %{
+               name: "sla_intervals",
+               ltl_formulas: ["response(admit, receipt)"]
+             })
+
+    assert tm.name == "sla_intervals"
+
+    # 8. ParetoFrontier
+    assert {:ok, pf} =
+             Ash.create(Ex4pmDomain.ParetoFrontier, %{
+               name: "process_variant_tradeoffs",
+               candidates_count: 10,
+               frontier_size: 3
+             })
+
+    assert pf.frontier_size == 3
+
+    # 9. InterviewSession
+    assert {:ok, is} =
+             Ash.create(Ex4pmDomain.InterviewSession, %{
+               agent_id: "agent-candidate-42",
+               ambiguity_score: 0.25
+             })
+
+    assert is.ambiguity_score == 0.25
+
+    # 10. AdversarialAudit
+    assert {:ok, audit} =
+             Ash.create(Ex4pmDomain.AdversarialAudit, %{
+               target_id: "batch-101",
+               passed?: true,
+               violations_count: 0
+             })
+
+    assert audit.passed? == true
+  end
 end

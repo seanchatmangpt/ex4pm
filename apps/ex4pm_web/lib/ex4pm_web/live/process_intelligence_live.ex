@@ -308,6 +308,58 @@ defmodule Ex4pmWeb.ProcessIntelligenceLive do
               </div>
             <% end %>
           </div>
+
+          <!-- Cognition & AutoSystems (wasm4pm Parity) -->
+          <div class="bg-[#121829] border border-gray-800 rounded-xl overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-gray-800 flex items-center justify-between bg-[#151c30]">
+              <h2 class="text-sm font-bold uppercase tracking-wider text-purple-300 flex items-center gap-2 font-mono">
+                <span>🧠 Cognition & AutoSystems Breeds</span>
+                <span class="text-xs text-purple-400 font-normal bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800">60+ Breeds Active</span>
+              </h2>
+            </div>
+            <div class="p-5 grid grid-cols-2 md:grid-cols-4 gap-3 font-mono text-xs">
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">Bayesian Inference</div>
+                <div class="text-emerald-400 font-bold">Exact & Belief Prop</div>
+                <div class="text-[10px] text-gray-500">P(Q|E) variable elimination</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">Prolog Resolution</div>
+                <div class="text-cyan-400 font-bold">Horn-Clause Unify</div>
+                <div class="text-[10px] text-gray-500">Robinson first-order logic</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">STRIPS / HTN Plan</div>
+                <div class="text-indigo-400 font-bold">Means-Ends Search</div>
+                <div class="text-[10px] text-gray-500">Precondition/Add/Del state</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">Temporal & LTL</div>
+                <div class="text-amber-400 font-bold">Allen 13 Relations</div>
+                <div class="text-[10px] text-gray-500">Trace formula model checking</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">Pareto Dominance</div>
+                <div class="text-pink-400 font-bold">Multi-Objective</div>
+                <div class="text-[10px] text-gray-500">Fitness vs Cost frontiers</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">AutoSystems Cost</div>
+                <div class="text-yellow-400 font-bold">f(delay, risk, cu)</div>
+                <div class="text-[10px] text-gray-500">Replacement cost evaluator</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">Adversarial Audits</div>
+                <div class="text-rose-400 font-bold">8 False-Pass Tests</div>
+                <div class="text-[10px] text-gray-500">Anti-spoofing integrity</div>
+              </div>
+              <div class="bg-[#0e1322] border border-gray-800 p-3 rounded space-y-1">
+                <div class="text-[11px] text-gray-400 font-semibold">InterviewAssist</div>
+                <div class="text-teal-400 font-bold">Active Inquiry</div>
+                <div class="text-[10px] text-gray-500">Agent qualification gates</div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Right Col: Live Event Feed & Refusals -->

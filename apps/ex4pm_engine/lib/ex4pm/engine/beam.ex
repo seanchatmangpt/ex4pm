@@ -10,12 +10,17 @@ defmodule Ex4pm.Engine.Beam do
   def id, do: :beam
 
   @impl true
-  def supports?(operation, _opts), do: operation in [:discover, :conform, :simulate, :optimize]
+  def supports?(operation, _opts),
+    do: operation in [:discover, :conform, :simulate, :optimize, :cognition]
 
   @impl true
   def available?(_opts), do: true
 
   @impl true
+  def execute(:cognition, {action, subject}, opts) when is_atom(action) do
+    Ex4pm.Engine.Cognition.execute(action, subject, opts)
+  end
+
   def execute(:discover, %EventLog{} = log, opts) do
     algorithm = Keyword.get(opts, :algorithm, :dfg)
 

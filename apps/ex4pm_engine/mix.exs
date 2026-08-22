@@ -28,7 +28,8 @@ defmodule Ex4pmEngine.MixProject do
       {:ex4pm_evidence, in_umbrella: true},
       {:jason, "~> 1.4.5"},
       {:wasmex, "~> 0.14"},
-      {:explorer, "~> 0.12"}
+      {:explorer, "~> 0.12"},
+      {:reactor, "~> 1.0"}
     ]
   end
 end

@@ -96,8 +96,17 @@ defmodule Ex4pm.Engine.OnlineMiner do
     {:reply, :ok, new_state}
   end
 
+  def handle_call({:ingest, %{} = map}, _from, state) do
+    event = to_event_struct(map)
+    new_state = process_event(event, state)
+    maybe_notify(new_state, :event, event)
+    {:reply, :ok, new_state}
+  end
+
   def handle_call({:ingest, events}, _from, state) when is_list(events) do
-    new_state = Enum.reduce(events, state, &process_event/2)
+    new_state =
+      Enum.reduce(events, state, fn ev, acc -> process_event(to_event_struct(ev), acc) end)
+
     maybe_notify(new_state, :batch, events)
     {:reply, {:ok, length(events)}, new_state}
   end
@@ -423,4 +432,21 @@ defmodule Ex4pm.Engine.OnlineMiner do
   end
 
   defp maybe_notify(_state, _type, _payload), do: :ok
+
+  defp to_event_struct(%Event{} = e), do: e
+
+  defp to_event_struct(map) when is_map(map) do
+    %Event{
+      id: Map.get(map, :id) || Map.get(map, "id") || "ev_#{System.unique_integer([:positive])}",
+      activity: Map.get(map, :activity) || Map.get(map, "activity") || "unknown",
+      timestamp:
+        Map.get(map, :timestamp) || Map.get(map, "timestamp") ||
+          DateTime.utc_now() |> DateTime.to_iso8601(),
+      object_ids:
+        Map.get(map, :objects) || Map.get(map, "objects") || Map.get(map, :object_ids) ||
+          Map.get(map, "object_ids") || [],
+      relationships: Map.get(map, :relationships) || Map.get(map, "relationships") || [],
+      attributes: Map.get(map, :attributes) || Map.get(map, "attributes") || %{}
+    }
+  end
 end

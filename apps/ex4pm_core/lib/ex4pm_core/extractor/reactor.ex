@@ -20,10 +20,10 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Reactor do
     activities =
       Enum.map(steps, fn step ->
         step_name = Map.get(step, :name)
-        step_id = to_string(step_name)
+        step_id = step_to_id(step_name)
 
         impl = Map.get(step, :impl)
-        Code.ensure_loaded(impl)
+        if is_atom(impl), do: Code.ensure_loaded(impl)
 
         has_undo? = is_tuple(impl) or (is_atom(impl) and function_exported?(impl, :undo, 3))
 
@@ -32,7 +32,7 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Reactor do
 
         %Activity{
           id: step_id,
-          label: "Step #{step_name}",
+          label: "Step #{inspect(step_name)}",
           lifecycle_states: ["create", "start", "complete", "compensate", "undo"],
           attributes: %{
             impl: inspect(impl),
@@ -40,7 +40,7 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Reactor do
             has_compensate?: has_compensate?,
             max_retries: Map.get(step, :max_retries, 0)
           },
-          metadata: %{reactor: inspect(reactor_module), step_name: step_name}
+          metadata: %{reactor: inspect(reactor_module), step_name: inspect(step_name)}
         }
       end)
       |> Enum.map(&{&1.id, &1})
@@ -49,23 +49,22 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Reactor do
     # Extract DAG dependencies into PartialOrder edges
     edges =
       Enum.flat_map(steps, fn step ->
-        target = to_string(Map.get(step, :name))
+        target = step_to_id(Map.get(step, :name))
 
         # Dependencies from wait_for
         wait_fors =
           Map.get(step, :wait_for, [])
           |> List.wrap()
-          |> Enum.map(&to_string/1)
+          |> Enum.map(&step_to_id/1)
 
         # Dependencies from argument results
         arg_deps =
           Map.get(step, :arguments, [])
           |> List.wrap()
-          |> Enum.flat_map(fn arg ->
-            case Map.get(arg, :source) do
-              {:result, step_name} -> [to_string(step_name)]
-              _ -> []
-            end
+          |> Enum.flat_map(fn
+            %{source: {:result, src}} -> [step_to_id(src)]
+            %{source: %Reactor.Template.Result{name: src}} -> [step_to_id(src)]
+            _ -> []
           end)
 
         (wait_fors ++ arg_deps)
@@ -73,7 +72,7 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Reactor do
         |> Enum.map(fn source -> {source, target} end)
       end)
 
-    node_ids = Enum.map(steps, &to_string(Map.get(&1, :name)))
+    node_ids = Enum.map(steps, &step_to_id(Map.get(&1, :name)))
 
     partial_orders =
       if node_ids != [] do
@@ -101,6 +100,24 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Reactor do
   end
 
   defp extract_steps(reactor_module) do
+    cond do
+      Code.ensure_loaded?(Reactor.Info) and function_exported?(Reactor.Info, :to_struct, 1) ->
+        case apply(Reactor.Info, :to_struct, [reactor_module]) do
+          {:ok, %{steps: s}} when is_list(s) and s != [] ->
+            s
+
+          _ ->
+            extract_steps_fallback(reactor_module)
+        end
+
+      true ->
+        extract_steps_fallback(reactor_module)
+    end
+  rescue
+    _ -> extract_steps_fallback(reactor_module)
+  end
+
+  defp extract_steps_fallback(reactor_module) do
     cond do
       function_exported?(reactor_module, :reactor, 0) ->
         try do
@@ -131,6 +148,12 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Reactor do
         []
     end
   end
+
+  defp step_to_id(name) when is_atom(name) or is_binary(name) or is_number(name),
+    do: to_string(name)
+
+  defp step_to_id(tuple) when is_tuple(tuple), do: inspect(tuple)
+  defp step_to_id(other), do: inspect(other)
 
   defp reactor_name(module) do
     module

@@ -1,28 +1,36 @@
 defmodule Ex4pm.Standing do
-  @moduledoc "Bounded evidence standing shared with wasm4pm semantics."
+  @moduledoc "Standing calculation and ranking semantics."
 
-  @statuses [:unknown, :partial_alive, :alive, :blocked, :build_broken, :unsupported]
+  @rank %{
+    alive: 4,
+    ALIVE: 4,
+    partial_alive: 3,
+    PARTIAL_ALIVE: 3,
+    blocked: 2,
+    BLOCKED: 2,
+    build_broken: 1,
+    BUILD_BROKEN: 1,
+    unsupported: 0,
+    UNSUPPORTED: 0,
+    unknown: 0,
+    UNKNOWN: 0
+  }
 
-  @type t :: :unknown | :partial_alive | :alive | :blocked | :build_broken | :unsupported
-
-  def all, do: @statuses
-  def valid?(status), do: status in @statuses
-
-  def rank(:unknown), do: 0
-  def rank(:unsupported), do: 1
-  def rank(:build_broken), do: 2
-  def rank(:blocked), do: 3
-  def rank(:partial_alive), do: 4
-  def rank(:alive), do: 5
-  def rank(_), do: -1
+  def rank(standing) when is_atom(standing) do
+    Map.get(@rank, standing, 0)
+  end
 
   def min(left, right) do
     if rank(left) <= rank(right), do: left, else: right
   end
+
+  def to_string(standing), do: Atom.to_string(standing) |> String.upcase()
 end
 
 defmodule Ex4pm.Refusal do
-  @moduledoc "Typed admission refusal. Refusal is not runtime failure."
+  @moduledoc """
+  Typed refusal struct representing formal domain refusals in ex4pm.
+  """
 
   @enforce_keys [:code, :message]
   defstruct [:code, :message, :subject, details: %{}]
@@ -30,17 +38,20 @@ defmodule Ex4pm.Refusal do
   @type t :: %__MODULE__{
           code: atom(),
           message: String.t(),
-          subject: term(),
+          subject: term() | nil,
           details: map()
         }
 
   def new(code, message, opts \\ []) do
-    %__MODULE__{
-      code: code,
-      message: message,
-      subject: Keyword.get(opts, :subject),
-      details: Map.new(Keyword.get(opts, :details, %{}))
-    }
+    subject = Keyword.get(opts, :subject)
+    details = Keyword.get(opts, :details, %{})
+    %__MODULE__{code: code, message: message, subject: subject, details: details}
+  end
+
+  def exception(opts) do
+    code = Keyword.get(opts, :code, :refusal)
+    message = Keyword.get(opts, :message, "Operation refused")
+    new(code, message, opts)
   end
 end
 
@@ -48,7 +59,14 @@ defmodule Ex4pm.Subject do
   @moduledoc "Immutable identity carrier for an admitted subject."
 
   @enforce_keys [:kind, :hash]
-  defstruct [:kind, :hash, metadata: %{}]
+  defstruct [:id, :kind, :hash, metadata: %{}]
+
+  @type t :: %__MODULE__{
+          id: String.t() | nil,
+          kind: atom(),
+          hash: String.t(),
+          metadata: map()
+        }
 
   def new(kind, value, metadata \\ %{}) do
     %__MODULE__{kind: kind, hash: Ex4pm.Core.Hash.digest(value), metadata: metadata}
@@ -63,87 +81,66 @@ defmodule Ex4pm.Core.Hash do
   def digest(term, algorithm \\ :sha256)
 
   def digest(term, :sha256) do
-    bytes = :erlang.term_to_binary(canonical(term), [:deterministic])
-    "sha256:" <> Base.encode16(:crypto.hash(:sha256, bytes), case: :lower)
-  end
-
-  def digest(term, {:provider, module, algorithm}) when is_atom(module) do
-    if function_exported?(module, :digest, 2) do
-      case module.digest(canonical(term), algorithm) do
-        {:ok, digest} when is_binary(digest) -> digest
-        digest when is_binary(digest) -> digest
-        other -> {:error, {:invalid_hash_provider_result, other}}
+    binary =
+      cond do
+        is_binary(term) -> term
+        is_map(term) -> :erlang.term_to_binary(canonicalize(term))
+        true -> :erlang.term_to_binary(term)
       end
-    else
-      {:error, {:unsupported_hash_provider, module}}
-    end
+
+    "sha256:" <> (:crypto.hash(:sha256, binary) |> Base.encode16(case: :lower))
   end
 
-  def digest(_term, algorithm), do: {:error, {:unsupported_hash_algorithm, algorithm}}
-
-  def canonical(%_{} = struct) do
-    struct
-    |> Map.from_struct()
-    |> canonical()
+  defp canonicalize(term) when is_struct(term) do
+    term |> Map.from_struct() |> canonicalize()
   end
 
-  def canonical(map) when is_map(map) do
-    map
-    |> Enum.map(fn {key, value} -> {canonical(key), canonical(value)} end)
-    |> Enum.sort_by(fn {key, _value} -> :erlang.term_to_binary(key, [:deterministic]) end)
+  defp canonicalize(map) when is_map(map) do
+    Enum.map(map, fn {k, v} -> {key_to_string(k), canonicalize(v)} end)
+    |> Enum.sort_by(&elem(&1, 0))
   end
 
-  def canonical(list) when is_list(list), do: Enum.map(list, &canonical/1)
+  defp canonicalize(list) when is_list(list) do
+    Enum.map(list, &canonicalize/1)
+  end
 
-  def canonical(tuple) when is_tuple(tuple),
-    do: tuple |> Tuple.to_list() |> Enum.map(&canonical/1) |> List.to_tuple()
+  defp canonicalize(other), do: other
 
-  def canonical(value), do: value
+  defp key_to_string(k) when is_tuple(k),
+    do: :erlang.term_to_binary(k) |> Base.encode16(case: :lower)
+
+  defp key_to_string(k) when is_atom(k) or is_binary(k) or is_number(k), do: to_string(k)
+  defp key_to_string(k), do: inspect(k)
 end
 
 defmodule Ex4pm.Core.Capability do
-  @moduledoc "One admitted capability edge in the DfCM graph."
+  @moduledoc "An engine capability descriptor."
 
   @enforce_keys [:id, :kind, :standing]
   defstruct [:id, :kind, :standing, :reason, evidence: %{}, constraints: %{}]
+
+  @type t :: %__MODULE__{
+          id: String.t() | atom(),
+          kind: atom(),
+          standing: atom(),
+          reason: String.t() | nil,
+          evidence: map(),
+          constraints: map()
+        }
 end
 
-defmodule Ex4pm.Core.CapabilityGraph do
-  @moduledoc "Preserves all lawful candidates before selection."
+defmodule Ex4pm.Claim do
+  @moduledoc "A verified or pending claim in the process intelligence system."
 
-  alias Ex4pm.Core.Capability
+  @enforce_keys [:id, :kind, :standing]
+  defstruct [:id, :kind, :standing, :reason, evidence: %{}, constraints: %{}]
 
-  def new(capabilities \\ []) do
-    capabilities
-    |> Enum.map(fn
-      %Capability{} = capability -> capability
-      map when is_map(map) -> struct!(Capability, map)
-    end)
-    |> Map.new(&{&1.id, &1})
-  end
-
-  def put(graph, %Capability{id: id} = capability), do: Map.put(graph, id, capability)
-  def get(graph, id), do: Map.get(graph, id)
-
-  def candidates(graph, kind) do
-    graph
-    |> Map.values()
-    |> Enum.filter(&(&1.kind == kind))
-    |> Enum.sort_by(fn capability ->
-      {-Ex4pm.Standing.rank(capability.standing), capability.id}
-    end)
-  end
-
-  def best(graph, kind) do
-    case candidates(graph, kind) do
-      [candidate | _] ->
-        {:ok, candidate}
-
-      [] ->
-        {:error,
-         Ex4pm.Refusal.new(:no_candidate, "no lawful capability candidate",
-           details: %{kind: kind}
-         )}
-    end
-  end
+  @type t :: %__MODULE__{
+          id: String.t(),
+          kind: atom(),
+          standing: atom(),
+          reason: String.t() | nil,
+          evidence: map(),
+          constraints: map()
+        }
 end

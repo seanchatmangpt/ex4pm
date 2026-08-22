@@ -3,7 +3,8 @@ defmodule Ex4pmDomain do
   Ash Domain for the OCEL 2.0 Process Intelligence Control Plane.
 
   Exposes resources for agents, agent runs, events, objects, event-object (E2O) relations,
-  object-object (O2O) relations, conformance verification results, refusals, and cryptographic receipts.
+  object-object (O2O) relations, conformance verification results, refusals, cryptographic receipts,
+  and autonomic capability liveness receipts.
   """
 
   use Ash.Domain
@@ -18,5 +19,18 @@ defmodule Ex4pmDomain do
     resource(Ex4pmDomain.ConformanceResult)
     resource(Ex4pmDomain.Refusal)
     resource(Ex4pmDomain.Receipt)
+    resource(Ex4pmDomain.CapabilityReceipt)
+
+    # Cognition & AutoSystems Breeds (wasm4pm parity)
+    resource(Ex4pmDomain.CognitionBreed)
+    resource(Ex4pmDomain.CognitionSession)
+    resource(Ex4pmDomain.BayesianNetwork)
+    resource(Ex4pmDomain.PrologKb)
+    resource(Ex4pmDomain.Plan)
+    resource(Ex4pmDomain.BlackboardHypothesis)
+    resource(Ex4pmDomain.TemporalModel)
+    resource(Ex4pmDomain.ParetoFrontier)
+    resource(Ex4pmDomain.InterviewSession)
+    resource(Ex4pmDomain.AdversarialAudit)
   end
 end

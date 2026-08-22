@@ -24,6 +24,7 @@ defmodule Ex4pmCore.MixProject do
 
   defp deps do
     [
+      {:ash, "~> 3.31"},
       {:sweet_xml, "~> 0.7.5"}
     ]
   end
