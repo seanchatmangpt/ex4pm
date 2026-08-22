@@ -1,11 +1,65 @@
 defmodule Ex4pm.POWL.Task do
-  @moduledoc "A task node in an executable partial-order workflow."
+  @moduledoc """
+  A task atom in the bounded strict-partial-order POWL kernel.
+
+  This type is intentionally smaller than the recursive POWL 2.0 execution
+  representation in `Ex4pmEngine.POWL`: it carries task identity, optional
+  intent, and metadata for the canonical core partial-order relation.
+  """
+
   @enforce_keys [:id]
   defstruct [:id, :label, :intent, metadata: %{}]
 end
 
 defmodule Ex4pm.POWL do
-  @moduledoc "Canonical bounded partial-order workflow model."
+  @moduledoc """
+  Canonical bounded strict-partial-order kernel for POWL.
+
+  For a task set `T`, this module admits a relation `≺ ⊆ T × T` only when it is
+  a **strict partial order**:
+
+      ∀t∈T : ¬(t ≺ t)
+      ∀a,b,c∈T : (a ≺ b ∧ b ≺ c) ⇒ a ≺ c
+
+  Irreflexivity plus transitivity implies asymmetry. Callers may provide a
+  Hasse-style cover relation; `new/3` stores its transitive closure so the
+  resulting `edges` field is the mathematical relation itself, not merely one
+  graph encoding of it.
+
+  This module is the core partial-order primitive. Recursive POWL 2.0 choice
+  graphs, `τ`, language semantics `ℒ`, and WF-net projection are implemented by
+  `Ex4pmEngine.POWL`; they are not duplicated here.
+
+  ## Executable transitivity
+
+      iex> alias Ex4pm.POWL
+      iex> {:ok, model} =
+      ...>   POWL.new(
+      ...>     [%{id: "a"}, %{id: "b"}, %{id: "c"}],
+      ...>     [{"a", "b"}, {"b", "c"}]
+      ...>   )
+      iex> POWL.precedes?(model, "a", "c")
+      true
+      iex> {"a", "c"} in model.edges
+      true
+      iex> POWL.layers(model)
+      [["a"], ["b"], ["c"]]
+
+  With no ordering relation, tasks are concurrent at this kernel boundary:
+
+      iex> {:ok, model} = Ex4pm.POWL.new([%{id: "a"}, %{id: "b"}], [])
+      iex> Ex4pm.POWL.layers(model)
+      [["a", "b"]]
+
+  ## References
+
+  The strict-partial-order interpretation follows H. Kourani and S. J. van
+  Zelst, “POWL: Partially Ordered Workflow Language”, BPM 2023,
+  DOI 10.1007/978-3-031-41620-0_6, and the generalized POWL 2.0 definition in
+  H. Kourani, G. Park, and W. M. P. van der Aalst, “A discovery technique for
+  expressive yet sound process models”, Process Science 3, 14 (2026),
+  DOI 10.1007/s44311-026-00046-8.
+  """
 
   alias Ex4pm.POWL.Task
   alias Ex4pm.Refusal
@@ -13,14 +67,43 @@ defmodule Ex4pm.POWL do
   @enforce_keys [:tasks, :edges]
   defstruct [:tasks, :edges, metadata: %{}]
 
+  @type t :: %__MODULE__{
+          tasks: %{optional(String.t()) => Task.t()},
+          edges: [{String.t(), String.t()}],
+          metadata: map()
+        }
+
+  @doc """
+  Constructs a bounded strict partial order.
+
+  Input edges may be the full relation or only a cover relation. The admitted
+  model always stores the deterministic transitive closure.
+  """
   def new(tasks, edges, metadata \\ %{}) do
     with {:ok, task_map} <- normalize_tasks(tasks),
          {:ok, normalized_edges} <- normalize_edges(edges, task_map),
          :ok <- acyclic?(task_map, normalized_edges) do
-      {:ok, %__MODULE__{tasks: task_map, edges: normalized_edges, metadata: metadata}}
+      relation = transitive_closure(normalized_edges)
+      {:ok, %__MODULE__{tasks: task_map, edges: relation, metadata: metadata}}
     end
   end
 
+  @doc """
+  Returns whether `left ≺ right` belongs to the admitted strict partial order.
+
+      iex> {:ok, m} = Ex4pm.POWL.new([%{id: :a}, %{id: :b}], [a: :b])
+      iex> Ex4pm.POWL.precedes?(m, :a, :b)
+      true
+  """
+  def precedes?(%__MODULE__{edges: edges}, left, right) do
+    {to_string(left), to_string(right)} in edges
+  end
+
+  @doc """
+  Returns deterministic topological strata of the strict partial order.
+
+  Tasks within one returned layer are pairwise unordered at that frontier.
+  """
   def layers(%__MODULE__{tasks: tasks, edges: edges}) do
     indegree =
       Enum.reduce(edges, Map.new(tasks, fn {id, _} -> {id, 0} end), fn {_from, to}, acc ->
@@ -99,7 +182,7 @@ defmodule Ex4pm.POWL do
       from == to ->
         {:halt,
          {:error,
-          Refusal.new(:self_cycle, "POWL edge cannot self-reference", details: %{task: from})}}
+          Refusal.new(:self_cycle, "POWL relation cannot self-reference", details: %{task: from})}}
 
       not Map.has_key?(tasks, from) ->
         {:halt,
@@ -115,6 +198,26 @@ defmodule Ex4pm.POWL do
     end
   end
 
+  defp transitive_closure(edges) do
+    edges
+    |> MapSet.new()
+    |> close_relation()
+    |> MapSet.to_list()
+    |> Enum.sort()
+  end
+
+  defp close_relation(relation) do
+    inferred =
+      for {a, b} <- relation,
+          {c, d} <- relation,
+          b == c,
+          into: MapSet.new(),
+          do: {a, d}
+
+    next = MapSet.union(relation, inferred)
+    if MapSet.equal?(next, relation), do: relation, else: close_relation(next)
+  end
+
   defp acyclic?(tasks, edges) do
     indegree =
       Enum.reduce(edges, Map.new(tasks, fn {id, _} -> {id, 0} end), fn {_from, to}, acc ->
@@ -125,7 +228,7 @@ defmodule Ex4pm.POWL do
 
     case consume_acyclic(indegree, successors, 0) do
       count when count == map_size(tasks) -> :ok
-      _ -> {:error, Refusal.new(:cyclic_powl, "POWL partial-order graph contains a cycle")}
+      _ -> {:error, Refusal.new(:cyclic_powl, "POWL strict partial order contains a cycle")}
     end
   end
 
