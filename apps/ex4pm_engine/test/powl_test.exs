@@ -30,6 +30,17 @@ defmodule Ex4pmEngine.POWLTest do
     refute POWL.accepts?(model, ["Create Order", "Ship Goods", "Approve Order"])
   end
 
+  test "structurally identical terms manufacture the same default subject identity" do
+    left = POWL.sequence("root", [POWL.activity("a", "A"), POWL.activity("b", "B")])
+    right = POWL.sequence("root", [POWL.activity("a", "A"), POWL.activity("b", "B")])
+
+    assert {:ok, left_model} = POWL.new(left)
+    assert {:ok, right_model} = POWL.new(right)
+
+    assert left_model.id == "powl:root"
+    assert left_model.subject.hash == right_model.subject.hash
+  end
+
   test "binary loop is the cyclic POWL 2.0 choice-graph mapping" do
     body = POWL.activity("body", "A")
     redo_node = POWL.activity("redo", "B")
