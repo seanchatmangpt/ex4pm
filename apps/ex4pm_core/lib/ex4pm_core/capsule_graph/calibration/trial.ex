@@ -4,9 +4,18 @@ defmodule Ex4pmCore.CapsuleGraph.Calibration.Trial do
   @enforce_keys [:source_id, :truth, :prediction, :observed_at, :id]
   defstruct [:source_id, :truth, :prediction, :observed_at, :id]
 
+  @type outcome :: :pass | :fail
+  @type t :: %__MODULE__{
+          source_id: String.t(),
+          truth: outcome(),
+          prediction: outcome(),
+          observed_at: DateTime.t(),
+          id: String.t()
+        }
+
   @outcomes [:pass, :fail]
 
-  @spec new(String.t(), atom(), atom(), DateTime.t()) :: {:ok, struct()} | {:error, term()}
+  @spec new(String.t(), atom(), atom(), DateTime.t()) :: {:ok, t()} | {:error, term()}
   def new(source_id, truth, prediction, %DateTime{} = observed_at)
       when is_binary(source_id) and truth in @outcomes and prediction in @outcomes do
     body = {source_id, truth, prediction, DateTime.to_iso8601(observed_at)}
