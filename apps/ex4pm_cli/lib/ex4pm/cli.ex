@@ -1,25 +1,66 @@
 defmodule Ex4pm.CLI do
-  @moduledoc "CLI projection over the canonical ex4pm API."
+  @moduledoc """
+  Human and machine CLI projection over `Ex4pm.Information`.
+
+  `manifest`, `list`, and `describe` are bounded read-only introspection.
+  Every non-trivial command is converted to the versioned information protocol
+  and executed through Reactor.
+  """
+
+  alias Ex4pm.Information
+  alias Ex4pm.Information.Protocol
 
   def main(args) do
     case args do
+      ["manifest"] ->
+        print_json(Information.manifest(), pretty: true)
+
+      ["list"] ->
+        print_json(%{protocol: Information.protocol(), capabilities: Information.list()},
+          pretty: true
+        )
+
+      ["describe", capability] ->
+        describe(capability)
+
+      ["run", capability] ->
+        run(capability, "{}")
+
+      ["run", capability, json] ->
+        run(capability, json)
+
+      ["stdio"] ->
+        stdio()
+
       ["doctor"] ->
-        doctor()
+        execute(%{"capability" => "system.doctor"})
 
       ["contracts"] ->
-        contracts()
+        execute(%{"capability" => "system.contracts"})
 
       ["discover", path] ->
-        discover_json(path, [])
+        execute(%{
+          "capability" => "process.discover_file",
+          "input" => %{"path" => path}
+        })
 
       ["discover", path, object_type] ->
-        discover_json(path, object_type: object_type)
+        execute(%{
+          "capability" => "process.discover_file",
+          "input" => %{"path" => path, "object_type" => object_type}
+        })
 
       ["discover-xes", path] ->
-        discover_xes(path, [])
+        execute(%{
+          "capability" => "process.discover_xes_file",
+          "input" => %{"path" => path}
+        })
 
       ["discover-xes", path, case_object_type] ->
-        discover_xes(path, case_object_type: case_object_type)
+        execute(%{
+          "capability" => "process.discover_xes_file",
+          "input" => %{"path" => path, "case_object_type" => case_object_type}
+        })
 
       ["help"] ->
         help(0)
@@ -32,102 +73,95 @@ defmodule Ex4pm.CLI do
     end
   end
 
-  defp doctor do
-    payload =
-      Ex4pm.capabilities(:discover)
-      |> Enum.map(fn capability ->
-        %{
-          engine: capability.id,
-          standing: capability.standing,
-          reason: capability.reason,
-          constraints: capability.constraints
-        }
-      end)
+  defp describe(capability) do
+    case Information.describe(capability) do
+      {:ok, description} ->
+        print_json(description, pretty: true)
 
-    contract =
-      case Ex4pm.contracts() do
-        {:ok, verified} -> %{standing: verified.standing, hash: verified.contract_hash}
-        {:error, refusal} -> %{standing: :blocked, refusal: inspect(refusal)}
+      {:error, refusal} ->
+        print_json(Protocol.refusal_response(%{"capability" => capability}, refusal), pretty: true)
+    end
+  end
+
+  defp run(capability, source) do
+    with {:ok, bytes} <- request_bytes(source),
+         {:ok, fragment} <- Jason.decode(bytes),
+         true <- is_map(fragment) do
+      fragment
+      |> Map.put("capability", capability)
+      |> execute()
+    else
+      false ->
+        execute(%{
+          "capability" => capability,
+          "input" => %{"invalid_fragment" => "run request must be a JSON object"}
+        })
+
+      {:error, reason} ->
+        print_json(
+          Protocol.error_response(%{"capability" => capability}, {:cli_request_decode_failed, reason}),
+          pretty: true
+        )
+    end
+  end
+
+  defp execute(request) do
+    request =
+      request
+      |> Map.put_new("protocol", Information.protocol())
+      |> Map.put_new("version", Information.release())
+
+    case Information.execute(request) do
+      {:ok, response} -> print_json(response, pretty: true)
+    end
+  end
+
+  defp stdio do
+    IO.stream(:stdio, :line)
+    |> Enum.each(fn line ->
+      if String.trim(line) != "" do
+        case Information.dispatch_json(line) do
+          {:ok, encoded} -> IO.puts(encoded)
+        end
       end
+    end)
+  end
+
+  defp request_bytes("-"), do: {:ok, IO.read(:stdio, :eof)}
+  defp request_bytes(json), do: {:ok, json}
+
+  defp print_json(value, opts) do
+    pretty? = Keyword.get(opts, :pretty, false)
 
     IO.puts(
-      Jason.encode!(%{operation: :discover, candidates: payload, contracts: contract},
-        pretty: true
+      Jason.encode!(Protocol.json_safe(value),
+        pretty: pretty?
       )
     )
   end
-
-  defp contracts do
-    case Ex4pm.contracts() do
-      {:ok, contract} -> IO.puts(Jason.encode!(json_safe(contract), pretty: true))
-      {:error, reason} -> fail("ex4pm contracts refused/failed", reason)
-    end
-  end
-
-  defp discover_json(path, opts) do
-    with {:ok, bytes} <- File.read(path),
-         {:ok, raw} <- Jason.decode(bytes),
-         {:ok, run} <- Ex4pm.discover(raw, opts) do
-      print_run(run)
-    else
-      {:error, reason} -> fail("ex4pm discover refused/failed", reason)
-    end
-  end
-
-  defp discover_xes(path, opts) do
-    with {:ok, bytes} <- File.read(path),
-         {:ok, log} <- Ex4pm.ingest_xes(bytes, opts),
-         {:ok, run} <-
-           Ex4pm.discover(log, object_type: Keyword.get(opts, :case_object_type, "Case")) do
-      print_run(run)
-    else
-      {:error, reason} -> fail("ex4pm discover-xes refused/failed", reason)
-    end
-  end
-
-  defp print_run(run) do
-    IO.puts(
-      Jason.encode!(
-        %{
-          standing: run.standing,
-          receipt: run.receipt.hash,
-          model: json_safe(run.value)
-        },
-        pretty: true
-      )
-    )
-  end
-
-  defp fail(prefix, reason) do
-    IO.puts(:stderr, "#{prefix}: #{inspect(reason)}")
-    System.halt(1)
-  end
-
-  defp json_safe(map) when is_map(map) do
-    Map.new(map, fn {key, value} -> {inspect_key(key), json_safe(value)} end)
-  end
-
-  defp json_safe(list) when is_list(list), do: Enum.map(list, &json_safe/1)
-
-  defp json_safe(tuple) when is_tuple(tuple),
-    do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
-
-  defp json_safe(value) when is_atom(value), do: Atom.to_string(value)
-  defp json_safe(value), do: value
-
-  defp inspect_key(key) when is_binary(key), do: key
-  defp inspect_key(key) when is_atom(key), do: Atom.to_string(key)
-  defp inspect_key(key), do: inspect(key)
 
   defp help(status) do
     IO.puts("""
-    ex4pm - BEAM-native process intelligence
+    ex4pm - Reactor-first BEAM process intelligence
 
-    usage:
+    direct introspection (no execution receipt):
+      ex4pm manifest
+      ex4pm list
+      ex4pm describe <capability>
+
+    Reactor information plane:
+      ex4pm run <capability> '<request-fragment-json>'
+      ex4pm run <capability> -
+      ex4pm stdio
+
+    compatibility projections (also Reactor-backed):
       ex4pm doctor
       ex4pm contracts
       ex4pm discover <ocel-v2.json> [object-type]
       ex4pm discover-xes <log.xes> [case-object-type]
+
+    protocol:
+      #{Information.protocol()} release #{Information.release()}
     """)
 
     if status != 0, do: System.halt(status)
