@@ -16,6 +16,7 @@ jobs:
     env:
       MIX_ENV: test
       EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EX4PM_PLAN_SHA: e5da34c8b42089f1ebb1fd2306d95f0c4986f8c3
     steps:
       - uses: actions/checkout@v4
         with:
@@ -77,6 +78,91 @@ jobs:
             mix.exs
             .formatter.exs
           if-no-files-found: error
+
+      - name: Checkout exact ex4pm-plan source
+        uses: actions/checkout@v4
+        with:
+          repository: seanchatmangpt/ex4pm-plan
+          ref: ${{ env.EX4PM_PLAN_SHA }}
+          path: .ci/ex4pm-plan
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Verify exact planner source identity
+        run: |
+          actual="$(git -C .ci/ex4pm-plan rev-parse HEAD)"
+          printf 'planner_admitted=%s\nplanner_observed=%s\n' "$EX4PM_PLAN_SHA" "$actual"
+          test "$actual" = "$EX4PM_PLAN_SHA"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install lean planner build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libboost-dev
+          python -m pip install --upgrade pip
+          python -m pip install "cmake>=3.26,<4" ninja build pytest
+
+      - name: Build and test exact planner source
+        run: |
+          python -m pip install -e .ci/ex4pm-plan
+          pytest -q .ci/ex4pm-plan/tests/ex4pm_plan
+          ex4pm-plan capabilities
+
+      - name: Build exact planner OCI capsule
+        run: docker build -t "ex4pm-plan:${EX4PM_PLAN_SHA}" .ci/ex4pm-plan
+
+      - name: Execute exact planner capsule
+        run: |
+          cat > /tmp/ex4pm-plan-request.json <<'JSON'
+          {"solver":"astar","problem":{"type":"deterministic_graph","initial":"A","goals":["G"],"edges":[{"from":"A","to":"G","action":"expensive","cost":5},{"from":"A","to":"B","action":"to_b","cost":1},{"from":"B","to":"G","action":"to_g","cost":1}]}}
+          JSON
+          docker run --rm --entrypoint ex4pm-plan "ex4pm-plan:${EX4PM_PLAN_SHA}" solve \
+            < /tmp/ex4pm-plan-request.json \
+            > /tmp/ex4pm-plan-result.json
+          cat /tmp/ex4pm-plan-result.json
+          docker image inspect --format='{{.Id}}' "ex4pm-plan:${EX4PM_PLAN_SHA}" > /tmp/ex4pm-plan-image-digest
+          python - <<'PY'
+          import json
+          result = json.load(open('/tmp/ex4pm-plan-result.json'))
+          assert result['standing'] == 'ALIVE'
+          assert result['result']['solved'] is True
+          assert result['result']['total_cost'] == 2.0
+          assert result['evidence']['replay_verified'] is True
+          PY
+
+      - name: Admit exact planner result through ex4pm and replay receipt
+        run: |
+          export EX4PM_PLAN_IMAGE_DIGEST="$(cat /tmp/ex4pm-plan-image-digest)"
+          mix run -e '
+            request = Jason.decode!(File.read!("/tmp/ex4pm-plan-request.json"))
+            response = Jason.decode!(File.read!("/tmp/ex4pm-plan-result.json"))
+            problem = %{
+              type: :deterministic_graph,
+              initial: "A",
+              goals: ["G"],
+              edges: [
+                %{from: "A", to: "G", action: "expensive", cost: 5},
+                %{from: "A", to: "B", action: "to_b", cost: 1},
+                %{from: "B", to: "G", action: "to_g", cost: 1}
+              ]
+            }
+            transport = fn generated_request, _opts ->
+              if generated_request != request, do: raise("planner request correspondence mismatch")
+              {:ok, response, %{
+                observed: true,
+                source_sha: Ex4pm.Engine.Ex4pmPlan.source_sha(),
+                image_digest: System.fetch_env!("EX4PM_PLAN_IMAGE_DIGEST")
+              }}
+            end
+            {:ok, run} = Ex4pm.plan(problem, ex4pm_plan_fun: transport)
+            :alive = run.standing
+            2.0 = run.value["total_cost"]
+            {:ok, %{replay: :chain_match}} = Ex4pm.replay(run.receipt.hash)
+            IO.puts("ex4pm-plan exact capsule -> Ex4pm.plan -> receipt replay: ALIVE")
+          '
 
       - name: Upload resolved lockfile
         if: always()
