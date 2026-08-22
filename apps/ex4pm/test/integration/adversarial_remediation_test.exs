@@ -15,7 +15,6 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
   alias Ex4pmEngine.OCPN
   alias Ex4pmEngine.OCPN.SoundnessEngine
   alias Ex4pmEngine.OcelToLatex
-  alias Ex4pmEngine.StochasticProfiler
   alias Ex4pmEngine.QuantumProcess
   alias Ex4pmEngine.ZkOcpn
 
@@ -83,12 +82,22 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
         unique_activities: 136,
         unique_objects: 58,
         shannon_entropy_bits: 4.7764,
-        duration_lognormal_fit: %{mu: 0.3908, sigma: 1.0533, mean_ms: 7.87, p50_ms: 0, p90_ms: 3, p99_ms: 185, max_ms: 6215},
+        duration_lognormal_fit: %{
+          mu: 0.3908,
+          sigma: 1.0533,
+          mean_ms: 7.87,
+          p50_ms: 0,
+          p90_ms: 3,
+          p99_ms: 185,
+          max_ms: 6215
+        },
         top_activities: %{"capability_liveness_receipt.ingest" => 228_447, "org.create" => 33_907},
         stochastic_transition_matrix: %{
           "capability_liveness_receipt.ingest" => %{"capability_liveness_receipt.read" => 0.6231}
         },
-        top_transitions: [{"capability_liveness_receipt.ingest", "capability_liveness_receipt.read", 142_304}],
+        top_transitions: [
+          {"capability_liveness_receipt.ingest", "capability_liveness_receipt.read", 142_304}
+        ],
         variant_pareto: [{"capability_liveness_receipt.ingest", 228_447, 35.3}]
       }
 
@@ -135,6 +144,7 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
     test "QuantumProcess moduledoc contains formalism classification disclaimer" do
       docs = Code.fetch_docs(Ex4pmEngine.QuantumProcess)
       assert {:docs_v1, _, _, _, %{"en" => moduledoc}, _, _} = docs
+
       assert String.contains?(moduledoc, "FORMALISM CLASSIFICATION") or
                String.contains?(moduledoc, "NOT a true quantum circuit"),
              "Expected formalism disclaimer in QuantumProcess moduledoc"
@@ -158,6 +168,7 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
     test "ZkOcpn moduledoc contains R1CS formalism classification disclaimer" do
       docs = Code.fetch_docs(Ex4pmEngine.ZkOcpn)
       assert {:docs_v1, _, _, _, %{"en" => moduledoc}, _, _} = docs
+
       assert String.contains?(moduledoc, "FORMALISM CLASSIFICATION") or
                String.contains?(moduledoc, "does NOT invoke a real zk-SNARK"),
              "Expected formalism disclaimer in ZkOcpn moduledoc"

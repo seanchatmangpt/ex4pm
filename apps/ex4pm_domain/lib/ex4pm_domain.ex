@@ -41,5 +41,7 @@ defmodule Ex4pmDomain do
     resource(Ex4pmDomain.PowlModel)
     resource(Ex4pmDomain.LtlfConstraint)
     resource(Ex4pmDomain.ChoreographyContract)
+    resource(Ex4pmDomain.ProcessIncident)
+    resource(Ex4pmDomain.ChangeOrder)
   end
 end

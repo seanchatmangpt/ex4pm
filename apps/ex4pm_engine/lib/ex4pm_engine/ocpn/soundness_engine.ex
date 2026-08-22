@@ -131,10 +131,12 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
 
     if circular_waits == [] do
       rag_edges_count =
-        Enum.sum(Enum.map(trans_ids, fn t ->
-          MapSet.size(Map.get(trans_consumed, t, MapSet.new())) +
-            MapSet.size(Map.get(trans_produced, t, MapSet.new()))
-        end))
+        Enum.sum(
+          Enum.map(trans_ids, fn t ->
+            MapSet.size(Map.get(trans_consumed, t, MapSet.new())) +
+              MapSet.size(Map.get(trans_produced, t, MapSet.new()))
+          end)
+        )
 
       {:ok,
        %{
