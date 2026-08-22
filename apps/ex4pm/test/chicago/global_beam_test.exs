@@ -14,7 +14,7 @@ defmodule Ex4pm.Chicago.Cluster do
       name: :peer.random_name(:ex4pm_chicago),
       longnames: false,
       peer_down: :continue,
-      args: ['-setcookie', Atom.to_charlist(Node.get_cookie())]
+      args: [~c"-setcookie", Atom.to_charlist(Node.get_cookie())]
     }
 
     {:ok, peer, node} = :peer.start_link(options)
