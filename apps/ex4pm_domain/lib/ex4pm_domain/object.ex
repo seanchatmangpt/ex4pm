@@ -7,23 +7,28 @@ defmodule Ex4pmDomain.Object do
     domain: Ex4pmDomain,
     data_layer: Ash.DataLayer.Ets
 
+  alias Wasm4pmCompat.AshTypes.Ids
+  alias Wasm4pmCompat.AshTypes.Ocel
+
   actions do
     defaults([:read, :destroy])
 
     create :create do
       primary?(true)
-      accept([:id, :type, :attributes])
+      accept([:id, :type, :object_id_num, :ocel_object, :attributes])
     end
 
     update :update do
       primary?(true)
-      accept([:type, :attributes])
+      accept([:type, :object_id_num, :ocel_object, :attributes])
     end
   end
 
   attributes do
     attribute(:id, :string, primary_key?: true, allow_nil?: false, public?: true)
     attribute(:type, :string, allow_nil?: false, public?: true)
+    attribute(:object_id_num, Ids.ObjectId, public?: true)
+    attribute(:ocel_object, Ocel.Object, public?: true)
     attribute(:attributes, :map, default: %{}, public?: true)
   end
 

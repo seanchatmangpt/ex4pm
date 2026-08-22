@@ -7,6 +7,9 @@ defmodule Ex4pmDomain.Event do
     domain: Ex4pmDomain,
     data_layer: Ash.DataLayer.Ets
 
+  alias Wasm4pmCompat.AshTypes.Ids
+  alias Wasm4pmCompat.AshTypes.Ocel
+
   actions do
     defaults([:read, :destroy])
 
@@ -21,13 +24,28 @@ defmodule Ex4pmDomain.Event do
         :run_id,
         :sequence,
         :subject_hash,
+        :event_id_num,
+        :activity_id_num,
+        :ocel_event,
         :attributes
       ])
     end
 
     update :update do
       primary?(true)
-      accept([:activity, :timestamp, :agent_id, :run_id, :sequence, :subject_hash, :attributes])
+
+      accept([
+        :activity,
+        :timestamp,
+        :agent_id,
+        :run_id,
+        :sequence,
+        :subject_hash,
+        :event_id_num,
+        :activity_id_num,
+        :ocel_event,
+        :attributes
+      ])
     end
   end
 
@@ -39,6 +57,9 @@ defmodule Ex4pmDomain.Event do
     attribute(:run_id, :string, public?: true)
     attribute(:sequence, :integer, public?: true)
     attribute(:subject_hash, :string, public?: true)
+    attribute(:event_id_num, Ids.EventId, public?: true)
+    attribute(:activity_id_num, Ids.ActivityId, public?: true)
+    attribute(:ocel_event, Ocel.OcelEvent, public?: true)
     attribute(:attributes, :map, default: %{}, public?: true)
   end
 

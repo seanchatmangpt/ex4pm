@@ -7,6 +7,8 @@ defmodule Ex4pmDomain.AlignmentRecord do
     domain: Ex4pmDomain,
     data_layer: Ash.DataLayer.Ets
 
+  alias Wasm4pmCompat.AshTypes.Conformance
+
   actions do
     defaults([:read, :destroy])
 
@@ -21,13 +23,14 @@ defmodule Ex4pmDomain.AlignmentRecord do
         :sync_moves,
         :log_moves,
         :model_moves,
+        :moves,
         :metadata
       ])
     end
 
     update :update do
       primary?(true)
-      accept([:total_cost, :fitness, :metadata])
+      accept([:total_cost, :fitness, :moves, :metadata])
     end
   end
 
@@ -36,10 +39,11 @@ defmodule Ex4pmDomain.AlignmentRecord do
     attribute(:case_id, :string, allow_nil?: false, public?: true)
     attribute(:trace_length, :integer, default: 0, public?: true)
     attribute(:total_cost, :float, default: 0.0, public?: true)
-    attribute(:fitness, :float, default: 1.0, public?: true)
+    attribute(:fitness, Conformance.Fitness, default: 1.0, public?: true)
     attribute(:sync_moves, :integer, default: 0, public?: true)
     attribute(:log_moves, :integer, default: 0, public?: true)
     attribute(:model_moves, :integer, default: 0, public?: true)
+    attribute(:moves, {:array, :map}, default: [], public?: true)
     attribute(:metadata, :map, default: %{}, public?: true)
   end
 

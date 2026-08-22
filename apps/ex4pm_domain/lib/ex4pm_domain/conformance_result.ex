@@ -7,6 +7,8 @@ defmodule Ex4pmDomain.ConformanceResult do
     domain: Ex4pmDomain,
     data_layer: Ash.DataLayer.Ets
 
+  alias Wasm4pmCompat.AshTypes.Conformance
+
   actions do
     defaults([:read, :destroy])
 
@@ -19,6 +21,8 @@ defmodule Ex4pmDomain.ConformanceResult do
         :run_id,
         :fitness,
         :precision,
+        :f1_score,
+        :verdict,
         :standing,
         :deviations,
         :conformance_vector,
@@ -33,6 +37,8 @@ defmodule Ex4pmDomain.ConformanceResult do
       accept([
         :fitness,
         :precision,
+        :f1_score,
+        :verdict,
         :standing,
         :deviations,
         :conformance_vector,
@@ -47,10 +53,12 @@ defmodule Ex4pmDomain.ConformanceResult do
     attribute(:subject_hash, :string, allow_nil?: false, public?: true)
     attribute(:agent_id, :string, public?: true)
     attribute(:run_id, :string, public?: true)
-    attribute(:fitness, :float, default: 1.0, allow_nil?: false, public?: true)
-    attribute(:precision, :float, default: 1.0, allow_nil?: false, public?: true)
+    attribute(:fitness, Conformance.Fitness, default: 1.0, allow_nil?: false, public?: true)
+    attribute(:precision, Conformance.Precision, default: 1.0, allow_nil?: false, public?: true)
+    attribute(:f1_score, Conformance.F1, public?: true)
+    attribute(:verdict, Conformance.ConformanceVerdict, public?: true)
     attribute(:standing, :atom, default: :alive, allow_nil?: false, public?: true)
-    attribute(:deviations, {:array, :map}, default: [], public?: true)
+    attribute(:deviations, {:array, Conformance.Deviation}, default: [], public?: true)
     attribute(:conformance_vector, :map, default: %{}, public?: true)
     attribute(:evaluated_at, :string, public?: true)
     attribute(:metadata, :map, default: %{}, public?: true)

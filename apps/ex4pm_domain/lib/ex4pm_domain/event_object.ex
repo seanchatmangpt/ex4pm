@@ -7,17 +7,19 @@ defmodule Ex4pmDomain.EventObject do
     domain: Ex4pmDomain,
     data_layer: Ash.DataLayer.Ets
 
+  alias Wasm4pmCompat.AshTypes.Ocel
+
   actions do
     defaults([:read, :destroy])
 
     create :create do
       primary?(true)
-      accept([:event_id, :object_id, :qualifier])
+      accept([:event_id, :object_id, :qualifier, :link_data])
     end
 
     update :update do
       primary?(true)
-      accept([:event_id, :object_id, :qualifier])
+      accept([:event_id, :object_id, :qualifier, :link_data])
     end
   end
 
@@ -26,6 +28,7 @@ defmodule Ex4pmDomain.EventObject do
     attribute(:event_id, :string, allow_nil?: false, public?: true)
     attribute(:object_id, :string, allow_nil?: false, public?: true)
     attribute(:qualifier, :string, default: "involved", public?: true)
+    attribute(:link_data, Ocel.EventObjectLink, public?: true)
   end
 
   relationships do

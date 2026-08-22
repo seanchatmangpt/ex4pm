@@ -7,6 +7,8 @@ defmodule Ex4pmDomain.Receipt do
     domain: Ex4pmDomain,
     data_layer: Ash.DataLayer.Ets
 
+  alias Wasm4pmCompat.AshTypes.Receipt
+
   actions do
     defaults([:read, :destroy])
 
@@ -24,6 +26,10 @@ defmodule Ex4pmDomain.Receipt do
         :standing,
         :agent_id,
         :run_id,
+        :envelope,
+        :receipt_chain,
+        :shape,
+        :replay_hint,
         :started_at,
         :finished_at,
         :metadata
@@ -42,6 +48,10 @@ defmodule Ex4pmDomain.Receipt do
         :standing,
         :agent_id,
         :run_id,
+        :envelope,
+        :receipt_chain,
+        :shape,
+        :replay_hint,
         :finished_at,
         :metadata
       ])
@@ -49,7 +59,8 @@ defmodule Ex4pmDomain.Receipt do
   end
 
   attributes do
-    attribute(:hash, :string, primary_key?: true, allow_nil?: false, public?: true)
+    uuid_primary_key(:id)
+    attribute(:hash, :string, allow_nil?: false, public?: true)
     attribute(:parent_hash, :string, public?: true)
     attribute(:subject_hash, :string, allow_nil?: false, public?: true)
     attribute(:phase, :atom, allow_nil?: false, public?: true)
@@ -59,6 +70,10 @@ defmodule Ex4pmDomain.Receipt do
     attribute(:standing, :atom, public?: true)
     attribute(:agent_id, :string, public?: true)
     attribute(:run_id, :string, public?: true)
+    attribute(:envelope, Receipt.ReceiptEnvelope, public?: true)
+    attribute(:receipt_chain, Receipt.ReceiptChain, public?: true)
+    attribute(:shape, Receipt.ReceiptShape, public?: true)
+    attribute(:replay_hint, Receipt.ReplayHint, public?: true)
     attribute(:started_at, :string, public?: true)
     attribute(:finished_at, :string, public?: true)
     attribute(:metadata, :map, default: %{}, public?: true)

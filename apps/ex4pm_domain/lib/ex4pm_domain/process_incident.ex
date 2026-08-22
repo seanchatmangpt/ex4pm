@@ -47,10 +47,13 @@ defmodule Ex4pmDomain.ProcessIncident do
     end
   end
 
+  alias Wasm4pmCompat.AshTypes.Diagnostic
+
   attributes do
     uuid_primary_key(:id)
     attribute(:title, :string, allow_nil?: false, public?: true)
-    attribute(:severity, :atom, default: :medium, public?: true)
+    attribute(:severity, Diagnostic.DiagnosticSeverity, default: :medium, public?: true)
+    attribute(:diagnostic, Diagnostic.CompatDiagnostic, public?: true)
     attribute(:state, :atom, default: :reported, public?: true)
     attribute(:assigned_team, :string, public?: true)
     attribute(:resolution_notes, :string, public?: true)

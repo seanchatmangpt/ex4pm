@@ -27,7 +27,8 @@ defmodule Ex4pmDomain.MixProject do
       {:ex4pm_core, in_umbrella: true},
       {:ex4pm_evidence, in_umbrella: true},
       {:ex4pm_engine, in_umbrella: true},
-      {:ash, "~> 3.31"}
+      {:ash, "~> 3.31"},
+      {:wasm4pm_compat_ash_types, path: "../../../wasm4pm-compat/bindings/elixir"}
     ]
   end
 end

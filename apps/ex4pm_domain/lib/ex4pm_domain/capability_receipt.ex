@@ -10,6 +10,9 @@ defmodule Ex4pmDomain.CapabilityReceipt do
     domain: Ex4pmDomain,
     data_layer: Ash.DataLayer.Ets
 
+  alias Wasm4pmCompat.AshTypes.Evidence
+  alias Wasm4pmCompat.AshTypes.Receipt
+
   actions do
     defaults([:read, :destroy])
 
@@ -25,6 +28,9 @@ defmodule Ex4pmDomain.CapabilityReceipt do
         :agent_id,
         :run_id,
         :digest,
+        :envelope,
+        :receipt_chain,
+        :evidence,
         :verified_at,
         :metadata
       ])
@@ -38,6 +44,9 @@ defmodule Ex4pmDomain.CapabilityReceipt do
         :exit_code,
         :standing,
         :digest,
+        :envelope,
+        :receipt_chain,
+        :evidence,
         :verified_at,
         :metadata
       ])
@@ -54,6 +63,9 @@ defmodule Ex4pmDomain.CapabilityReceipt do
     attribute(:agent_id, :string, public?: true)
     attribute(:run_id, :string, public?: true)
     attribute(:digest, :string, public?: true)
+    attribute(:envelope, Receipt.ReceiptEnvelope, public?: true)
+    attribute(:receipt_chain, Receipt.ReceiptChain, public?: true)
+    attribute(:evidence, Evidence.Evidence, public?: true)
     attribute(:verified_at, :utc_datetime_usec, public?: true)
     attribute(:metadata, :map, default: %{}, public?: true)
   end
