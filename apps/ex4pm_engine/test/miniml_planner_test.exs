@@ -1,8 +1,6 @@
 defmodule Ex4pm.Engine.MinimlPlannerTest do
   use ExUnit.Case, async: true
 
-  alias Ex4pm.Engine
-
   alias Ex4pmEngine.Cognition.{
     Causal,
     CriticalPath,
