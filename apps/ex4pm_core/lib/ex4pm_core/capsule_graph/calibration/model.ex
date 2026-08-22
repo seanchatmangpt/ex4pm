@@ -6,7 +6,19 @@ defmodule Ex4pmCore.CapsuleGraph.Calibration.Model do
   @enforce_keys [:source_id, :support, :tp, :tn, :fp, :fn, :tpr, :fpr, :brier]
   defstruct [:source_id, :support, :tp, :tn, :fp, :fn, :tpr, :fpr, :brier]
 
-  @spec fit([Trial.t() | struct()]) :: {:ok, struct()} | {:error, term()}
+  @type t :: %__MODULE__{
+          source_id: String.t(),
+          support: non_neg_integer(),
+          tp: non_neg_integer(),
+          tn: non_neg_integer(),
+          fp: non_neg_integer(),
+          fn: non_neg_integer(),
+          tpr: float(),
+          fpr: float(),
+          brier: float()
+        }
+
+  @spec fit([Trial.t()]) :: {:ok, t()} | {:error, term()}
   def fit([]), do: {:error, {:refused, :empty_calibration_history}}
 
   def fit(trials) when is_list(trials) do
