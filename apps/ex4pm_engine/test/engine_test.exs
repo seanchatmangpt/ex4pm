@@ -62,7 +62,15 @@ defmodule Ex4pm.EngineTest do
 
   test "registry preserves candidates without confusing inspection with execution" do
     candidates = Engine.candidates(:discover)
-    assert Enum.map(candidates, & &1.id) == [:beam, :wasm, :nif, :remote]
+
+    assert Enum.map(candidates, & &1.id) == [
+             :beam,
+             :ex4pm_plan,
+             :wasm,
+             :nif,
+             :remote
+           ]
+
     assert Enum.find(candidates, &(&1.id == :beam)).standing == :partial_alive
     assert Enum.find(candidates, &(&1.id == :wasm)).standing == :unsupported
     assert Enum.all?(candidates, fn candidate -> candidate.evidence.executed == false end)
