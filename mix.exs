@@ -10,7 +10,8 @@ defmodule Ex4pm.Umbrella.MixProject do
       aliases: aliases(),
       preferred_cli_env: [
         verify: :test,
-        "test.stress": :test
+        "test.stress": :test,
+        chicago: :test
       ],
       dialyzer: [
         plt_core_path: "priv/plts/core.plt",
@@ -24,7 +25,8 @@ defmodule Ex4pm.Umbrella.MixProject do
     [
       preferred_envs: [
         verify: :test,
-        "test.stress": :test
+        "test.stress": :test,
+        chicago: :test
       ]
     ]
   end
@@ -32,7 +34,8 @@ defmodule Ex4pm.Umbrella.MixProject do
   defp aliases do
     [
       verify: ["format --check-formatted", "compile --warnings-as-errors", "test"],
-      "test.stress": ["test apps/ex4pm_engine/test/benchmarks/stress_benchmark_test.exs"]
+      "test.stress": ["test apps/ex4pm_engine/test/benchmarks/stress_benchmark_test.exs"],
+      chicago: ["do --app ex4pm test --only chicago --seed 0"]
     ]
   end
 end

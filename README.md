@@ -2,7 +2,7 @@
 
 ex4pm is a BEAM-native, evidence-oriented process-intelligence system derived from the semantic laws of wasm4pm rather than from its directory structure.
 
-It keeps process semantics portable while using OTP for supervision, streaming, distributed execution, and continuously operating process intelligence.
+It keeps process semantics portable while using OTP for supervision, streaming, distributed execution, planning, and continuously operating process intelligence.
 
 ## Governing calculus
 
@@ -19,13 +19,14 @@ observation
   -> bounded standing
 ```
 
-`SELECT`, `CONSTRUCT`, and `DO` are intentionally separate. Hooks and planners can manufacture intents, but only the BRCE broker may execute a state-changing callback.
+`SELECT`, `CONSTRUCT`, and `DO` are intentionally separate. Hooks and planners can manufacture intents and candidate plans, but only the BRCE broker may execute a state-changing callback.
 
 ## DfCM engine graph
 
 The engine registry preserves these candidates simultaneously:
 
 - `:beam` - native deterministic Elixir algorithms;
+- `:ex4pm_plan` - pinned ex4pm-plan cloud planning worker protocol;
 - `:wasm` - Wasmex/Wasmtime execution of admitted WebAssembly artifacts;
 - `:nif` - configured native NIF module;
 - `:remote` - configured remote engine callback.
@@ -37,7 +38,7 @@ Selection is capability- and evidence-driven. An unavailable edge yields a typed
 - `ex4pm_contracts` - canonical ontology, SHACL, WIT component contract, and receipt schema;
 - `ex4pm_core` - canonical observation IR, OCEL/XES normalization, POWL, capabilities, hashing;
 - `ex4pm_evidence` - receipts, replay, receipt store, BRCE;
-- `ex4pm_engine` - engine calculus, BEAM discovery/conformance/simulation, WASM/NIF/remote adapters, differential verification;
+- `ex4pm_engine` - engine calculus, BEAM discovery/conformance/simulation, ex4pm-plan, WASM/NIF/remote adapters, differential verification;
 - `ex4pm_runtime` - POWL planning and receipted OTP execution;
 - `ex4pm_stream` - Broadway ingestion with backpressure and acknowledgement;
 - `ex4pm_domain` - Ash/ETS semantic-control-plane projection;
@@ -53,11 +54,33 @@ Selection is capability- and evidence-driven. An unavailable edge yields a typed
 {:ok, report} = Ex4pm.conform(dataset, run.value)
 {:ok, paths} = Ex4pm.simulate(run.value, max_depth: 12, max_paths: 128)
 {:ok, candidates} = Ex4pm.optimize(dataset, run.value)
+{:ok, plan} = Ex4pm.plan(problem, ex4pm_plan_fun: planner_transport)
 {:ok, replayed} = Ex4pm.replay(run.receipt.hash)
 {:ok, contract} = Ex4pm.contracts()
 ```
 
-`operate/3` is different: it requires an explicit authority map and all task callbacks cross the BRCE boundary.
+`plan/2` is an analytical CONSTRUCT path. Its planner transport is explicit, its result is receipted, and an exact ex4pm-plan capsule reaches `ALIVE` only when the transport reports the pinned source identity plus an image digest and the worker reports replay verification. The planner adapter never receives ambient cloud credentials.
+
+`operate/3` is different: it requires an explicit authority map and all task callbacks cross the BRCE boundary. A plan returned by `plan/2` has no ambient DO authority.
+
+## ex4pm-plan bridge
+
+The maintained planning worker is [seanchatmangpt/ex4pm-plan](https://github.com/seanchatmangpt/ex4pm-plan), an 80/20 downstream distribution of Airbus scikit-decide. The ex4pm adapter is pinned to exact worker source `e5da34c8b42089f1ebb1fd2306d95f0c4986f8c3` and protocol `ex4pm-plan/v1`.
+
+The injected `ex4pm_plan_fun` is the cloud-placement boundary. It may launch an OCI worker through Kubernetes, AWS, Azure, GCP, Fly.io, or another scheduler, but provider credentials and launch authority remain outside the planner adapter. The callback returns the worker response and, when available, an observed capsule identity:
+
+```elixir
+fn request, opts ->
+  {:ok, response,
+   %{
+     observed: true,
+     source_sha: Ex4pm.Engine.Ex4pmPlan.source_sha(),
+     image_digest: "sha256:..."
+   }}
+end
+```
+
+A response without observed capsule identity remains `PARTIAL_ALIVE`; a mismatched observed source is refused.
 
 ## Canonical contracts
 
@@ -99,6 +122,6 @@ The CI workflow runs formatting, warnings-as-errors compilation, umbrella tests,
 
 ## Standing
 
-Repository-wide standing begins at `PARTIAL_ALIVE`. Individual BEAM routes can become `ALIVE` after exact execution and replay. Optional WASM/NIF/remote routes remain `UNSUPPORTED`, `BLOCKED`, or `PARTIAL_ALIVE` until their exact runtime subjects execute.
+Repository-wide standing begins at `PARTIAL_ALIVE`. Individual BEAM routes can become `ALIVE` after exact execution and replay. The ex4pm-plan route requires exact worker/capsule identity and replay evidence before `ALIVE`; optional WASM/NIF/remote routes remain `UNSUPPORTED`, `BLOCKED`, or `PARTIAL_ALIVE` until their exact runtime subjects execute.
 
 See `docs/ARCHITECTURE.md` for the full graph and falsifiers.

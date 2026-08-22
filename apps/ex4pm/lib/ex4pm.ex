@@ -19,7 +19,8 @@ defmodule Ex4pm do
   alias Ex4pm.Domain.Projector
   alias Ex4pm.Engine
   alias Ex4pm.Engine.Differential
-  alias Ex4pm.Evidence.{Receipt, Replay, Store}
+  alias Ex4pm.Evidence.{Receipt, Store}
+  alias Ex4pm.Evidence.Replay.Chain
   alias Ex4pm.{EventLog, OCEL, POWL, Refusal, Run, XES}
 
   def contracts, do: Ex4pm.Contracts.verify()
@@ -65,6 +66,23 @@ defmodule Ex4pm do
     end
   end
 
+  def plan(problem, opts \\ [])
+
+  def plan(problem, opts) when is_map(problem) do
+    opts = Keyword.put_new(opts, :engine, :ex4pm_plan)
+
+    with {:ok, engine_result} <- Engine.execute(:plan, problem, opts) do
+      receipted_run(:plan, Ex4pm.Core.Hash.digest(problem), engine_result, opts)
+    end
+  end
+
+  def plan(other, _opts) do
+    {:error,
+     Refusal.new(:invalid_planning_problem, "plan requires an admitted planning problem map",
+       subject: other
+     )}
+  end
+
   def operate(subject, authority, opts \\ [])
 
   def operate(%POWL{} = model, authority, opts) do
@@ -102,7 +120,7 @@ defmodule Ex4pm do
 
     case Store.get(hash, store) do
       {:ok, receipt} ->
-        Replay.verify(receipt)
+        Chain.verify(receipt, store)
 
       :error ->
         {:error,

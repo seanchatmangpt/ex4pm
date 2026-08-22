@@ -11,7 +11,7 @@ defmodule Ex4pm.Runtime do
   alias Ex4pm.Evidence.BRCE
   alias Ex4pm.POWL
   alias Ex4pm.Refusal
-  alias Ex4pm.Runtime.Plan
+  alias Ex4pm.Runtime.{Intent, Plan}
 
   def compile(%POWL{} = model) do
     layers =
@@ -43,7 +43,7 @@ defmodule Ex4pm.Runtime do
 
   def execute(%Plan{} = plan, authority, opts) do
     max_concurrency = Keyword.get(opts, :max_concurrency, System.schedulers_online())
-    task_executor = Keyword.get(opts, :task_executor, &default_task_executor/1)
+    task_executor = Keyword.get(opts, :task_executor, &Intent.execute/1)
     store = Keyword.get(opts, :store, Ex4pm.Evidence.Store)
 
     Enum.reduce_while(plan.layers, {:ok, []}, fn layer, {:ok, completed_layers} ->
@@ -92,23 +92,13 @@ defmodule Ex4pm.Runtime do
   end
 
   defp execute_task(plan, task, authority, task_executor, store) do
-    operation = task_operation(task)
+    operation = Intent.operation(task)
 
     BRCE.execute(plan.subject_hash, operation, authority, fn -> task_executor.(task) end,
       store: store,
       metadata: %{task_id: task.id, task_label: task.label}
     )
   end
-
-  defp task_operation(%{intent: %{operation: operation}}), do: operation
-  defp task_operation(%{intent: %{"operation" => operation}}), do: operation
-  defp task_operation(task), do: {:powl_task, task.id}
-
-  defp default_task_executor(%{intent: %{fun: fun}}) when is_function(fun, 0), do: fun.()
-  defp default_task_executor(%{intent: %{"fun" => fun}}) when is_function(fun, 0), do: fun.()
-
-  defp default_task_executor(task),
-    do: %{task_id: task.id, intent: task.intent, mode: :no_external_effect}
 
   defp normalize_layer_results(results) do
     Enum.reduce_while(results, {:ok, []}, fn
