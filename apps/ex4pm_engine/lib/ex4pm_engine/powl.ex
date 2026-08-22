@@ -317,7 +317,7 @@ defmodule Ex4pmEngine.POWL do
     with {:ok, normalized_nodes} <- normalize_node_map(nodes),
          {:ok, root} <- determine_root(normalized_nodes, Keyword.get(opts, :root)) do
       model = %__MODULE__{
-        id: to_string(Keyword.get(opts, :id, "powl_#{System.unique_integer([:positive])}")),
+        id: to_string(Keyword.get(opts, :id, "powl:#{root}")),
         root: root,
         nodes: normalized_nodes,
         metadata: Keyword.get(opts, :metadata, %{})
