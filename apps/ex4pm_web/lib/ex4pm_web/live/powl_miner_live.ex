@@ -15,9 +15,9 @@ defmodule Ex4pmWeb.PowlMinerLive do
   use Ex4pmWeb, :live_view
 
   alias Ex4pmEngine.IO.{BPMNExporter, EventLogParser, PNMLExporter}
-  alias Ex4pmEngine.Miner.InductiveMinerV2
+  alias Ex4pmEngine.InductiveMiner
   alias Ex4pmEngine.POWL
-  alias Ex4pmEngine.POWL.{ChoiceGraph, Language}
+  alias Ex4pmEngine.POWL.Language
   alias Ex4pmEngine.SoundnessProver
   alias Ex4pmEngine.Visualizer.SVGRenderer
 
@@ -227,7 +227,7 @@ defmodule Ex4pmWeb.PowlMinerLive do
       [{filename, content}] ->
         case EventLogParser.parse(filename, content) do
           {:ok, log} ->
-            case InductiveMinerV2.mine(log, threshold: socket.assigns.threshold) do
+            case InductiveMiner.mine(log, threshold: socket.assigns.threshold) do
               {:ok, powl_model} ->
                 wf_net = POWL.to_workflow_net(powl_model)
                 soundness = SoundnessProver.verify_soundness(wf_net)

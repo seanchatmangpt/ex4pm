@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: MIT
 
-defmodule Ex4pmEngine.Miner.InductiveMinerV2Test do
+defmodule Ex4pmEngine.InductiveMinerTest do
   use ExUnit.Case, async: true
 
-  alias Ex4pmEngine.Miner.InductiveMinerV2
+  alias Ex4pmEngine.InductiveMiner
   alias Ex4pmEngine.POWL.{ChoiceGraph, Language}
   alias Ex4pmEngine.SoundnessProver
 
@@ -20,7 +20,7 @@ defmodule Ex4pmEngine.Miner.InductiveMinerV2Test do
         ["CheckCredit", "RegularShip", "Deliver"]
       ]
 
-      assert {:ok, model} = InductiveMinerV2.mine(log)
+      assert {:ok, model} = InductiveMiner.mine(log)
 
       # 1. Theorem 1 Fitness Guarantee: Every trace in log must be in L(model)
       model_lang = Language.evaluate(model)
@@ -41,10 +41,8 @@ defmodule Ex4pmEngine.Miner.InductiveMinerV2Test do
       dfg = MapSet.new([{"a", "b"}, {"b", "a"}, {"b", "c"}, {"c", "d"}])
       sigma_l = ["a", "b", "c", "d"]
 
-      parts = InductiveMinerV2.mine_dg(dfg, sigma_l)
+      parts = InductiveMiner.mine_dg(dfg, sigma_l)
 
-      # a and b are mutually reachable -> merged into {a, b}
-      # c is reachable from b, d from c -> separate parts
       assert length(parts) == 3
       assert MapSet.new(["a", "b"]) in parts
       assert MapSet.new(["c"]) in parts

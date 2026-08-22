@@ -2,26 +2,27 @@
 #
 # SPDX-License-Identifier: MIT
 
-defmodule Ex4pmEngine.Miner.InductiveMinerV2 do
+defmodule Ex4pmEngine.InductiveMiner do
   @moduledoc """
-  POWL 2.0 Inductive Miner ($PM^\\times$) — Exact Mathematical Realization:
+  Canonical POWL 2.0 Inductive Miner ($PM^\\times$) — Exact Mathematical Realization:
   - Algorithm 1 `MineDG` [BPM25, p. 11]
   - Definition 4 & 5 Valid Choice Graph Cut [BPM25, p. 10]
   - Theorem 1 Fitness Guarantee [BPM25, p. 13]
 
-  ## Algorithmic Workflow
+  ## Mathematical Formalism
 
-  Given an event log $L \\in \\mathcal{B}(\\Sigma^*)$:
+  Given an event log $L \\in \\mathcal{B}(\\Sigma^*)$ over alphabet $\\Sigma_L$:
   1. Base Cases:
      - If $\\Sigma_L = \\{a\\}$ (single activity), return `activity(a)`.
      - If $L = [\\langle\\rangle^n]$ (empty traces), return `silent()`.
-  2. Cut Detection (in priority order):
-     - Concurrent Cut (Exclusive / Partial Order): Partition $\\Sigma_L$ into independent components.
-     - Sequence Cut: Linear sequence partition.
-     - Loop Cut: Binary $\\circlearrowleft$ do/redo partition.
-     - **Choice Graph Cut ($PM^\\times$, Algorithm 1)**: Partition $\\Sigma_L$ into candidate parts $A = \\{A_1, \\dots, A_n\\}$ via DFG mutual reachability.
-  3. Recursive Projection: Project log onto each part $L_i = \\text{proj}(L, A_i)$ (Def. 6), discover $\\psi_i$, and substitute into choice graph $G$.
-  4. Fall-Through: Flower model / silent leaf if no cut detected.
+  2. Choice Graph Cut ($PM^\\times$, Algorithm 1):
+     - Partition $\\Sigma_L$ into candidate parts $A = \\{A_1, \\dots, A_n\\}$ by merging mutually reachable DFG activities ($a_1 \\mapsto^+ a_2 \\wedge a_2 \\mapsto^+ a_1 \\implies A_{a_1} = A_{a_2}$).
+     - Construct choice graph edges $E \\subseteq (A \\cup \\{▷, □\\}) \\times (A \\cup \\{▷, □\\})$ satisfying Definition 5.
+  3. Recursive Projection:
+     - For each part $A_i$, project sub-log $L_i = \\text{proj}(L, A_i) = \\{\\sigma{\\upharpoonright}_{A_i} \\mid \\sigma \\in L \\wedge \\sigma{\\upharpoonright}_{A_i} \\neq \\langle\\rangle\\}$.
+     - Recursively discover sub-model $\\psi_i = PM^\\times(L_i)$ and substitute into choice graph $G$.
+  4. Fall-Through:
+     - Compute minimal poset over DFG if no structural cut exists.
   """
 
   alias Ex4pmEngine.POWL
@@ -72,13 +73,6 @@ defmodule Ex4pmEngine.Miner.InductiveMinerV2 do
             fall_through(log, sigma_l)
         end
     end
-  end
-
-  defp fall_through(log, sigma_l) do
-    dfg = compute_dfg(log)
-    poset = compute_poset(dfg, sigma_l)
-    leaf_nodes = Enum.map(sigma_l, fn a -> POWL.activity(a, a) end)
-    {:ok, POWL.partial_order("po_fallthrough", leaf_nodes, poset)}
   end
 
   @doc """
@@ -186,6 +180,13 @@ defmodule Ex4pmEngine.Miner.InductiveMinerV2 do
       Enum.filter(trace, &MapSet.member?(act_set, &1))
     end)
     |> Enum.reject(&(&1 == []))
+  end
+
+  defp fall_through(log, sigma_l) do
+    dfg = compute_dfg(log)
+    poset = compute_poset(dfg, sigma_l)
+    leaf_nodes = Enum.map(sigma_l, fn a -> POWL.activity(a, a) end)
+    {:ok, POWL.partial_order("po_fallthrough", leaf_nodes, poset)}
   end
 
   defp compute_poset(dfg, sigma_l) do
