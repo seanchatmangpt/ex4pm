@@ -5,6 +5,7 @@ defmodule Ex4pmCore.CapsuleGraph.Subject do
   defstruct [:repository, :sha]
 
   @sha_pattern ~r/\A[0-9a-f]{40}\z/
+  @whitespace_pattern ~r/\s/
 
   def new(repository, sha) when is_binary(repository) and is_binary(sha) do
     if valid_repository?(repository) and Regex.match?(@sha_pattern, sha) do
@@ -20,7 +21,7 @@ defmodule Ex4pmCore.CapsuleGraph.Subject do
 
   defp valid_repository?(repository) do
     case String.split(repository, "/", parts: 3) do
-      [owner, name] -> owner != "" and name != "" and not String.contains?(repository, ~r/\s/)
+      [owner, name] -> owner != "" and name != "" and not Regex.match?(@whitespace_pattern, repository)
       _ -> false
     end
   end
