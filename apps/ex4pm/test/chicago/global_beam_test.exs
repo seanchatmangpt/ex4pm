@@ -14,7 +14,7 @@ defmodule Ex4pm.Chicago.Cluster do
       name: :peer.random_name(:ex4pm_chicago),
       longnames: false,
       peer_down: :continue,
-      args: ['-setcookie', Atom.to_charlist(Node.get_cookie())]
+      args: [~c"-setcookie", Atom.to_charlist(Node.get_cookie())]
     }
 
     {:ok, peer, node} = :peer.start_link(options)
@@ -56,11 +56,15 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     {:ok, peers: peers, nodes: Enum.map(peers, &elem(&1, 1))}
   end
 
-  def concurrency_probe(parent, delay_ms) do
-    send(parent, {:distributed_probe_started, self(), Node.self()})
+  def concurrency_probe(delay_ms) do
+    started_us = System.system_time(:microsecond)
     Process.sleep(delay_ms)
-    send(parent, {:distributed_probe_finished, self(), Node.self()})
-    :ok
+
+    %{
+      started_us: started_us,
+      finished_us: System.system_time(:microsecond),
+      node: Node.self()
+    }
   end
 
   test "qualification observes exact BEAM identity and finite system limits", %{nodes: nodes} do
@@ -122,7 +126,6 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
 
   test "high fan-out honors Reactor concurrency and closes every remote receipt", %{nodes: nodes} do
     task_count = 40
-    parent = self()
 
     tasks =
       for index <- 1..task_count do
@@ -130,7 +133,7 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
           id: "fanout-#{index}",
           intent: %{
             operation: :fanout_probe,
-            mfa: {__MODULE__, :concurrency_probe, [parent, 75]}
+            mfa: {__MODULE__, :concurrency_probe, [75]}
           }
         }
       end
@@ -138,20 +141,18 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     {:ok, plan} = tasks |> powl!([]) |> Runtime.compile()
     authority = %{id: "chicago", capabilities: [:do]}
 
-    runner =
-      Task.async(fn ->
-        Distributed.execute(plan, authority,
-          nodes: nodes,
-          max_concurrency: 4,
-          timeout: 10_000
-        )
-      end)
+    assert {:ok, execution} =
+             Distributed.execute(plan, authority,
+               nodes: nodes,
+               max_concurrency: 4,
+               timeout: 10_000
+             )
 
-    peak = observe_peak_probes(runner, 0, 0)
+    intervals = for layer <- execution.layers, item <- layer, do: item.result
+    peak = max_observed_overlap(intervals)
+
     assert peak <= 4
     assert peak > 1
-
-    assert {:ok, execution} = Task.await(runner, 30_000)
     assert length(execution.receipt_hashes) == task_count
     assert Enum.count(execution.placements) == task_count
 
@@ -382,21 +383,20 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     model
   end
 
-  defp observe_peak_probes(runner, active, peak) do
-    if Process.alive?(runner.pid) or active > 0 do
-      receive do
-        {:distributed_probe_started, _pid, _node} ->
-          next = active + 1
-          observe_peak_probes(runner, next, max(peak, next))
-
-        {:distributed_probe_finished, _pid, _node} ->
-          observe_peak_probes(runner, max(active - 1, 0), peak)
-      after
-        10 -> observe_peak_probes(runner, active, peak)
-      end
-    else
-      peak
-    end
+  defp max_observed_overlap(intervals) do
+    intervals
+    |> Enum.flat_map(fn interval ->
+      [
+        {interval.started_us, 1},
+        {interval.finished_us, -1}
+      ]
+    end)
+    |> Enum.sort_by(fn {time, delta} -> {time, -delta} end)
+    |> Enum.reduce({0, 0}, fn {_time, delta}, {active, peak} ->
+      active = active + delta
+      {active, max(peak, active)}
+    end)
+    |> elem(1)
   end
 
   defp find_refusal(%Ex4pm.Refusal{code: code} = refusal, code), do: {:ok, refusal}

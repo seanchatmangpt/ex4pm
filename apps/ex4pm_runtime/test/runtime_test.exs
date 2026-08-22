@@ -37,6 +37,14 @@ defmodule Ex4pm.RuntimeTest do
            ]
   end
 
+  test "Reactor preserves the public typed refusal contract" do
+    assert {:ok, model} = POWL.new([%{id: "a", label: "A"}], [])
+    assert {:ok, plan} = Runtime.compile(model)
+
+    assert {:error, %{failure: %Ex4pm.Refusal{code: :authority_required}}} =
+             Runtime.execute(plan, nil)
+  end
+
   test "incomparable POWL tasks are scheduled concurrently by Reactor" do
     assert {:ok, model} = diamond_model()
     assert {:ok, plan} = Runtime.compile(model)

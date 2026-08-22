@@ -105,7 +105,7 @@ defmodule Ex4pm.Runtime do
          )}
 
       {:error, reason} ->
-        {:error, %{failure: reason, completed_layers: []}}
+        {:error, %{failure: public_failure(reason), completed_layers: []}}
     end
   end
 
@@ -236,4 +236,24 @@ defmodule Ex4pm.Runtime do
       error -> error
     end
   end
+
+  defp public_failure(%Refusal{} = refusal), do: refusal
+
+  defp public_failure(%{error: error} = reactor_error) do
+    case public_failure(error) do
+      %Refusal{} = refusal -> refusal
+      _ -> reactor_error
+    end
+  end
+
+  defp public_failure(%{errors: errors} = reactor_error) when is_list(errors) do
+    Enum.find_value(errors, reactor_error, fn error ->
+      case public_failure(error) do
+        %Refusal{} = refusal -> refusal
+        _ -> nil
+      end
+    end)
+  end
+
+  defp public_failure(other), do: other
 end
