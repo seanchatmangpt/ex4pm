@@ -43,7 +43,8 @@ Selection is capability- and evidence-driven. An unavailable edge yields a typed
 - `ex4pm_stream` - Broadway ingestion with backpressure and acknowledgement;
 - `ex4pm_domain` - Ash/ETS semantic-control-plane projection;
 - `ex4pm` - public orchestration API;
-- `ex4pm_cli` - command-line projection.
+- `ex4pm_information` - Reactor-first admitted information execution, layered receipts, canonical JSON interchange;
+- `ex4pm_cli` - human and JSONL command-line projection over the information plane.
 
 ## Public API
 
@@ -62,6 +63,43 @@ Selection is capability- and evidence-driven. An unavailable edge yields a typed
 `plan/2` is an analytical CONSTRUCT path. Its planner transport is explicit, its result is receipted, and an exact ex4pm-plan capsule reaches `ALIVE` only when the transport reports the pinned source identity plus an image digest and the worker reports replay verification. The planner adapter never receives ambient cloud credentials.
 
 `operate/3` is different: it requires an explicit authority map and all task callbacks cross the BRCE boundary. A plan returned by `plan/2` has no ambient DO authority.
+
+## Reactor information plane — v26.8.22
+
+All non-trivial CLI/interoperability requests now enter `Ex4pm.Information.Flow`, a Reactor DAG that normalizes protocol input, performs closed capability admission, manufactures a pending information receipt, executes an explicit handler, manufactures a terminal outcome receipt, and returns a versioned envelope.
+
+Only `manifest`, `list`, and `describe` are direct one-hop introspection. They read the static capability graph and manufacture no execution receipt.
+
+Protocol identity is `ex4pm.information/1`, release `26.8.22`. The same JSON object can be sent from an escript, a long-lived JSONL stdio client, wasm4pm, pm4py, clap-noun-verb-any, or a future MCP/network projection without changing ex4pm's canonical process semantics.
+
+```json
+{
+  "protocol": "ex4pm.information/1",
+  "version": "26.8.22",
+  "capability": "process.discover",
+  "input": {
+    "subject": {"objects": {}, "events": {}},
+    "object_type": "Order"
+  },
+  "options": {"engine": "beam", "algorithm": "dfg"}
+}
+```
+
+External capability/resource/action strings are matched against closed registries and loaded public Ash metadata; they are never converted into modules, atoms, functions, or callbacks. `ash.read` permits only public Ash read actions. Generic Ash mutation and raw JSON `runtime.operate` remain visible DfCM candidates but are explicitly unadmitted. `Ex4pm.Evidence.BRCE` remains the exclusive state-changing DO boundary.
+
+The public DFG wire format uses JSON edge objects (`source`, `target`, counts and timing) rather than Elixir tuple map keys, allowing a discovery result to round-trip into conformance/simulation/optimization across language boundaries.
+
+CLI surfaces:
+
+```bash
+ex4pm manifest
+ex4pm list
+ex4pm describe process.discover
+ex4pm run engine.candidates '{"input":{"operation":"discover"}}'
+ex4pm stdio
+```
+
+See `docs/REACTOR_INFORMATION_PLANE.md` for protocol bounds, receipts, wasm4pm/pm4py interop, DfCM candidates, and falsifiers.
 
 ## ex4pm-plan bridge
 
