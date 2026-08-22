@@ -24,6 +24,29 @@ defmodule Ex4pmEngine.LTLf do
             | {:or, [t()]}
   end
 
+  @doc "Constructs a Response(A, B) constraint: whenever A occurs, B must eventually occur."
+  def response(a, b), do: {:response, to_string(a), to_string(b)}
+
+  @doc "Constructs a Precedence(A, B) constraint: B cannot occur unless A has already occurred."
+  def precedence(a, b), do: {:precedence, to_string(a), to_string(b)}
+
+  @doc "Constructs a Non-Coexistence(A, B) constraint: A and B cannot both occur in the same trace."
+  def non_coexistence(a, b), do: {:non_coexistence, to_string(a), to_string(b)}
+
+  @doc "Constructs a Chain-Response(A, B) constraint: whenever A occurs, B must occur immediately next."
+  def chain_response(a, b), do: {:chain_response, to_string(a), to_string(b)}
+
+  @doc "Constructs an Exactly-Once(A) constraint: A must occur exactly once in the trace."
+  def exactly_once(a), do: {:exactly_once, to_string(a)}
+
+  @doc "Constructs an Absence(A) constraint: A must never occur in the trace."
+  def absence(a), do: {:absence, to_string(a)}
+
+  @doc "Convenience evaluator returning a simple boolean satisfied? result."
+  def evaluate(trace, formula) do
+    evaluate_trace(trace, formula).satisfied?
+  end
+
   @doc """
   Evaluates an LTLf formula or list of formulas against an observed trace.
   `trace` is a list of activity strings.
