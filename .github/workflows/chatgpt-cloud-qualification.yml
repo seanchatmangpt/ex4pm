@@ -96,6 +96,7 @@ jobs:
           OCEL_INGEST_TOKEN: ${{ secrets.OCEL_INGEST_TOKEN }}
           OCEL_SPOOL_DIR: tmp/chatgpt-cloud/ocel-spool
         run: |
+          set -euo pipefail
           python3 scripts/emit-ocel.py \
             --activity ex4pm.qualification.completed \
             --standing ALIVE \
@@ -105,7 +106,27 @@ jobs:
             --sequence "$GITHUB_RUN_ATTEMPT" \
             --repo "$GITHUB_REPOSITORY" \
             --sha "$SUBJECT_SHA" \
-            --receipt tmp/chatgpt-cloud/qualification-receipt.json
+            --receipt tmp/chatgpt-cloud/qualification-receipt.json \
+            --output tmp/chatgpt-cloud/ocel-spool/qualification.ocel.json
+
+      - name: Admit relayed OCEL observation through ex4pm
+        run: |
+          mix run -e '
+            path = "tmp/chatgpt-cloud/ocel-spool/qualification.ocel.json"
+            receipt_path = "tmp/chatgpt-cloud/qualification-receipt.json"
+            raw = Jason.decode!(File.read!(path))
+            {:ok, log} = Ex4pm.ingest(raw)
+            [event] = log.events
+            3 = map_size(log.objects)
+            "ex4pm.qualification.completed" = event.activity
+            "ALIVE" = event.attributes["standing"]
+            "OBSERVE" = event.attributes["authority_domain"]
+            subject_sha = System.fetch_env!("SUBJECT_SHA")
+            ^subject_sha = event.attributes["subject_sha"]
+            receipt_sha = :crypto.hash(:sha256, File.read!(receipt_path)) |> Base.encode16(case: :lower)
+            ^receipt_sha = event.attributes["receipt_sha256"]
+            IO.puts("qualification receipt -> OCEL spool -> Ex4pm.ingest: ALIVE #{receipt_sha}")
+          '
 
       - name: Upload qualification receipt
         if: always()
