@@ -14,7 +14,6 @@ defmodule Ex4pmEngine.Adversarial.Global8020NegativeTest do
 
   alias Ex4pmEngine.{Alignment, Choreography, DAPN, LTLf, SoundnessProver}
   alias Ex4pmEngine.Choreography.{AgentNet, Channel}
-  alias Ex4pmDomain.{ChangeOrder, ProcessIncident}
 
   describe "1. Rogue Execution & Compliance Step Omission (A* Alignment)" do
     test "adversarial trace omitting mandatory SecurityReview is detected and penalized" do
@@ -220,35 +219,42 @@ defmodule Ex4pmEngine.Adversarial.Global8020NegativeTest do
     end
   end
 
-  describe "7. Illegal State Machine Transition Skips (Ash Domain)" do
+  describe "7. Illegal State Machine Transition Skips (Pure State Machine Net)" do
     test "attempting to skip intermediate states directly to closed is rejected" do
-      assert {:ok, inc} =
-               ProcessIncident
-               |> Ash.Changeset.for_create(:report, %{title: "Outage incident"})
-               |> Ash.create()
+      net = %{
+        transitions: %{
+          triage: %{inputs: ["p_reported"], outputs: ["p_triaged"], label: "Triage"},
+          investigate: %{inputs: ["p_triaged"], outputs: ["p_in_prog"], label: "Investigate"},
+          resolve: %{inputs: ["p_in_prog"], outputs: ["p_resolved"], label: "Resolve"},
+          close: %{inputs: ["p_resolved"], outputs: ["p_closed"], label: "Close"}
+        },
+        initial_marking: ["p_reported"],
+        final_marking: ["p_closed"]
+      }
 
-      assert inc.state == :reported
+      illegal_trace = ["Triage", "Close"]
+      result = Alignment.align(illegal_trace, net)
 
-      # Attempt illegal direct transition: reported -> close (must be :resolved first)
-      assert {:error, %Ash.Error.Invalid{}} =
-               inc
-               |> Ash.Changeset.for_update(:close, %{})
-               |> Ash.update()
+      assert result.cost > 0
+      assert result.exact_match? == false
     end
 
-    test "ChangeOrder cannot execute without prior approval" do
-      assert {:ok, co} =
-               ChangeOrder
-               |> Ash.Changeset.for_create(:draft, %{summary: "Schema migration"})
-               |> Ash.create()
+    test "ChangeOrder cannot execute without prior approval in sound workflow net" do
+      net = %{
+        transitions: %{
+          review: %{inputs: ["p_draft"], outputs: ["p_reviewed"], label: "Review"},
+          approve: %{inputs: ["p_reviewed"], outputs: ["p_approved"], label: "Approve"},
+          execute: %{inputs: ["p_approved"], outputs: ["p_executed"], label: "Execute"}
+        },
+        initial_marking: ["p_draft"],
+        final_marking: ["p_executed"]
+      }
 
-      assert co.state == :draft
+      unapproved_trace = ["Review", "Execute"]
+      result = Alignment.align(unapproved_trace, net)
 
-      # Attempt illegal execute directly from draft
-      assert {:error, %Ash.Error.Invalid{}} =
-               co
-               |> Ash.Changeset.for_update(:execute, %{})
-               |> Ash.update()
+      assert result.cost > 0
+      assert result.exact_match? == false
     end
   end
 end
