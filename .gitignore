@@ -1,13 +1,91 @@
-/_build
-/cover
-/deps
-/doc
+# The directory Mix will write compiled artifacts to.
+/_build/
+apps/**/_build/
+
+# If you run "mix test --cover", coverage assets go here.
+/cover/
+apps/**/cover/
+*.coverdata
+
+# The directory Mix downloads your dependencies to.
+/deps/
+apps/**/deps/
+
+# Where third-party dependencies like ExDoc output generated docs.
+/doc/
+apps/**/doc/
+
+# Ignore .fetch files
 /.fetch
+
+# If the VM crashes, it generates a dump, let's ignore it
 erl_crash.dump
+
+# Also ignore archive artifacts (built via "mix archive.build")
 *.ez
+
+# Generated BEAM files
 *.beam
+
+# Dialyzer PLT files (configured in mix.exs under priv/plts/)
+*.plt
+*.plt.hash
+/priv/plts/
+apps/**/priv/plts/
+
+# Secrets and environment configs
 /config/*.secret.exs
-.elixir_ls/
+apps/**/config/*.secret.exs
+.env
+.env.*
+!.env.example
+
+# Temporary and cache directories
 tmp/
 apps/**/tmp/
+.cache/
+
+# Phoenix / Web assets
+node_modules/
+apps/**/assets/node_modules/
+apps/**/priv/static/assets/
+apps/**/priv/static/cache_manifest.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Language servers and IDE tools
+.elixir_ls/
+.lexical/
+.next_ls/
+
+# Deployment & cloud tooling
+.fly/
+
+# Editors & IDEs
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+
+# LaTeX intermediate build artifacts
+*.aux
+*.toc
+*.out
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# Operating System files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
