@@ -61,7 +61,10 @@ defmodule Ex4pm.Information do
       async?: async?
     ]
 
-    case Reactor.run(Ex4pm.Information.Flow, %{request: request}, %{information_run_id: run_id},
+    case Reactor.run(
+           Ex4pm.Information.Flow,
+           %{request: request},
+           %{information_run_id: run_id},
            reactor_opts
          ) do
       {:ok, response} ->
@@ -74,11 +77,13 @@ defmodule Ex4pm.Information do
         {:ok, Protocol.refusal_response(request, refusal)}
 
       {:error, reason} ->
-        {:ok, Protocol.error_response(request, reason)}
+        case find_refusal(reason) do
+          {:ok, refusal} -> {:ok, Protocol.refusal_response(request, refusal)}
+          :error -> {:ok, Protocol.error_response(request, reason)}
+        end
 
       {:halted, reactor} ->
-        {:ok,
-         Protocol.error_response(request, {:reactor_halted, inspect(reactor, limit: 5)})}
+        {:ok, Protocol.error_response(request, {:reactor_halted, inspect(reactor, limit: 5)})}
     end
   end
 
@@ -122,4 +127,44 @@ defmodule Ex4pm.Information do
       end
     end
   end
+
+  defp find_refusal(%Ex4pm.Refusal{} = refusal), do: {:ok, refusal}
+
+  defp find_refusal(%_{} = struct) do
+    struct
+    |> Map.from_struct()
+    |> find_refusal()
+  end
+
+  defp find_refusal(map) when is_map(map) do
+    Enum.reduce_while(map, :error, fn {key, value}, :error ->
+      case find_refusal(key) do
+        {:ok, refusal} ->
+          {:halt, {:ok, refusal}}
+
+        :error ->
+          case find_refusal(value) do
+            {:ok, refusal} -> {:halt, {:ok, refusal}}
+            :error -> {:cont, :error}
+          end
+      end
+    end)
+  end
+
+  defp find_refusal(list) when is_list(list) do
+    Enum.reduce_while(list, :error, fn value, :error ->
+      case find_refusal(value) do
+        {:ok, refusal} -> {:halt, {:ok, refusal}}
+        :error -> {:cont, :error}
+      end
+    end)
+  end
+
+  defp find_refusal(tuple) when is_tuple(tuple) do
+    tuple
+    |> Tuple.to_list()
+    |> find_refusal()
+  end
+
+  defp find_refusal(_), do: :error
 end
