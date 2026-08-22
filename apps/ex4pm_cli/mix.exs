@@ -21,6 +21,9 @@ defmodule Ex4pmCli.MixProject do
   end
 
   defp deps do
-    [{:ex4pm, in_umbrella: true}, {:jason, "~> 1.4.5"}]
+    [
+      {:ex4pm_information, in_umbrella: true},
+      {:jason, "~> 1.4.5"}
+    ]
   end
 end
