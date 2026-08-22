@@ -12,7 +12,7 @@ defmodule Ex4pmCli.MixProject do
       elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      escript: [main_module: Ex4pm.CLI]
+      escript: [main_module: Ex4pm.CLI, name: "ex4pm"]
     ]
   end
 
