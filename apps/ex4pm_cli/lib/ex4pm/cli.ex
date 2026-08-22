@@ -79,7 +79,9 @@ defmodule Ex4pm.CLI do
         print_json(description, pretty: true)
 
       {:error, refusal} ->
-        print_json(Protocol.refusal_response(%{"capability" => capability}, refusal), pretty: true)
+        print_json(Protocol.refusal_response(%{"capability" => capability}, refusal),
+          pretty: true
+        )
     end
   end
 
@@ -99,7 +101,10 @@ defmodule Ex4pm.CLI do
 
       {:error, reason} ->
         print_json(
-          Protocol.error_response(%{"capability" => capability}, {:cli_request_decode_failed, reason}),
+          Protocol.error_response(
+            %{"capability" => capability},
+            {:cli_request_decode_failed, reason}
+          ),
           pretty: true
         )
     end

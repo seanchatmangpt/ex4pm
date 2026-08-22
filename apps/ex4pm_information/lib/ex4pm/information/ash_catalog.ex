@@ -126,7 +126,9 @@ defmodule Ex4pm.Information.AshCatalog do
 
   defp require_read_action(action) do
     {:error,
-     Refusal.new(:ash_mutation_not_admitted, "generic Ash mutation is not admitted by this protocol",
+     Refusal.new(
+       :ash_mutation_not_admitted,
+       "generic Ash mutation is not admitted by this protocol",
        details: %{action: action.name, type: action.type, required: :read}
      )}
   end

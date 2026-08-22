@@ -4,7 +4,10 @@ defmodule Ex4pmCore.CapsuleCurrentnessDependencyTest do
 
   test "broken dependency dominates downstream standing" do
     graph = %{consumer: [:producer], producer: []}
-    assert {:ok, standings} = Dependency.propagate(graph, %{producer: :build_broken, consumer: :partial_alive})
+
+    assert {:ok, standings} =
+             Dependency.propagate(graph, %{producer: :build_broken, consumer: :partial_alive})
+
     assert standings.consumer == :build_broken
     assert standings.producer == :build_broken
   end

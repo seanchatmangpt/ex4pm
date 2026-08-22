@@ -200,7 +200,10 @@ defmodule Ex4pm.Information.Protocol do
   end
 
   def json_safe(list) when is_list(list), do: Enum.map(list, &json_safe/1)
-  def json_safe(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
+
+  def json_safe(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> Enum.map(&json_safe/1)
+
   def json_safe(value) when is_atom(value), do: Atom.to_string(value)
   def json_safe(value) when is_reference(value), do: inspect(value)
   def json_safe(value) when is_pid(value), do: inspect(value)
@@ -209,7 +212,8 @@ defmodule Ex4pm.Information.Protocol do
 
   defp protocol_value(request) do
     case value(request, "protocol", @protocol) do
-      @protocol -> {:ok, @protocol}
+      @protocol ->
+        {:ok, @protocol}
 
       other ->
         {:error,
@@ -221,7 +225,8 @@ defmodule Ex4pm.Information.Protocol do
 
   defp version_value(request) do
     case value(request, "version", @release) do
-      @release -> {:ok, @release}
+      @release ->
+        {:ok, @release}
 
       other ->
         {:error,

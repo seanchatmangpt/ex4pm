@@ -21,8 +21,11 @@ defmodule Ex4pmCore.CapsuleGraph.Subject do
 
   defp valid_repository?(repository) do
     case String.split(repository, "/", parts: 3) do
-      [owner, name] -> owner != "" and name != "" and not Regex.match?(@whitespace_pattern, repository)
-      _ -> false
+      [owner, name] ->
+        owner != "" and name != "" and not Regex.match?(@whitespace_pattern, repository)
+
+      _ ->
+        false
     end
   end
 end

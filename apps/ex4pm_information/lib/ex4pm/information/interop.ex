@@ -52,8 +52,11 @@ defmodule Ex4pm.Information.Interop do
 
   def decode_model(model) when is_map(model) do
     case value(model, "type") do
-      "dfg" -> decode_dfg(model)
-      :dfg -> decode_dfg(model)
+      "dfg" ->
+        decode_dfg(model)
+
+      :dfg ->
+        decode_dfg(model)
 
       other ->
         {:error,
@@ -129,13 +132,15 @@ defmodule Ex4pm.Information.Interop do
       else
         _ ->
           {:halt,
-           {:error, Refusal.new(:invalid_interchange_edge, "DFG edge is malformed", subject: edge)}}
+           {:error,
+            Refusal.new(:invalid_interchange_edge, "DFG edge is malformed", subject: edge)}}
       end
     end)
   end
 
   defp decode_edges(other) do
-    {:error, Refusal.new(:invalid_interchange_edges, "DFG edges must be an array", subject: other)}
+    {:error,
+     Refusal.new(:invalid_interchange_edges, "DFG edges must be an array", subject: other)}
   end
 
   defp count_map(map, field) when is_map(map) do
@@ -156,7 +161,8 @@ defmodule Ex4pm.Information.Interop do
   end
 
   defp count_map(other, field) do
-    {:error, Refusal.new(:invalid_interchange_counts, "#{field} must be an object", subject: other)}
+    {:error,
+     Refusal.new(:invalid_interchange_counts, "#{field} must be an object", subject: other)}
   end
 
   defp non_negative_integer(value, _field) when is_integer(value) and value >= 0, do: {:ok, value}

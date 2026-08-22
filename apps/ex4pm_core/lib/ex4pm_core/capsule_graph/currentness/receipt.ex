@@ -15,7 +15,8 @@ defmodule Ex4pmCore.CapsuleGraph.Currentness.Receipt do
   end
 
   def replay(%{schema: "ex4pm.capsule-currentness/v1", body: body, digest: digest}) do
-    body.actuation_performed == false and body.authority in [:observe, :select, :construct, :verify] and Digest.sha256(body) == digest
+    body.actuation_performed == false and
+      body.authority in [:observe, :select, :construct, :verify] and Digest.sha256(body) == digest
   end
 
   def replay(_), do: false

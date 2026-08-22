@@ -5,7 +5,11 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Evidence.Candidate do
 
   def observe(name) do
     with {:ok, module} <- Registry.fetch(name) do
-      standing = if Code.ensure_loaded?(module) and function_exported?(module, :extract, 2), do: :partial_alive, else: :unsupported
+      standing =
+        if Code.ensure_loaded?(module) and function_exported?(module, :extract, 2),
+          do: :partial_alive,
+          else: :unsupported
+
       {:ok, %{name: name, module: module, standing: standing}}
     end
   end

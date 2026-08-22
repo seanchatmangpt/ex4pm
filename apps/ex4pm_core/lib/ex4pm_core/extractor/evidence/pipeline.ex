@@ -2,7 +2,16 @@ defmodule Ex4pmCore.ProcessIR.Extractor.Evidence.Pipeline do
   @moduledoc false
 
   alias Ex4pmCore.ProcessIR
-  alias Ex4pmCore.ProcessIR.Extractor.Evidence.{Candidate, Digest, Output, Receipt, Registry, Selector, Source}
+
+  alias Ex4pmCore.ProcessIR.Extractor.Evidence.{
+    Candidate,
+    Digest,
+    Output,
+    Receipt,
+    Registry,
+    Selector,
+    Source
+  }
 
   def extract(extractor_name, source_identity, subject, opts \\ []) do
     with {:ok, source} <- Source.new(extractor_name, source_identity),

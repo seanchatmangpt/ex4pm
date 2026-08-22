@@ -13,6 +13,8 @@ defmodule Ex4pmCore.CapsuleGraph.ReceiptTest do
     receipt = Receipt.new(candidate, %{b: 2, a: 1}, %{path: ["a", "b"]})
     assert receipt.authority == :construct_only
     assert {:ok, :match} = Replay.verify(receipt)
-    assert {:error, {:refused, :capsule_receipt_mismatch}} = Replay.verify(%{receipt | output_digest: "tampered"})
+
+    assert {:error, {:refused, :capsule_receipt_mismatch}} =
+             Replay.verify(%{receipt | output_digest: "tampered"})
   end
 end

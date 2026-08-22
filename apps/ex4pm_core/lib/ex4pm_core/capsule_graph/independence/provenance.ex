@@ -2,7 +2,10 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.Provenance do
   @moduledoc false
 
   def new(edges) when is_list(edges) do
-    graph = Enum.reduce(edges, %{}, fn {parent, child}, acc -> Map.update(acc, parent, [child], &[child | &1]) end)
+    graph =
+      Enum.reduce(edges, %{}, fn {parent, child}, acc ->
+        Map.update(acc, parent, [child], &[child | &1])
+      end)
 
     case cycle?(graph) do
       true -> {:error, {:refused, :provenance_cycle}}
@@ -17,8 +20,10 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.Provenance do
   end
 
   defp walk(_, [], _, _), do: false
+
   defp walk(graph, [node | rest], seen, target) do
     children = Map.get(graph, node, [])
+
     cond do
       target in children -> true
       MapSet.member?(seen, node) -> walk(graph, rest, seen, target)
@@ -32,8 +37,12 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.Provenance do
 
   defp dfs_cycle?(graph, node, visiting, visited) do
     cond do
-      MapSet.member?(visiting, node) -> true
-      MapSet.member?(visited, node) -> false
+      MapSet.member?(visiting, node) ->
+        true
+
+      MapSet.member?(visited, node) ->
+        false
+
       true ->
         visiting = MapSet.put(visiting, node)
         visited = MapSet.put(visited, node)

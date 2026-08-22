@@ -53,7 +53,10 @@ defmodule Ex4pm.CLITest do
   test "stdio emits exactly one JSON response per non-empty request line" do
     input =
       [
-        Jason.encode!(%{"capability" => "engine.candidates", "input" => %{"operation" => "discover"}}),
+        Jason.encode!(%{
+          "capability" => "engine.candidates",
+          "input" => %{"operation" => "discover"}
+        }),
         "",
         Jason.encode!(%{"capability" => "system.contracts"})
       ]
@@ -69,6 +72,6 @@ defmodule Ex4pm.CLITest do
 
     assert length(lines) == 2
     assert Enum.all?(lines, &(&1["protocol"] == "ex4pm.information/1"))
-    assert Enum.all?(lines, &(&1["receipts"]["information"]))
+    assert Enum.all?(lines, & &1["receipts"]["information"])
   end
 end

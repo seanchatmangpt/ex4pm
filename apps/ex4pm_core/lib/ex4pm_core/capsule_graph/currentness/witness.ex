@@ -6,10 +6,18 @@ defmodule Ex4pmCore.CapsuleGraph.Currentness.Witness do
   defstruct [:before_digest, :after_digest, :kind, :result]
 
   def new(before_digest, after_digest, kind, result)
-      when kind in @kinds and result in @results and is_binary(before_digest) and is_binary(after_digest) do
+      when kind in @kinds and result in @results and is_binary(before_digest) and
+             is_binary(after_digest) do
     if kind == :exact and before_digest != after_digest,
       do: {:error, {:refused, :false_exact_witness}},
-      else: {:ok, %__MODULE__{before_digest: before_digest, after_digest: after_digest, kind: kind, result: result}}
+      else:
+        {:ok,
+         %__MODULE__{
+           before_digest: before_digest,
+           after_digest: after_digest,
+           kind: kind,
+           result: result
+         }}
   end
 
   def new(_, _, _, _), do: {:error, {:refused, :invalid_witness}}

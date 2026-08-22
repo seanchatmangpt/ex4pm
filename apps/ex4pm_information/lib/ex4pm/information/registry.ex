@@ -161,7 +161,8 @@ defmodule Ex4pm.Information.Registry do
     },
     "process.optimize" => %{
       handler: :process_optimize,
-      description: "Construct non-actuating optimization candidates from an OCEL subject and model.",
+      description:
+        "Construct non-actuating optimization candidates from an OCEL subject and model.",
       inputs: %{
         "subject" => %{type: :map, required?: true},
         "model" => %{type: :map, required?: true}
@@ -214,13 +215,55 @@ defmodule Ex4pm.Information.Registry do
   ]
 
   @transport_graph [
-    %{id: :beam_in_process, standing: :unknown, implementation: :implemented, role: :native_client, protocol: "ex4pm.information/1"},
-    %{id: :escript, standing: :unknown, implementation: :implemented, role: :human_and_process_client, protocol: "ex4pm.information/1"},
-    %{id: :jsonl_stdio, standing: :unknown, implementation: :implemented, role: :machine_interop, protocol: "ex4pm.information/1"},
-    %{id: :wasm4pm, standing: :unknown, implementation: :protocol_ready, role: :portable_wasm_client, protocol: "ex4pm.information/1"},
-    %{id: :pm4py, standing: :unknown, implementation: :protocol_ready, role: :python_reference_client, protocol: "ex4pm.information/1"},
-    %{id: :clap_noun_verb_any, standing: :unknown, implementation: :candidate, role: :generated_cli_client, protocol: "ex4pm.information/1"},
-    %{id: :mcp, standing: :unknown, implementation: :candidate, role: :tool_projection, protocol: "ex4pm.information/1"}
+    %{
+      id: :beam_in_process,
+      standing: :unknown,
+      implementation: :implemented,
+      role: :native_client,
+      protocol: "ex4pm.information/1"
+    },
+    %{
+      id: :escript,
+      standing: :unknown,
+      implementation: :implemented,
+      role: :human_and_process_client,
+      protocol: "ex4pm.information/1"
+    },
+    %{
+      id: :jsonl_stdio,
+      standing: :unknown,
+      implementation: :implemented,
+      role: :machine_interop,
+      protocol: "ex4pm.information/1"
+    },
+    %{
+      id: :wasm4pm,
+      standing: :unknown,
+      implementation: :protocol_ready,
+      role: :portable_wasm_client,
+      protocol: "ex4pm.information/1"
+    },
+    %{
+      id: :pm4py,
+      standing: :unknown,
+      implementation: :protocol_ready,
+      role: :python_reference_client,
+      protocol: "ex4pm.information/1"
+    },
+    %{
+      id: :clap_noun_verb_any,
+      standing: :unknown,
+      implementation: :candidate,
+      role: :generated_cli_client,
+      protocol: "ex4pm.information/1"
+    },
+    %{
+      id: :mcp,
+      standing: :unknown,
+      implementation: :candidate,
+      role: :tool_projection,
+      protocol: "ex4pm.information/1"
+    }
   ]
 
   def public_capabilities do
@@ -273,7 +316,10 @@ defmodule Ex4pm.Information.Registry do
       :error ->
         {:error,
          Refusal.new(:unknown_capability, "capability is not admitted",
-           details: %{capability: normalized.capability, admitted: Map.keys(@capabilities) |> Enum.sort()}
+           details: %{
+             capability: normalized.capability,
+             admitted: Map.keys(@capabilities) |> Enum.sort()
+           }
          )}
 
       {:ok, spec} ->

@@ -219,49 +219,49 @@ defmodule Ex4pm.Information.Flow do
 
   use Reactor
 
-  input :request
+  input(:request)
 
   step :normalize, Ex4pm.Information.Step.Normalize do
-    argument :request, input(:request)
-    async? false
-    max_retries 0
+    argument(:request, input(:request))
+    async?(false)
+    max_retries(0)
   end
 
   step :admit, Ex4pm.Information.Step.Admit do
-    argument :request, result(:normalize)
-    async? false
-    max_retries 0
+    argument(:request, result(:normalize))
+    async?(false)
+    max_retries(0)
   end
 
   step :pending_receipt, Ex4pm.Information.Step.PendingReceipt do
-    argument :admitted, result(:admit)
-    async? false
-    max_retries 0
+    argument(:admitted, result(:admit))
+    async?(false)
+    max_retries(0)
   end
 
   step :execute, Ex4pm.Information.Step.Execute do
-    argument :admitted, result(:admit)
-    wait_for :pending_receipt
-    async? false
-    max_retries 0
+    argument(:admitted, result(:admit))
+    wait_for(:pending_receipt)
+    async?(false)
+    max_retries(0)
   end
 
   step :outcome_receipt, Ex4pm.Information.Step.OutcomeReceipt do
-    argument :admitted, result(:admit)
-    argument :pending, result(:pending_receipt)
-    argument :execution, result(:execute)
-    async? false
-    max_retries 0
+    argument(:admitted, result(:admit))
+    argument(:pending, result(:pending_receipt))
+    argument(:execution, result(:execute))
+    async?(false)
+    max_retries(0)
   end
 
   step :envelope, Ex4pm.Information.Step.Envelope do
-    argument :admitted, result(:admit)
-    argument :pending, result(:pending_receipt)
-    argument :execution, result(:execute)
-    argument :outcome, result(:outcome_receipt)
-    async? false
-    max_retries 0
+    argument(:admitted, result(:admit))
+    argument(:pending, result(:pending_receipt))
+    argument(:execution, result(:execute))
+    argument(:outcome, result(:outcome_receipt))
+    async?(false)
+    max_retries(0)
   end
 
-  return :envelope
+  return(:envelope)
 end
