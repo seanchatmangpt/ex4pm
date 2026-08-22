@@ -30,12 +30,26 @@ public_modules = [
   "Ex4pm",
   "Ex4pm.Ocel",
   "Ex4pm.Engine",
-  "Ex4pm.Evidence.BRCE"
+  "Ex4pm.Evidence.BRCE",
+  "Ex4pm.Information"
 ]
 
 [process_intelligence]
-operations = ["ingest", "discover", "conform", "simulate"]
-interchange = ["ocel2_json", "json_receipts"]
+operations = [
+  "ingest",
+  "discover",
+  "conform",
+  "simulate",
+  "optimize",
+  "plan",
+  "information"
+]
+interchange = [
+  "ocel2_json",
+  "canonical_dfg_json",
+  "json_receipts",
+  "reactor_jsonl_v1"
+]
 
 [authority]
 select_construct_do_separate = true
