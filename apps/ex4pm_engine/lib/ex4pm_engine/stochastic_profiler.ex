@@ -34,11 +34,13 @@ defmodule Ex4pmEngine.StochasticProfiler do
                 :ets.update_counter(activities_tab, act, {2, 1}, {act, 0})
 
                 omap = json["ocel:omap"] || []
+
                 Enum.each(omap, fn obj ->
                   :ets.update_counter(objects_tab, obj, {2, 1}, {obj, 0})
                 end)
 
                 vmap = json["ocel:vmap"] || %{}
+
                 if duration = vmap["duration_ms"] do
                   :ets.insert(durations_tab, {act, duration})
                 end
@@ -92,7 +94,8 @@ defmodule Ex4pmEngine.StochasticProfiler do
         p99_val = Enum.at(durations_sorted, max(0, trunc(n * 0.99) - 1))
         max_val = List.last(durations_sorted)
 
-        {Float.round(mu_val, 4), Float.round(sigma_val, 4), Float.round(mean_val, 2), p50_val, p90_val, p99_val, max_val}
+        {Float.round(mu_val, 4), Float.round(sigma_val, 4), Float.round(mean_val, 2), p50_val,
+         p90_val, p99_val, max_val}
       else
         {0.0, 0.0, 0.0, 0, 0, 0, 0}
       end

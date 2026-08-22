@@ -44,7 +44,14 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
         terminal_marking = MapSet.new([term_id])
 
         # BFS state space exploration
-        explore_state_space(initial_marking, terminal_marking, places, transitions, arcs, max_states)
+        explore_state_space(
+          initial_marking,
+          terminal_marking,
+          places,
+          transitions,
+          arcs,
+          max_states
+        )
     end
   end
 
@@ -65,18 +72,20 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
         dead_transitions = MapSet.difference(all_trans_ids, fired_transitions)
 
         if MapSet.size(dead_transitions) == 0 do
-          {:ok, %{
-            sound?: true,
-            states_explored: MapSet.size(visited),
-            terminal_reachable?: true,
-            dead_transitions: []
-          }}
+          {:ok,
+           %{
+             sound?: true,
+             states_explored: MapSet.size(visited),
+             terminal_reachable?: true,
+             dead_transitions: []
+           }}
         else
-          {:error, %{
-            violation: :dead_transitions,
-            dead_transitions: MapSet.to_list(dead_transitions),
-            states_explored: MapSet.size(visited)
-          }}
+          {:error,
+           %{
+             violation: :dead_transitions,
+             dead_transitions: MapSet.to_list(dead_transitions),
+             states_explored: MapSet.size(visited)
+           }}
         end
 
       {{:value, {current_marking, trace}}, rest_queue} ->
@@ -87,11 +96,12 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
           sink_id = Enum.at(MapSet.to_list(m_end), 0)
 
           if MapSet.member?(current_marking, sink_id) and current_marking != m_end do
-            {:error, %{
-              violation: :improper_completion,
-              improper_marking: MapSet.to_list(current_marking),
-              counter_example_trace: Enum.reverse(trace)
-            }}
+            {:error,
+             %{
+               violation: :improper_completion,
+               improper_marking: MapSet.to_list(current_marking),
+               counter_example_trace: Enum.reverse(trace)
+             }}
           else
             # Find enabled transitions
             enabled =
@@ -107,15 +117,18 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
 
             if enabled == [] and current_marking != m_end do
               # Reachable Deadlock!
-              {:error, %{
-                violation: :deadlock,
-                deadlocked_marking: MapSet.to_list(current_marking),
-                counter_example_trace: Enum.reverse(trace)
-              }}
+              {:error,
+               %{
+                 violation: :deadlock,
+                 deadlocked_marking: MapSet.to_list(current_marking),
+                 counter_example_trace: Enum.reverse(trace)
+               }}
             else
               # Fire transitions and produce new markings
               {new_queue, new_visited, new_fired} =
-                Enum.reduce(enabled, {rest_queue, visited, fired_transitions}, fn {t_id, _}, {q_acc, v_acc, f_acc} ->
+                Enum.reduce(enabled, {rest_queue, visited, fired_transitions}, fn {t_id, _},
+                                                                                  {q_acc, v_acc,
+                                                                                   f_acc} ->
                   in_places =
                     arcs
                     |> Enum.filter(&(&1.target == t_id))
@@ -144,7 +157,15 @@ defmodule Ex4pmEngine.OCPN.SoundnessEngine do
                   end
                 end)
 
-              loop_explore(new_queue, new_visited, new_fired, m_end, transitions, arcs, max_states)
+              loop_explore(
+                new_queue,
+                new_visited,
+                new_fired,
+                m_end,
+                transitions,
+                arcs,
+                max_states
+              )
             end
           end
         end

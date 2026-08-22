@@ -63,6 +63,7 @@ defmodule Ex4pmEngine.StreamingEngine do
     throughput = Float.round(total_events / max(1, elapsed_ms / 1000), 2)
 
     activity_counts = :ets.tab2list(activities_table) |> Map.new()
+    transition_counts = :ets.tab2list(transitions_table) |> Map.new()
     object_counts = :ets.tab2list(objects_table) |> Map.new()
 
     # Calculate duration statistics
@@ -99,6 +100,8 @@ defmodule Ex4pmEngine.StreamingEngine do
       throughput_events_sec: throughput,
       unique_activities: map_size(activity_counts),
       activity_frequencies: activity_counts,
+      unique_transitions: map_size(transition_counts),
+      transitions: transition_counts,
       unique_objects: map_size(object_counts),
       duration_stats: stats
     }
