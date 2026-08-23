@@ -119,8 +119,16 @@ jobs:
           cat > /tmp/ex4pm-plan-request.json <<'JSON'
           {"solver":"astar","problem":{"type":"deterministic_graph","initial":"A","goals":["G"],"edges":[{"from":"A","to":"G","action":"expensive","cost":5},{"from":"A","to":"B","action":"to_b","cost":1},{"from":"B","to":"G","action":"to_g","cost":1}]}}
           JSON
-          docker run --rm --entrypoint ex4pm-plan "ex4pm-plan:${EX4PM_PLAN_SHA}" solve \
-            < /tmp/ex4pm-plan-request.json \
+          python - <<'PY'
+          import json
+          request = json.load(open('/tmp/ex4pm-plan-request.json'))
+          worker_request = {'op': 'solve', **request}
+          with open('/tmp/ex4pm-plan-worker-request.json', 'w') as handle:
+              json.dump(worker_request, handle, sort_keys=True, separators=(',', ':'))
+              handle.write('\n')
+          PY
+          docker run --rm "ex4pm-plan:${EX4PM_PLAN_SHA}" \
+            < /tmp/ex4pm-plan-worker-request.json \
             > /tmp/ex4pm-plan-result.json
           cat /tmp/ex4pm-plan-result.json
           docker image inspect --format='{{.Id}}' "ex4pm-plan:${EX4PM_PLAN_SHA}" > /tmp/ex4pm-plan-image-digest
