@@ -1,0 +1,97 @@
+name: ex4pm-package-court
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - release/**
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: dev
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+
+      - name: Verify exact subject identity
+        run: test "$(git rev-parse HEAD)" = "$EX4PM_SUBJECT_SHA"
+
+      - name: Verify atomic v26.8.23 release graph
+        run: python3 scripts/check-release-version.py 26.8.23
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Resolve exact dependencies
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get --check-locked
+
+      - name: Build and unpack consumer-visible Hex artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="$PWD"
+          mkdir -p artifacts/qualification/packages/unpacked artifacts/qualification/packages/receipts
+          while IFS=: read -r package path; do
+            output="$root/artifacts/qualification/packages/unpacked/$package"
+            (cd "$path" && mix hex.build --unpack --output "$output" </dev/null)
+            python3 scripts/inspect-hex-package.py "$output" \
+              --version 26.8.23 \
+              --package "$package" \
+              --output "artifacts/qualification/packages/receipts/$package.json"
+          done <<'PACKAGES'
+          ex4pm_core:apps/ex4pm_core
+          ex4pm_contracts:apps/ex4pm_contracts
+          ex4pm_evidence:apps/ex4pm_evidence
+          ex4pm_engine:apps/ex4pm_engine
+          ex4pm_domain:apps/ex4pm_domain
+          ex4pm_stream:apps/ex4pm_stream
+          ex4pm_runtime:apps/ex4pm_runtime
+          ex4pm:apps/ex4pm
+          PACKAGES
+
+      - name: Manufacture package court summary
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib, subprocess
+          receipts = {}
+          for path in sorted(pathlib.Path('artifacts/qualification/packages/receipts').glob('*.json')):
+              value = json.loads(path.read_text())
+              assert value['standing'] == 'ALIVE', value
+              receipts[value['package']] = {
+                  'path': str(path),
+                  'sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                  'file_count': value['file_count'],
+              }
+          assert len(receipts) == 8, receipts
+          summary = {
+              'standing': 'ALIVE',
+              'version': '26.8.23',
+              'source_sha': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
+              'tree_sha': subprocess.check_output(['git','rev-parse','HEAD^{tree}'], text=True).strip(),
+              'packages': receipts,
+              'publish_actuation': 'NOT_ATTEMPTED',
+          }
+          pathlib.Path('artifacts/qualification/packages/package-court.json').write_text(
+              json.dumps(summary, indent=2, sort_keys=True) + '\n'
+          )
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ex4pm-package-court-${{ env.EX4PM_SUBJECT_SHA }}
+          path: artifacts/qualification/packages/
+          if-no-files-found: error

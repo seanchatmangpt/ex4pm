@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - feat/**
+      - release/**
 
 permissions:
   contents: read
@@ -27,6 +28,9 @@ jobs:
           actual="$(git rev-parse HEAD)"
           printf 'admitted=%s\nobserved=%s\n' "$EX4PM_SUBJECT_SHA" "$actual"
           test "$actual" = "$EX4PM_SUBJECT_SHA"
+
+      - name: Verify atomic v26.8.23 release graph
+        run: python3 scripts/check-release-version.py 26.8.23
 
       - uses: erlef/setup-beam@v1
         with:
@@ -119,10 +123,20 @@ jobs:
           cat > /tmp/ex4pm-plan-request.json <<'JSON'
           {"solver":"astar","problem":{"type":"deterministic_graph","initial":"A","goals":["G"],"edges":[{"from":"A","to":"G","action":"expensive","cost":5},{"from":"A","to":"B","action":"to_b","cost":1},{"from":"B","to":"G","action":"to_g","cost":1}]}}
           JSON
-          docker run --rm --entrypoint ex4pm-plan "ex4pm-plan:${EX4PM_PLAN_SHA}" solve \
-            < /tmp/ex4pm-plan-request.json \
-            > /tmp/ex4pm-plan-result.json
-          cat /tmp/ex4pm-plan-result.json
+          python - <<'PY'
+          import json
+          request = json.load(open('/tmp/ex4pm-plan-request.json'))
+          worker_request = {'op': 'solve', **request}
+          with open('/tmp/ex4pm-plan-worker-request.json', 'w') as handle:
+              json.dump(worker_request, handle, sort_keys=True, separators=(',', ':'))
+              handle.write('\n')
+          PY
+          docker run --rm -i "ex4pm-plan:${EX4PM_PLAN_SHA}" \
+            < /tmp/ex4pm-plan-worker-request.json \
+            > /tmp/ex4pm-plan-worker.raw
+          cat /tmp/ex4pm-plan-worker.raw
+          python3 scripts/extract-ex4pm-plan-json.py \
+            /tmp/ex4pm-plan-worker.raw /tmp/ex4pm-plan-result.json
           docker image inspect --format='{{.Id}}' "ex4pm-plan:${EX4PM_PLAN_SHA}" > /tmp/ex4pm-plan-image-digest
           python - <<'PY'
           import json
@@ -132,6 +146,11 @@ jobs:
           assert result['result']['total_cost'] == 2.0
           assert result['evidence']['replay_verified'] is True
           PY
+          mkdir -p artifacts/qualification/planner
+          cp /tmp/ex4pm-plan-request.json artifacts/qualification/planner/
+          cp /tmp/ex4pm-plan-worker.raw artifacts/qualification/planner/
+          cp /tmp/ex4pm-plan-result.json artifacts/qualification/planner/
+          cp /tmp/ex4pm-plan-image-digest artifacts/qualification/planner/
 
       - name: Admit exact planner result through ex4pm and replay receipt
         run: |
@@ -163,6 +182,14 @@ jobs:
             {:ok, %{replay: :chain_match}} = Ex4pm.replay(run.receipt.hash)
             IO.puts("ex4pm-plan exact capsule -> Ex4pm.plan -> receipt replay: ALIVE")
           '
+
+      - name: Upload planner protocol evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-plan-protocol-${{ env.EX4PM_SUBJECT_SHA }}
+          path: artifacts/qualification/planner/
+          if-no-files-found: warn
 
       - name: Upload resolved lockfile
         if: always()

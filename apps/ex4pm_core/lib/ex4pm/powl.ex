@@ -32,11 +32,10 @@ defmodule Ex4pm.POWL do
   end
 
   defp normalize_tasks(tasks) when is_list(tasks) do
-    tasks
-    |> Enum.reduce_while({:ok, %{}}, fn
+    Enum.reduce_while(tasks, {:ok, %{}}, fn
       %Task{id: id} = task, {:ok, acc} ->
         id = to_string(id)
-        {:cont, {:ok, Map.put(acc, id, %{task | id: id})}}
+        insert_unique_task(acc, id, %{task | id: id})
 
       map, {:ok, acc} when is_map(map) ->
         id = Map.get(map, :id) || Map.get(map, "id")
@@ -54,7 +53,7 @@ defmodule Ex4pm.POWL do
             metadata: Map.get(map, :metadata) || Map.get(map, "metadata") || %{}
           }
 
-          {:cont, {:ok, Map.put(acc, id, task)}}
+          insert_unique_task(acc, id, task)
         end
 
       other, _acc ->
@@ -66,6 +65,21 @@ defmodule Ex4pm.POWL do
 
   defp normalize_tasks(other) do
     {:error, Refusal.new(:invalid_tasks, "POWL tasks must be a list", subject: other)}
+  end
+
+  defp insert_unique_task(acc, id, task) do
+    if Map.has_key?(acc, id) do
+      {:halt,
+       {:error,
+        Refusal.new(
+          :duplicate_task_id,
+          "POWL task identity must be unique before construction",
+          subject: task,
+          details: %{task: id}
+        )}}
+    else
+      {:cont, {:ok, Map.put(acc, id, task)}}
+    end
   end
 
   defp normalize_edges(edges, tasks) when is_list(edges) do

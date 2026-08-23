@@ -1,0 +1,16 @@
+[package]
+name = "ex4pm_reference_nif"
+version = "26.8.23"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rustler = "0.38"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "unwind"

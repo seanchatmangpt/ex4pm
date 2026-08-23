@@ -9,7 +9,7 @@ config :ex4pm, :pubsub, Ex4pm.PubSub
 
 config :ex4pm_web, Ex4pmWeb.Endpoint,
   url: [host: "localhost"],
-  adapter: Phoenix.Endpoint.Cowboy2Adapter,
+  adapter: Bandit.PhoenixAdapter,
   render_errors: [formats: [html: Ex4pmWeb.ErrorHTML, json: Ex4pmWeb.ErrorJSON], layout: false],
   pubsub_server: Ex4pmWeb.PubSub,
   live_view: [signing_salt: "ex4pm_secret_salt_control_plane_1234567890"],

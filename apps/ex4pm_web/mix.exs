@@ -4,7 +4,7 @@ defmodule Ex4pmWeb.MixProject do
   def project do
     [
       app: :ex4pm_web,
-      version: "26.8.22",
+      version: "26.8.23",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
@@ -18,10 +18,7 @@ defmodule Ex4pmWeb.MixProject do
   end
 
   def application do
-    [
-      mod: {Ex4pmWeb.Application, []},
-      extra_applications: [:logger, :runtime_tools, :crypto]
-    ]
+    [mod: {Ex4pmWeb.Application, []}, extra_applications: [:logger, :runtime_tools, :crypto]]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
@@ -40,7 +37,7 @@ defmodule Ex4pmWeb.MixProject do
       {:phoenix_live_view, "~> 1.0"},
       {:ash_phoenix, "~> 2.1"},
       {:ash_admin, "~> 0.12"},
-      {:plug_cowboy, "~> 2.7"},
+      {:bandit, "~> 1.5"},
       {:jason, "~> 1.4"},
       {:telemetry_metrics, "~> 0.6 or ~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
@@ -50,11 +47,6 @@ defmodule Ex4pmWeb.MixProject do
   end
 
   defp aliases do
-    [
-      setup: ["deps.get"],
-      "assets.setup": ["tailwind.install --if-missing", "esbuild.install --if-missing"],
-      "assets.build": ["tailwind default", "esbuild default"],
-      "assets.deploy": ["tailwind default --minify", "esbuild default --minify", "phx.digest"]
-    ]
+    [setup: ["deps.get"], "assets.setup": [], "assets.build": [], "assets.deploy": ["phx.digest"]]
   end
 end

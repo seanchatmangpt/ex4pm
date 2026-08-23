@@ -1,0 +1,45 @@
+name: ex4pm-format-capsule
+
+on:
+  push:
+    branches:
+      - release/**
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  format-capsule:
+    runs-on: ubuntu-latest
+    env:
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+      - name: Verify exact subject identity
+        run: test "$(git rev-parse HEAD)" = "$EX4PM_SUBJECT_SHA"
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+      - name: Manufacture formatter projection
+        shell: bash
+        run: |
+          set -euo pipefail
+          mix format
+          mix format --check-formatted
+          mkdir -p format-capsule
+          git diff --binary -- . ':!format-capsule' > format-capsule/format.patch
+          sources=(apps mix.exs .formatter.exs)
+          for optional in config lib scripts formal; do
+            if [ -e "$optional" ]; then sources+=("$optional"); fi
+          done
+          tar -czf format-capsule/formatted-source.tar.gz "${sources[@]}"
+          sha256sum format-capsule/formatted-source.tar.gz > format-capsule/formatted-source.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: format-capsule-${{ env.EX4PM_SUBJECT_SHA }}
+          path: format-capsule/
+          if-no-files-found: error

@@ -1,25 +1,27 @@
 defmodule Ex4pmContracts.MixProject do
   use Mix.Project
 
+  @version "26.8.23"
+  @source_url "https://github.com/seanchatmangpt/ex4pm"
+
   def project do
     [
       app: :ex4pm_contracts,
-      version: "26.8.22",
+      version: @version,
+      description: "Executable ontology, WIT, SHACL and receipt contracts for ex4pm",
+      source_url: @source_url,
+      package: package(),
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
-      elixir: "~> 1.17",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: [{:ex4pm_core, "~> 26.8.23", in_umbrella: true}]
     ]
   end
 
-  def application do
-    [extra_applications: [:logger, :crypto]]
-  end
+  def application, do: [extra_applications: [:logger, :crypto]]
 
-  defp deps do
-    [{:ex4pm_core, in_umbrella: true}]
-  end
+  defp package,
+    do: [licenses: ["MIT"], links: %{"GitHub" => @source_url}, files: ["lib", "priv", "mix.exs"]]
 end

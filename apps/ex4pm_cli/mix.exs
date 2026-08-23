@@ -4,7 +4,7 @@ defmodule Ex4pmCli.MixProject do
   def project do
     [
       app: :ex4pm_cli,
-      version: "26.8.22",
+      version: "26.8.23",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",

@@ -1,0 +1,13 @@
+[package]
+name = "ex4pm-reference-wasm"
+version = "26.8.23"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
