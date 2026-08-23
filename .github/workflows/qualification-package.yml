@@ -46,7 +46,7 @@ jobs:
           mkdir -p artifacts/qualification/packages/unpacked artifacts/qualification/packages/receipts
           while IFS=: read -r package path; do
             output="$root/artifacts/qualification/packages/unpacked/$package"
-            (cd "$path" && mix hex.build --unpack --output "$output")
+            (cd "$path" && mix hex.build --unpack --output "$output" </dev/null)
             python3 scripts/inspect-hex-package.py "$output" \
               --version 26.8.23 \
               --package "$package" \
