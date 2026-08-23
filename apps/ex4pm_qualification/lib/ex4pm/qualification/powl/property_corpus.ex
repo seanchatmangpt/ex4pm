@@ -13,8 +13,7 @@ defmodule Ex4pm.Qualification.Powl.PropertyCorpus do
 
   def run(count \\ @default_cases) when is_integer(count) and count > 0 do
     0..(count - 1)
-    |> Enum.reduce_while({:ok, %{cases: 0, traces: 0, reactor_samples: 0}}, fn id,
-                                                                               {:ok, acc} ->
+    |> Enum.reduce_while({:ok, %{cases: 0, traces: 0, reactor_samples: 0}}, fn id, {:ok, acc} ->
       {model, bound} = case_model(id)
       oracle = ReferenceOracle.language(model, bound)
       compiled = BoundedUnfolder.language(model, bound)
@@ -67,7 +66,10 @@ defmodule Ex4pm.Qualification.Powl.PropertyCorpus do
 
     checks = [
       match?({:error, %{code: :duplicate_task_id}}, Ex4pm.POWL.new(duplicate, [])),
-      match?({:error, %{code: :cyclic_powl}}, Ex4pm.POWL.new(cycle_tasks, [{"a", "b"}, {"b", "a"}])),
+      match?(
+        {:error, %{code: :cyclic_powl}},
+        Ex4pm.POWL.new(cycle_tasks, [{"a", "b"}, {"b", "a"}])
+      ),
       match?({:error, %{code: :self_cycle}}, Ex4pm.POWL.new(cycle_tasks, [{"a", "a"}])),
       match?({:error, %{code: :unknown_task}}, Ex4pm.POWL.new(cycle_tasks, [{"a", "missing"}]))
     ]
@@ -84,14 +86,35 @@ defmodule Ex4pm.Qualification.Powl.PropertyCorpus do
 
     model =
       case rem(id, 8) do
-        0 -> POWL.sequence("seq#{id}", [a, b, c])
-        1 -> POWL.choice("choice#{id}", [a, b, c])
-        2 -> POWL.partial_order("po#{id}", [a, b, c], [{a.id, c.id}])
-        3 -> POWL.partial_order("parallel#{id}", [a, b, c], [])
-        4 -> POWL.loop("loop#{id}", POWL.sequence("body#{id}", [a, b]), r)
-        5 -> POWL.choice("nested#{id}", [POWL.sequence("s#{id}", [a, b]), POWL.partial_order("p#{id}", [b, c], [])])
-        6 -> choice_graph(id, a, b, c)
-        7 -> POWL.sequence("mixed#{id}", [POWL.choice("x#{id}", [a, b]), POWL.partial_order("y#{id}", [b, c], [])])
+        0 ->
+          POWL.sequence("seq#{id}", [a, b, c])
+
+        1 ->
+          POWL.choice("choice#{id}", [a, b, c])
+
+        2 ->
+          POWL.partial_order("po#{id}", [a, b, c], [{a.id, c.id}])
+
+        3 ->
+          POWL.partial_order("parallel#{id}", [a, b, c], [])
+
+        4 ->
+          POWL.loop("loop#{id}", POWL.sequence("body#{id}", [a, b]), r)
+
+        5 ->
+          POWL.choice("nested#{id}", [
+            POWL.sequence("s#{id}", [a, b]),
+            POWL.partial_order("p#{id}", [b, c], [])
+          ])
+
+        6 ->
+          choice_graph(id, a, b, c)
+
+        7 ->
+          POWL.sequence("mixed#{id}", [
+            POWL.choice("x#{id}", [a, b]),
+            POWL.partial_order("y#{id}", [b, c], [])
+          ])
       end
 
     {model, bound}
