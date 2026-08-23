@@ -31,9 +31,18 @@ jobs:
           mix local.rebar --force
       - name: Resolve exact locked dependencies
         run: mix deps.get --check-locked
-      - name: Apply canonical formatter
-        run: mix format
-      - name: Commit formatter projection
+      - name: Apply canonical formatter to POWL change surface only
+        run: |
+          mix format \
+            apps/ex4pm/test/chicago/global_beam_test.exs \
+            apps/ex4pm/test/test_helper.exs \
+            apps/ex4pm_core/lib/ex4pm/powl.ex \
+            apps/ex4pm_core/test/powl_doctest_test.exs \
+            apps/ex4pm_engine/lib/ex4pm_engine/powl.ex \
+            apps/ex4pm_engine/test/engine_test.exs \
+            apps/ex4pm_engine/test/powl_doctest_test.exs \
+            apps/ex4pm_engine/test/powl_test.exs
+      - name: Commit bounded formatter projection
         run: |
           if git diff --quiet; then
             echo "formatter produced no diff"
@@ -41,6 +50,14 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps config mix.exs .formatter.exs
-          git commit -m "style: apply canonical Elixir formatter"
+          git add \
+            apps/ex4pm/test/chicago/global_beam_test.exs \
+            apps/ex4pm/test/test_helper.exs \
+            apps/ex4pm_core/lib/ex4pm/powl.ex \
+            apps/ex4pm_core/test/powl_doctest_test.exs \
+            apps/ex4pm_engine/lib/ex4pm_engine/powl.ex \
+            apps/ex4pm_engine/test/engine_test.exs \
+            apps/ex4pm_engine/test/powl_doctest_test.exs \
+            apps/ex4pm_engine/test/powl_test.exs
+          git commit -m "style: apply bounded POWL formatter projection"
           git push origin "HEAD:${GITHUB_REF_NAME}"
