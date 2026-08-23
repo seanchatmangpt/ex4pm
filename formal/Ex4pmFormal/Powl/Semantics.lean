@@ -9,10 +9,9 @@ private def seqLang : List (List (List String)) → List (List String)
   | [] => [[]]
   | h :: t => concatLang h (seqLang t)
 
-private def repeatLang (n : Nat) (body redo : List (List String)) : List (List String) :=
-  match n with
-  | 0 => body
-  | Nat.succ k => concatLang (concatLang body redo) (repeatLang k body redo)
+private def repeatLang : Nat → List (List String) → List (List String) → List (List String)
+  | 0, body, _redo => body
+  | Nat.succ n, body, redo => concatLang (concatLang body redo) (repeatLang n body redo)
 
 mutual
   def language : Syntax → List (List String)
@@ -24,11 +23,6 @@ mutual
     | .admittedPartial traces => traces
 
   def execLanguage : Exec → List (List String)
-    | .atom a => [[a]]
-    | .silent => [[]]
-    | .seq xs => seqLang (xs.map execLanguage)
-    | .choice xs => xs.flatMap execLanguage
-    | .repeat n body redo => repeatLang n (execLanguage body) (execLanguage redo)
     | .finiteFragments traces => traces
 end
 

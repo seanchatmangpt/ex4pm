@@ -4,4 +4,3 @@ defaultTargets = ["Ex4pmFormal"]
 
 [[lean_lib]]
 name = "Ex4pmFormal"
-roots = ["Powl"]

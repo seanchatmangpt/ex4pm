@@ -27,12 +27,12 @@ jobs:
       - name: Manufacture formatter projection
         run: |
           mix format
-          mkdir -p .format-capsule
-          git diff --binary -- . ':!.format-capsule' > .format-capsule/format.patch
-          tar -czf .format-capsule/formatted-source.tar.gz apps lib mix.exs .formatter.exs
-          sha256sum .format-capsule/formatted-source.tar.gz > .format-capsule/formatted-source.tar.gz.sha256
+          mkdir -p format-capsule
+          git diff --binary -- . ':!format-capsule' > format-capsule/format.patch
+          tar -czf format-capsule/formatted-source.tar.gz apps lib mix.exs .formatter.exs
+          sha256sum format-capsule/formatted-source.tar.gz > format-capsule/formatted-source.tar.gz.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: format-capsule-${{ env.EX4PM_SUBJECT_SHA }}
-          path: .format-capsule/
+          path: format-capsule/
           if-no-files-found: error
