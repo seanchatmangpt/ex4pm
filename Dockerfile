@@ -1,6 +1,6 @@
 # Multi-stage production Dockerfile for ex4pm Process Intelligence Control Plane
 ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=27.2.4
+ARG OTP_VERSION=27.3.4
 ARG DEBIAN_VERSION=bookworm-20250224-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"

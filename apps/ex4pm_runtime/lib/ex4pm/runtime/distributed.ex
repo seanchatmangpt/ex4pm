@@ -1,7 +1,6 @@
 defmodule Ex4pm.Runtime.Distributed do
   @moduledoc "Evidence-bounded distributed POWL execution scheduled exclusively by Reactor."
 
-  alias Ex4pm.Core.Hash
   alias Ex4pm.Evidence.{Receipt, Replay, Store}
   alias Ex4pm.Refusal
   alias Ex4pm.Runtime
