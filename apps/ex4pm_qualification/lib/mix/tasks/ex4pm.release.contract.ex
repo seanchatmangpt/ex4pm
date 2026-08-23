@@ -30,7 +30,9 @@ defmodule Mix.Tasks.Ex4pm.Release.Contract do
     )
 
     if opts[:require_alive] and contract.standing != :alive do
-      Mix.raise("release contract is not ALIVE: missing=#{inspect(contract.missing)} blocked=#{inspect(contract.blocked)}")
+      Mix.raise(
+        "release contract is not ALIVE: missing=#{inspect(contract.missing)} blocked=#{inspect(contract.blocked)}"
+      )
     end
   end
 

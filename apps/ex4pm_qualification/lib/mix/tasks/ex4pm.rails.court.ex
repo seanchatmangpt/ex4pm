@@ -9,7 +9,7 @@ defmodule Mix.Tasks.Ex4pm.Rails.Court do
     case Ex4pm.Qualification.ReferenceRailCourt.run(output) do
       {:ok, manifest} ->
         Mix.shell().info(
-          "ReferenceRails=#{manifest.standing} rails=#{manifest.rails |> Enum.map(& &1.engine) |> Enum.join(",")}" 
+          "ReferenceRails=#{manifest.standing} rails=#{manifest.rails |> Enum.map(& &1.engine) |> Enum.join(",")}"
         )
 
       {:error, reason} ->

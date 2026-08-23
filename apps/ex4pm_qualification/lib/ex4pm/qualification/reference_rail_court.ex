@@ -28,7 +28,11 @@ defmodule Ex4pm.Qualification.ReferenceRailCourt do
         differential_groups: [%{operation: "plan", rails: ["ex4pm_plan", "remote"]}]
       }
 
-      File.write!(Path.join(output_dir, "rail-court.json"), Jason.encode!(manifest, pretty: true) <> "\n")
+      File.write!(
+        Path.join(output_dir, "rail-court.json"),
+        Jason.encode!(manifest, pretty: true) <> "\n"
+      )
+
       {:ok, manifest}
     end
   end

@@ -11,7 +11,11 @@ defmodule Ex4pm.Qualification.ReleaseContract do
     %{id: :ambiguity_closure, authority: :repository, evidence: :distributed_receipts},
     %{id: :independent_verifier, authority: :repository, evidence: :python_recomputation},
     %{id: :sabotage_court, authority: :repository, evidence: :falsifier_ledger},
-    %{id: :global_topology, authority: :external_infrastructure, evidence: :topology_attestations},
+    %{
+      id: :global_topology,
+      authority: :external_infrastructure,
+      evidence: :topology_attestations
+    },
     %{id: :hex_package, authority: :release, evidence: :package_inspection}
   ]
 
@@ -60,6 +64,7 @@ defmodule Ex4pm.Qualification.ReleaseContract do
   defp fetch(map, key), do: Map.get(map, key) || Map.get(map, Atom.to_string(key))
 
   defp normalize_state(value) when value in @states, do: value
+
   defp normalize_state(value) when is_binary(value) do
     case String.upcase(value) do
       "UNKNOWN" -> :unknown
