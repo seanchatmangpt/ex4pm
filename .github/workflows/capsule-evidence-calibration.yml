@@ -1,0 +1,53 @@
+name: capsule-evidence-calibration
+
+on:
+  pull_request:
+    paths:
+      - 'apps/ex4pm_core/lib/ex4pm_core/capsule_graph/calibration/**'
+      - 'apps/ex4pm_core/test/capsule_calibration_*_test.exs'
+      - '.github/workflows/capsule-evidence-calibration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Admit exact head
+        run: test "$(git rev-parse HEAD)" = "$EX4PM_SUBJECT_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Resolve locked dependencies
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get --check-locked
+
+      - name: Compile exact subject
+        run: mix compile --warnings-as-errors
+
+      - name: Run calibration falsifiers
+        run: mix test apps/ex4pm_core/test/capsule_calibration_*_test.exs
+
+      - name: Run canonical core regression court
+        run: mix test apps/ex4pm_core/test
+
+      - name: Check authored formatting
+        run: mix format --check-formatted apps/ex4pm_core/lib/ex4pm_core/capsule_graph/calibration/*.ex apps/ex4pm_core/test/capsule_calibration_*_test.exs
+
+      - name: Assert no consequential authority surface
+        run: |
+          ! grep -R -nE 'System\.cmd|:os\.cmd|HTTPoison|Req\.|Finch\.|AWS|Azure|GCP' apps/ex4pm_core/lib/ex4pm_core/capsule_graph/calibration
