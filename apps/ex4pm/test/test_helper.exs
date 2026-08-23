@@ -1,1 +1,1 @@
-ExUnit.start(exclude: [chicago: true])
+ExUnit.start(exclude: [:chicago])
