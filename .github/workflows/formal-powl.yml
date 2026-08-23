@@ -1,0 +1,70 @@
+name: ex4pm-formal-powl
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - release/**
+
+permissions:
+  contents: read
+
+jobs:
+  lean:
+    runs-on: ubuntu-latest
+    env:
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+      - name: Verify exact subject identity
+        run: test "$(git rev-parse HEAD)" = "$EX4PM_SUBJECT_SHA"
+      - name: Install elan/Lean toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Elaborate soundness and completeness
+        working-directory: formal
+        shell: bash
+        run: |
+          set -euo pipefail
+          lake build 2>&1 | tee ../formal-powl.log
+      - name: Manufacture formal proof receipt
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/qualification/formal
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib, subprocess
+          files = [
+              'formal/Ex4pmFormal/Powl/Syntax.lean',
+              'formal/Ex4pmFormal/Powl/Semantics.lean',
+              'formal/Ex4pmFormal/Powl/Compile.lean',
+              'formal/Ex4pmFormal/Powl/Soundness.lean',
+              'formal/Ex4pmFormal/Powl/Completeness.lean',
+              'formal/lean-toolchain',
+              'formal/lakefile.toml',
+          ]
+          digests = {p: hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest() for p in files}
+          receipt = {
+              'standing': 'ALIVE',
+              'source_sha': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
+              'tree_sha': subprocess.check_output(['git','rev-parse','HEAD^{tree}'], text=True).strip(),
+              'command': 'cd formal && lake build',
+              'exit': 0,
+              'log_sha256': hashlib.sha256(pathlib.Path('formal-powl.log').read_bytes()).hexdigest(),
+              'files': digests,
+          }
+          pathlib.Path('artifacts/qualification/formal/receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-formal-powl-${{ env.EX4PM_SUBJECT_SHA }}
+          path: |
+            formal-powl.log
+            artifacts/qualification/formal/receipt.json
+          if-no-files-found: error

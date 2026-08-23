@@ -2,44 +2,32 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
   @moduledoc """
   Adapter for the pinned ex4pm-plan cloud worker protocol.
 
-  This module is an analytical CONSTRUCT edge. The transport is explicitly injected
-  by the caller so this adapter never acquires provider credentials or ambient cloud
-  authority. A response is only promoted to `:alive` when the transport reports an
-  observed identity for the exact pinned worker source plus an image digest and the
-  worker reports successful replay verification.
+  This is an analytical CONSTRUCT edge. Provider authority remains outside the
+  adapter. ALIVE requires the exact pinned worker source, OCI digest and worker
+  replay evidence.
   """
 
   @behaviour Ex4pm.Engine
-
   alias Ex4pm.Engine.Result
   alias Ex4pm.Refusal
 
   @protocol "ex4pm-plan/v1"
-  @source_sha "e5da34c8b42089f1ebb1fd2306d95f0c4986f8c3"
+  @source_sha "99816fb389670174be44ddaaf3b42f00496e6f21"
 
   @impl true
   def id, do: :ex4pm_plan
-
   @impl true
-  def supports?(:plan, opts) do
-    Keyword.get(opts, :planner, :astar) in [:astar, "astar"]
-  end
-
+  def supports?(:plan, opts), do: Keyword.get(opts, :planner, :astar) in [:astar, "astar"]
   def supports?(_operation, _opts), do: false
-
   @impl true
-  def available?(opts) do
-    supports?(:plan, opts) and is_function(Keyword.get(opts, :ex4pm_plan_fun), 2)
-  end
+  def available?(opts),
+    do: supports?(:plan, opts) and is_function(Keyword.get(opts, :ex4pm_plan_fun), 2)
 
   @impl true
   def execute(:plan, subject, opts) when is_map(subject) do
     case Keyword.get(opts, :ex4pm_plan_fun) do
       fun when is_function(fun, 2) ->
-        request = %{
-          "solver" => "astar",
-          "problem" => json_term(subject)
-        }
+        request = %{"solver" => "astar", "problem" => json_term(subject)}
 
         case fun.(request, opts) do
           {:ok, response, identity} when is_map(response) ->
@@ -78,20 +66,20 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
     end
   end
 
-  def execute(:plan, subject, _opts) do
-    {:error,
-     Refusal.new(:invalid_planning_problem, "ex4pm-plan requires a map planning problem",
-       subject: subject
-     )}
-  end
+  def execute(:plan, subject, _opts),
+    do:
+      {:error,
+       Refusal.new(:invalid_planning_problem, "ex4pm-plan requires a map planning problem",
+         subject: subject
+       )}
 
-  def execute(operation, subject, _opts) do
-    {:error,
-     Refusal.new(:unsupported_ex4pm_plan_operation, "ex4pm-plan only supports planning",
-       subject: subject,
-       details: %{operation: operation}
-     )}
-  end
+  def execute(operation, subject, _opts),
+    do:
+      {:error,
+       Refusal.new(:unsupported_ex4pm_plan_operation, "ex4pm-plan only supports planning",
+         subject: subject,
+         details: %{operation: operation}
+       )}
 
   def protocol, do: @protocol
   def source_sha, do: @source_sha
@@ -170,39 +158,38 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
   end
 
   defp validate_observed_identity(identity) do
-    if observed_identity?(identity) and field(identity, :source_sha) != @source_sha do
-      {:error,
-       Refusal.new(
-         :ex4pm_plan_identity_mismatch,
-         "observed planner source does not match the pinned fork head",
-         details: %{expected: @source_sha, observed: field(identity, :source_sha)}
-       )}
-    else
-      :ok
-    end
+    if observed_identity?(identity) and field(identity, :source_sha) != @source_sha,
+      do:
+        {:error,
+         Refusal.new(
+           :ex4pm_plan_identity_mismatch,
+           "observed planner source does not match the pinned fork head",
+           details: %{expected: @source_sha, observed: field(identity, :source_sha)}
+         )},
+      else: :ok
   end
 
-  defp exact_observed_identity?(identity) do
-    observed_identity?(identity) and
-      field(identity, :source_sha) == @source_sha and
-      is_binary(field(identity, :image_digest)) and
-      byte_size(field(identity, :image_digest)) > 0
-  end
+  defp exact_observed_identity?(identity),
+    do:
+      observed_identity?(identity) and field(identity, :source_sha) == @source_sha and
+        is_binary(field(identity, :image_digest)) and
+        byte_size(field(identity, :image_digest)) > 0
 
   defp observed_identity?(identity), do: is_map(identity) and field(identity, :observed) == true
 
-  defp field(map, key) when is_map(map) do
-    case Map.fetch(map, key) do
-      {:ok, value} -> value
-      :error -> Map.get(map, Atom.to_string(key))
-    end
-  end
+  defp field(map, key) when is_map(map),
+    do:
+      case(Map.fetch(map, key),
+        do: (
+          {:ok, value} -> value
+          :error -> Map.get(map, Atom.to_string(key))
+        )
+      )
 
   defp field(_other, _key), do: nil
 
-  defp json_term(value) when is_map(value) do
-    Map.new(value, fn {key, nested} -> {to_string(key), json_term(nested)} end)
-  end
+  defp json_term(value) when is_map(value),
+    do: Map.new(value, fn {key, nested} -> {to_string(key), json_term(nested)} end)
 
   defp json_term(value) when is_list(value), do: Enum.map(value, &json_term/1)
   defp json_term(value) when value in [true, false, nil], do: value

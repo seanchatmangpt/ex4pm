@@ -1,0 +1,6 @@
+name = "ex4pm-formal"
+version = "0.1.0"
+defaultTargets = ["Ex4pmFormal"]
+
+[[lean_lib]]
+name = "Ex4pmFormal"

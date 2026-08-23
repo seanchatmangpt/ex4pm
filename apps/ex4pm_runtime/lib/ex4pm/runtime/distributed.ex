@@ -1,7 +1,7 @@
 defmodule Ex4pm.Runtime.Distributed do
   @moduledoc "Evidence-bounded distributed POWL execution scheduled exclusively by Reactor."
 
-  alias Ex4pm.Evidence.{Replay, Store}
+  alias Ex4pm.Evidence.{Receipt, Replay, Store}
   alias Ex4pm.Refusal
   alias Ex4pm.Runtime
   alias Ex4pm.Runtime.{Intent, Plan}
@@ -20,12 +20,10 @@ defmodule Ex4pm.Runtime.Distributed do
       placements = placement_map(plan, nodes)
 
       task_runner = fn task, _runtime_context ->
-        node = Map.fetch!(placements, task.id)
-
         execute_on_node(
           plan.subject_hash,
           task,
-          node,
+          Map.fetch!(placements, task.id),
           authority,
           timeout,
           origin_store,
@@ -45,16 +43,19 @@ defmodule Ex4pm.Runtime.Distributed do
     end
   end
 
-  def execute(other, _authority, _opts) do
-    {:error,
-     Refusal.new(
-       :invalid_distributed_execution_plan,
-       "distributed execution requires a compiled runtime plan",
-       subject: other
-     )}
-  end
+  def execute(other, _authority, _opts),
+    do:
+      {:error,
+       Refusal.new(
+         :invalid_distributed_execution_plan,
+         "distributed execution requires a compiled runtime plan",
+         subject: other
+       )}
 
-  def execute_remote_task(subject_hash, task, authority, store \\ Store) do
+  def execute_remote_task(subject_hash, task, authority, store \\ Store),
+    do: execute_remote_task(subject_hash, task, authority, store, nil)
+
+  def execute_remote_task(subject_hash, task, authority, store, execution_id) do
     operation = Intent.operation(task)
 
     Ex4pm.Evidence.BRCE.execute(
@@ -68,7 +69,9 @@ defmodule Ex4pm.Runtime.Distributed do
         executing_node: Node.self(),
         runtime: :reactor,
         task_id: task.id,
-        task_label: task.label
+        task_label: task.label,
+        execution_id: execution_id,
+        retry_authority: :none
       }
     )
   end
@@ -76,12 +79,7 @@ defmodule Ex4pm.Runtime.Distributed do
   def concurrency_probe(delay_ms) do
     started_us = System.system_time(:microsecond)
     Process.sleep(delay_ms)
-
-    %{
-      started_us: started_us,
-      finished_us: System.system_time(:microsecond),
-      node: Node.self()
-    }
+    %{started_us: started_us, finished_us: System.system_time(:microsecond), node: Node.self()}
   end
 
   def security_posture do
@@ -144,70 +142,238 @@ defmodule Ex4pm.Runtime.Distributed do
   end
 
   defp execute_on_node(subject_hash, task, node, authority, timeout, origin_store, remote_store) do
+    operation = Intent.operation(task)
+    execution_id = "exec:" <> Base.encode16(:crypto.strong_rand_bytes(16), case: :lower)
+
+    dispatch =
+      Receipt.pending(subject_hash, operation, authority, %{
+        receipt_role: :distributed_dispatch_intent,
+        execution_id: execution_id,
+        target_node: to_string(node),
+        retry_authority: :none
+      })
+
+    with {:ok, _} <- put_receipt(dispatch, origin_store, :distributed_dispatch_persistence_failed) do
+      perform_remote_call(
+        dispatch,
+        subject_hash,
+        task,
+        node,
+        authority,
+        timeout,
+        origin_store,
+        remote_store,
+        execution_id
+      )
+    end
+  end
+
+  defp perform_remote_call(
+         dispatch,
+         subject_hash,
+         task,
+         node,
+         authority,
+         timeout,
+         origin_store,
+         remote_store,
+         execution_id
+       ) do
     try do
       case :erpc.call(
              node,
              __MODULE__,
              :execute_remote_task,
-             [subject_hash, task, authority, remote_store],
+             [subject_hash, task, authority, remote_store, execution_id],
              timeout
            ) do
         {:ok, %{result: result, pending: pending, receipt: receipt}} ->
-          with :ok <- verify_receipt_chain(subject_hash, pending, receipt),
+          with :ok <- verify_receipt_chain(subject_hash, pending, receipt, execution_id),
                :ok <- mirror_receipt(pending, origin_store),
-               :ok <- mirror_receipt(receipt, origin_store) do
+               :ok <- mirror_receipt(receipt, origin_store),
+               {:ok, dispatch_outcome} <-
+                 close_dispatch(
+                   dispatch,
+                   %{remote_receipt_hash: receipt.hash},
+                   :alive,
+                   :confirmed,
+                   origin_store,
+                   false
+                 ) do
             {:ok,
              %{
                result: %{node: node, value: result},
                pending: pending,
-               receipt: receipt
+               receipt: receipt,
+               dispatch_pending: dispatch,
+               dispatch_receipt: dispatch_outcome
              }}
           end
 
         {:error, %{pending: pending, receipt: receipt} = failure} ->
-          with :ok <- verify_receipt_chain(subject_hash, pending, receipt),
+          with :ok <- verify_receipt_chain(subject_hash, pending, receipt, execution_id),
                :ok <- mirror_receipt(pending, origin_store),
-               :ok <- mirror_receipt(receipt, origin_store) do
+               :ok <- mirror_receipt(receipt, origin_store),
+               {:ok, _} <-
+                 close_dispatch(
+                   dispatch,
+                   %{remote_receipt_hash: receipt.hash},
+                   :blocked,
+                   :confirmed_failure,
+                   origin_store,
+                   true
+                 ) do
             {:error, %{failure: failure, node: node, task_id: task.id}}
           end
 
         {:error, %Refusal{} = refusal} ->
+          _ =
+            close_dispatch(
+              dispatch,
+              %{refusal: refusal.code},
+              :blocked,
+              :remote_refusal,
+              origin_store,
+              false
+            )
+
           {:error, %{failure: refusal, node: node, task_id: task.id}}
 
         other ->
+          _ =
+            close_dispatch(
+              dispatch,
+              %{result: inspect(other)},
+              :blocked,
+              :invalid_remote_result,
+              origin_store,
+              true
+            )
+
           {:error,
            Refusal.new(
              :invalid_distributed_task_result,
              "remote runtime returned an unrecognized result",
-             details: %{node: node, task_id: task.id, result: inspect(other)}
+             details: %{
+               node: node,
+               task_id: task.id,
+               result: inspect(other),
+               execution_id: execution_id
+             }
            )}
       end
     catch
       :error, {:erpc, reason} ->
-        {:error, erpc_refusal(reason, node, task, subject_hash)}
+        ambiguous? = reason in [:noconnection, :timeout]
+
+        case close_dispatch(
+               dispatch,
+               %{reason: reason},
+               :blocked,
+               if(ambiguous?, do: :ambiguous, else: :failed),
+               origin_store,
+               ambiguous?
+             ) do
+          {:ok, outcome} ->
+            {:error,
+             erpc_refusal(
+               reason,
+               node,
+               task,
+               subject_hash,
+               execution_id,
+               dispatch.hash,
+               outcome.hash
+             )}
+
+          {:error, refusal} ->
+            {:error, refusal}
+        end
 
       kind, reason ->
+        case close_dispatch(
+               dispatch,
+               %{class: kind, reason: inspect(reason)},
+               :blocked,
+               :ambiguous,
+               origin_store,
+               true
+             ) do
+          {:ok, outcome} ->
+            {:error,
+             Refusal.new(:distributed_remote_failure, "remote runtime call failed",
+               details: %{
+                 node: node,
+                 task_id: task.id,
+                 subject_hash: subject_hash,
+                 class: kind,
+                 reason: inspect(reason),
+                 execution_id: execution_id,
+                 dispatch_pending_hash: dispatch.hash,
+                 dispatch_outcome_hash: outcome.hash,
+                 do_may_have_been_attempted: true,
+                 retry_authority: :none
+               }
+             )}
+
+          {:error, refusal} ->
+            {:error, refusal}
+        end
+    end
+  end
+
+  defp close_dispatch(dispatch, result, standing, resolution, store, may_have_attempted) do
+    outcome =
+      Receipt.outcome(dispatch, result, standing, %{
+        receipt_role: :distributed_dispatch_outcome,
+        resolution: resolution,
+        execution_id: dispatch.metadata.execution_id,
+        do_may_have_been_attempted: may_have_attempted,
+        retry_authority: :none
+      })
+
+    put_receipt(outcome, store, :distributed_ambiguity_receipt_failed)
+  end
+
+  defp put_receipt(receipt, store, code) do
+    try do
+      case Store.put(receipt, store) do
+        {:ok, _} ->
+          {:ok, receipt}
+
+        other ->
+          {:error,
+           Refusal.new(code, "distributed evidence persistence failed",
+             details: %{
+               receipt_hash: receipt.hash,
+               result: inspect(other),
+               do_may_have_been_attempted: receipt.phase == :outcome
+             }
+           )}
+      end
+    catch
+      kind, reason ->
         {:error,
-         Refusal.new(:distributed_remote_failure, "remote runtime call failed",
+         Refusal.new(code, "distributed evidence persistence crashed",
            details: %{
-             node: node,
-             task_id: task.id,
-             subject_hash: subject_hash,
+             receipt_hash: receipt.hash,
              class: kind,
              reason: inspect(reason),
-             do_may_have_been_attempted: true
+             do_may_have_been_attempted: receipt.phase == :outcome
            }
          )}
     end
   end
 
-  defp verify_receipt_chain(subject_hash, pending, receipt) do
+  defp verify_receipt_chain(subject_hash, pending, receipt, execution_id) do
     with {:ok, _} <- Replay.verify(pending),
          {:ok, _} <- Replay.verify(receipt),
          true <- pending.subject_hash == subject_hash,
          true <- receipt.subject_hash == subject_hash,
          true <- receipt.parent_hash == pending.hash,
-         true <- receipt.operation == pending.operation do
+         true <- receipt.operation == pending.operation,
+         true <- pending.metadata[:execution_id] == execution_id,
+         true <- receipt.metadata[:execution_id] == execution_id do
       :ok
     else
       {:error, %Refusal{} = refusal} ->
@@ -217,48 +383,27 @@ defmodule Ex4pm.Runtime.Distributed do
         {:error,
          Refusal.new(
            :distributed_receipt_chain_mismatch,
-           "remote pending/outcome receipts do not close over the admitted subject"
+           "remote pending/outcome receipts do not close over the admitted subject and dispatch identity"
          )}
     end
   end
 
-  defp mirror_receipt(receipt, store) do
-    try do
-      case Store.put(receipt, store) do
-        {:ok, _} ->
-          :ok
+  defp mirror_receipt(receipt, store),
+    do:
+      case(put_receipt(receipt, store, :distributed_receipt_mirror_failed),
+        do: (
+          {:ok, _} -> :ok
+          {:error, reason} -> {:error, reason}
+        )
+      )
 
-        other ->
-          {:error,
-           Refusal.new(
-             :distributed_receipt_mirror_failed,
-             "remote receipt could not be mirrored into the origin ledger",
-             details: %{receipt_hash: receipt.hash, result: inspect(other), do_attempted: true}
-           )}
-      end
-    catch
-      kind, reason ->
-        {:error,
-         Refusal.new(
-           :distributed_receipt_mirror_failed,
-           "remote receipt mirror crashed",
-           details: %{
-             receipt_hash: receipt.hash,
-             class: kind,
-             reason: inspect(reason),
-             do_attempted: true
-           }
-         )}
-    end
-  end
-
-  defp admit_distribution([]) do
-    {:error,
-     Refusal.new(
-       :distributed_nodes_required,
-       "distributed execution requires at least one explicit node"
-     )}
-  end
+  defp admit_distribution([]),
+    do:
+      {:error,
+       Refusal.new(
+         :distributed_nodes_required,
+         "distributed execution requires at least one explicit node"
+       )}
 
   defp admit_distribution(nodes) do
     cond do
@@ -283,19 +428,26 @@ defmodule Ex4pm.Runtime.Distributed do
   defp admit_nodes(nodes) do
     unreachable = Enum.reject(nodes, &(Node.ping(&1) == :pong))
 
-    if unreachable == [] do
-      :ok
-    else
-      {:error,
-       Refusal.new(
-         :distributed_nodes_unreachable,
-         "one or more admitted distributed nodes are unreachable",
-         details: %{nodes: unreachable, do_attempted: false}
-       )}
-    end
+    if unreachable == [],
+      do: :ok,
+      else:
+        {:error,
+         Refusal.new(
+           :distributed_nodes_unreachable,
+           "one or more admitted distributed nodes are unreachable",
+           details: %{nodes: unreachable, do_attempted: false}
+         )}
   end
 
-  defp erpc_refusal(reason, node, task, subject_hash) do
+  defp erpc_refusal(
+         reason,
+         node,
+         task,
+         subject_hash,
+         execution_id,
+         dispatch_pending_hash,
+         dispatch_outcome_hash
+       ) do
     ambiguous? = reason in [:noconnection, :timeout]
 
     code =
@@ -313,7 +465,11 @@ defmodule Ex4pm.Runtime.Distributed do
         node: node,
         task_id: task.id,
         subject_hash: subject_hash,
-        do_may_have_been_attempted: ambiguous?
+        execution_id: execution_id,
+        dispatch_pending_hash: dispatch_pending_hash,
+        dispatch_outcome_hash: dispatch_outcome_hash,
+        do_may_have_been_attempted: ambiguous?,
+        retry_authority: :none
       }
     )
   end
