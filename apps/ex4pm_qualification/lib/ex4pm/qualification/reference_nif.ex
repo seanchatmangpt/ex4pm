@@ -1,11 +1,10 @@
 defmodule Ex4pm.Qualification.ReferenceNif do
   @moduledoc false
-  @on_load :load_nif
 
   def load_nif do
-    case System.get_env("EX4PM_REFERENCE_NIF") do
-      nil -> :ok
-      path -> :erlang.load_nif(String.to_charlist(path), 0)
+    case System.fetch_env("EX4PM_REFERENCE_NIF") do
+      {:ok, path} -> :erlang.load_nif(String.to_charlist(path), 0)
+      :error -> {:error, :reference_nif_path_not_admitted}
     end
   end
 

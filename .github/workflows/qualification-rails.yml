@@ -64,7 +64,7 @@ jobs:
           set -euo pipefail
           export EX4PM_REFERENCE_NIF="$PWD/artifacts/qualification/rail-assets/reference-nif.so"
           set +e
-          mix run -e 'Ex4pm.Qualification.ReferenceNif.panic_probe()' \
+          mix run -e ':ok = Ex4pm.Qualification.ReferenceNif.load_nif(); Ex4pm.Qualification.ReferenceNif.panic_probe()' \
             > artifacts/qualification/rail-assets/nif-panic.log 2>&1
           status=$?
           set -e
