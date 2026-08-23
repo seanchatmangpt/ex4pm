@@ -73,6 +73,17 @@ defmodule Ex4pm.Runtime.Distributed do
     )
   end
 
+  def concurrency_probe(delay_ms) do
+    started_us = System.system_time(:microsecond)
+    Process.sleep(delay_ms)
+
+    %{
+      started_us: started_us,
+      finished_us: System.system_time(:microsecond),
+      node: Node.self()
+    }
+  end
+
   def security_posture do
     transport = distribution_transport()
     encrypted? = transport in [:inet_tls, :inet6_tls]

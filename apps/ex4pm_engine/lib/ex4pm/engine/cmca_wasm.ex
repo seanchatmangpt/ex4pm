@@ -58,14 +58,19 @@ defmodule Ex4pm.Engine.CmcaWasm do
 
           other ->
             {:error,
-             Refusal.new(:invalid_cmca_wasm_transport_result, "CMCA WASM transport returned an invalid value",
+             Refusal.new(
+               :invalid_cmca_wasm_transport_result,
+               "CMCA WASM transport returned an invalid value",
                details: %{result: inspect(other)}
              )}
         end
 
       _ ->
         {:error,
-         Refusal.new(:cmca_wasm_unavailable, "CMCA requires an explicit wasm4pm transport callback")}
+         Refusal.new(
+           :cmca_wasm_unavailable,
+           "CMCA requires an explicit wasm4pm transport callback"
+         )}
     end
   end
 
@@ -78,7 +83,9 @@ defmodule Ex4pm.Engine.CmcaWasm do
 
   def execute(operation, subject, _opts) do
     {:error,
-     Refusal.new(:unsupported_cmca_wasm_operation, "CMCA WASM only supports consequence allocation",
+     Refusal.new(
+       :unsupported_cmca_wasm_operation,
+       "CMCA WASM only supports consequence allocation",
        subject: subject,
        details: %{operation: operation}
      )}
@@ -159,7 +166,9 @@ defmodule Ex4pm.Engine.CmcaWasm do
 
       observed ->
         {:error,
-         Refusal.new(:cmca_source_identity_mismatch, "CMCA receipt does not bind the exact admitted BCINR source",
+         Refusal.new(
+           :cmca_source_identity_mismatch,
+           "CMCA receipt does not bind the exact admitted BCINR source",
            details: %{expected: @bcinr_source_sha, observed: observed}
          )}
     end
@@ -172,13 +181,20 @@ defmodule Ex4pm.Engine.CmcaWasm do
 
       field(identity, :wasm4pm_source_sha) != @wasm4pm_source_sha ->
         {:error,
-         Refusal.new(:cmca_wasm_identity_mismatch, "observed wasm4pm source does not match the pinned CMCA export head",
-           details: %{expected: @wasm4pm_source_sha, observed: field(identity, :wasm4pm_source_sha)}
+         Refusal.new(
+           :cmca_wasm_identity_mismatch,
+           "observed wasm4pm source does not match the pinned CMCA export head",
+           details: %{
+             expected: @wasm4pm_source_sha,
+             observed: field(identity, :wasm4pm_source_sha)
+           }
          )}
 
       field(identity, :cmca_replay_verified) != true ->
         {:error,
-         Refusal.new(:cmca_wasm_replay_unverified, "observed CMCA execution did not establish WASM receipt replay",
+         Refusal.new(
+           :cmca_wasm_replay_unverified,
+           "observed CMCA execution did not establish WASM receipt replay",
            details: %{observed: field(identity, :cmca_replay_verified)}
          )}
 
@@ -211,7 +227,9 @@ defmodule Ex4pm.Engine.CmcaWasm do
     Map.new(value, fn {key, nested} -> {to_string(key), json_term(nested)} end)
   end
 
-  defp json_term(value) when is_tuple(value), do: value |> Tuple.to_list() |> Enum.map(&json_term/1)
+  defp json_term(value) when is_tuple(value),
+    do: value |> Tuple.to_list() |> Enum.map(&json_term/1)
+
   defp json_term(value) when is_list(value), do: Enum.map(value, &json_term/1)
   defp json_term(value) when value in [true, false, nil], do: value
   defp json_term(value) when is_atom(value), do: Atom.to_string(value)
