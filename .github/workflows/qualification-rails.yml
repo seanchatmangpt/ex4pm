@@ -104,7 +104,11 @@ jobs:
           open('/tmp/ex4pm-plan-worker-request.json','a').write('\n')
           PY
           docker run --rm -i "ex4pm-plan:${EX4PM_PLAN_SHA}" \
-            < /tmp/ex4pm-plan-worker-request.json > /tmp/ex4pm-plan-result.json
+            < /tmp/ex4pm-plan-worker-request.json \
+            > /tmp/ex4pm-plan-worker.raw
+          cat /tmp/ex4pm-plan-worker.raw
+          python3 scripts/extract-ex4pm-plan-json.py \
+            /tmp/ex4pm-plan-worker.raw /tmp/ex4pm-plan-result.json
           python3 - <<'PY'
           import json
           result = json.load(open('/tmp/ex4pm-plan-result.json'))
@@ -114,6 +118,7 @@ jobs:
           assert result['evidence']['replay_verified'] is True
           PY
           cp /tmp/ex4pm-plan-request.json artifacts/qualification/rail-assets/
+          cp /tmp/ex4pm-plan-worker.raw artifacts/qualification/rail-assets/
           cp /tmp/ex4pm-plan-result.json artifacts/qualification/rail-assets/
 
       - name: Start authenticated TLS reference remote
