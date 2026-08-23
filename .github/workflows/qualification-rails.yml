@@ -1,0 +1,158 @@
+name: ex4pm-reference-rails
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - release/**
+
+permissions:
+  contents: read
+
+jobs:
+  rails:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      EX4PM_PLAN_SHA: 99816fb389670174be44ddaaf3b42f00496e6f21
+      CARGO_TERM_COLOR: always
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+
+      - name: Verify exact subject identity
+        run: test "$(git rev-parse HEAD)" = "$EX4PM_SUBJECT_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Resolve exact Elixir dependencies
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+          mix deps.get --check-locked
+          mix compile --warnings-as-errors
+
+      - name: Build exact reference WASM and NIF artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup target add wasm32-unknown-unknown
+          export CARGO_TARGET_DIR="$PWD/.qualification-target/wasm"
+          cargo build --release --target wasm32-unknown-unknown --manifest-path qualification/reference-wasm/Cargo.toml
+          export CARGO_TARGET_DIR="$PWD/.qualification-target/nif"
+          cargo build --release --manifest-path qualification/reference-nif/Cargo.toml
+          test -f .qualification-target/wasm/wasm32-unknown-unknown/release/ex4pm_reference_wasm.wasm
+          test -f .qualification-target/nif/release/libex4pm_reference_nif.so
+
+      - name: Checkout exact ex4pm-plan source
+        uses: actions/checkout@v4
+        with:
+          repository: seanchatmangpt/ex4pm-plan
+          ref: ${{ env.EX4PM_PLAN_SHA }}
+          path: .qualification/ex4pm-plan
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Verify and build exact planner OCI capsule
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .qualification/ex4pm-plan rev-parse HEAD)" = "$EX4PM_PLAN_SHA"
+          docker build -t "ex4pm-plan:${EX4PM_PLAN_SHA}" .qualification/ex4pm-plan
+          mkdir -p artifacts/qualification/rail-assets
+          docker save "ex4pm-plan:${EX4PM_PLAN_SHA}" -o artifacts/qualification/rail-assets/ex4pm-plan.tar
+          docker image inspect --format='{{.Id}}' "ex4pm-plan:${EX4PM_PLAN_SHA}" > /tmp/ex4pm-plan-image-digest
+
+      - name: Execute planner reference subject
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > /tmp/ex4pm-plan-request.json <<'JSON'
+          {"solver":"astar","problem":{"type":"deterministic_graph","initial":"A","goals":["G"],"edges":[{"from":"A","to":"G","action":"expensive","cost":5},{"from":"A","to":"B","action":"to_b","cost":1},{"from":"B","to":"G","action":"to_g","cost":1}]}}
+          JSON
+          python3 - <<'PY'
+          import json
+          request = json.load(open('/tmp/ex4pm-plan-request.json'))
+          json.dump({'op': 'solve', **request}, open('/tmp/ex4pm-plan-worker-request.json','w'), sort_keys=True, separators=(',', ':'))
+          open('/tmp/ex4pm-plan-worker-request.json','a').write('\n')
+          PY
+          docker run --rm -i "ex4pm-plan:${EX4PM_PLAN_SHA}" \
+            < /tmp/ex4pm-plan-worker-request.json > /tmp/ex4pm-plan-result.json
+          python3 - <<'PY'
+          import json
+          result = json.load(open('/tmp/ex4pm-plan-result.json'))
+          assert result['standing'] == 'ALIVE'
+          assert result['result']['solved'] is True
+          assert result['result']['total_cost'] == 2.0
+          assert result['evidence']['replay_verified'] is True
+          PY
+
+      - name: Start authenticated TLS reference remote
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/ex4pm-remote
+          openssl req -x509 -newkey rsa:2048 -nodes \
+            -keyout /tmp/ex4pm-remote/server.key \
+            -out /tmp/ex4pm-remote/server.crt \
+            -days 1 -subj '/CN=localhost' \
+            -addext 'subjectAltName=DNS:localhost'
+          python3 qualification/reference-remote/server.py \
+            --cert /tmp/ex4pm-remote/server.crt \
+            --key /tmp/ex4pm-remote/server.key \
+            --planner-result /tmp/ex4pm-plan-result.json \
+            > /tmp/ex4pm-remote/server.log 2>&1 &
+          echo $! > /tmp/ex4pm-remote/server.pid
+          for i in $(seq 1 30); do
+            if curl --silent --fail --cacert /tmp/ex4pm-remote/server.crt https://localhost:8443/health; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/ex4pm-remote/server.log
+          exit 1
+
+      - name: Execute five-rail capability-indexed court
+        shell: bash
+        run: |
+          set -euo pipefail
+          export EX4PM_REFERENCE_WASM="$PWD/.qualification-target/wasm/wasm32-unknown-unknown/release/ex4pm_reference_wasm.wasm"
+          export EX4PM_REFERENCE_NIF="$PWD/.qualification-target/nif/release/libex4pm_reference_nif.so"
+          export EX4PM_PLAN_REQUEST=/tmp/ex4pm-plan-request.json
+          export EX4PM_PLAN_RESULT=/tmp/ex4pm-plan-result.json
+          export EX4PM_PLAN_IMAGE_DIGEST="$(cat /tmp/ex4pm-plan-image-digest)"
+          export EX4PM_PLAN_ARTIFACT="$PWD/artifacts/qualification/rail-assets/ex4pm-plan.tar"
+          export EX4PM_REMOTE_URL=https://localhost:8443/plan
+          export EX4PM_REMOTE_CA=/tmp/ex4pm-remote/server.crt
+          export EX4PM_REMOTE_ARTIFACT="$PWD/qualification/reference-remote/server.py"
+          export EX4PM_REMOTE_ARTIFACT_DIGEST="sha256:$(sha256sum qualification/reference-remote/server.py | cut -d' ' -f1)"
+          export EX4PM_RUST_TOOLCHAIN="$(rustc --version)"
+          export EX4PM_WASM_RUNTIME="wasmex-wasmtime"
+          mix ex4pm.rails.court artifacts/qualification/rails
+          cp "$EX4PM_REFERENCE_WASM" artifacts/qualification/rail-assets/reference.wasm
+          cp "$EX4PM_REFERENCE_NIF" artifacts/qualification/rail-assets/reference-nif.so
+          cp qualification/reference-remote/server.py artifacts/qualification/rail-assets/reference-remote.py
+          cp /tmp/ex4pm-plan-request.json artifacts/qualification/rail-assets/
+          cp /tmp/ex4pm-plan-result.json artifacts/qualification/rail-assets/
+          cp /tmp/ex4pm-remote/server.crt artifacts/qualification/rail-assets/
+
+      - name: Prove no rail remained below ALIVE
+        run: |
+          python3 - <<'PY'
+          import json
+          result = json.load(open('artifacts/qualification/rails/rail-court.json'))
+          assert result['standing'] == 'ALIVE'
+          assert sorted(item['engine'] for item in result['rails']) == ['beam','ex4pm_plan','nif','remote','wasm']
+          groups = result['differential_groups']
+          assert groups == [{'operation':'plan','rails':['ex4pm_plan','remote']}]
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-reference-rails-${{ env.EX4PM_SUBJECT_SHA }}
+          path: artifacts/qualification/
+          if-no-files-found: error
