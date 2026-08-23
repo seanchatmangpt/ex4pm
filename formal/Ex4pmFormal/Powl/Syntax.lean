@@ -7,10 +7,10 @@ inductive Syntax where
   | choice : List Syntax → Syntax
   | repeat : Nat → Syntax → Syntax → Syntax
   | admittedPartial : List (List String) → Syntax
-  deriving Repr, DecidableEq
+  deriving Repr
 
 inductive Exec where
   | finiteFragments : List (List String) → Exec
-  deriving Repr, DecidableEq
+  deriving Repr
 
 end Ex4pmFormal.Powl
