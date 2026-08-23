@@ -4,24 +4,8 @@ defmodule Ex4pmCore.CapsuleGraph.Receipt do
   alias Ex4pmCore.CapsuleGraph.{Candidate, Digest}
 
   @schema "ex4pm.capsule-graph/v1"
-  @enforce_keys [
-    :schema,
-    :candidate_id,
-    :subject_sha,
-    :input_digest,
-    :output_digest,
-    :authority,
-    :digest
-  ]
-  defstruct [
-    :schema,
-    :candidate_id,
-    :subject_sha,
-    :input_digest,
-    :output_digest,
-    :authority,
-    :digest
-  ]
+  @enforce_keys [:schema, :candidate_id, :subject_sha, :input_digest, :output_digest, :authority, :digest]
+  defstruct [:schema, :candidate_id, :subject_sha, :input_digest, :output_digest, :authority, :digest]
 
   def new(%Candidate{} = candidate, input, output) do
     body = %{

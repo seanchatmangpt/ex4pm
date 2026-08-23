@@ -55,7 +55,8 @@ defmodule Ex4pm.Stream.Pipeline do
       context: %{sink: sink, objects: objects},
       producer: [
         module:
-          {Ex4pm.Stream.Producer, [events: events, ack_target: Keyword.get(opts, :ack_target)]},
+          {Ex4pm.Stream.Producer,
+           [events: events, ack_target: Keyword.get(opts, :ack_target)]},
         concurrency: Keyword.get(opts, :producer_concurrency, 1)
       ],
       processors: [

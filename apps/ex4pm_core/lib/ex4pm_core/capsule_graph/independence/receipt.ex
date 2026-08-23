@@ -2,15 +2,7 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.Receipt do
   @moduledoc false
   alias Ex4pmCore.CapsuleGraph.Digest
 
-  def issue(
-        attempt_id,
-        standing,
-        diversity,
-        cluster_count,
-        blockers,
-        strategy,
-        authority \\ :construct
-      ) do
+  def issue(attempt_id, standing, diversity, cluster_count, blockers, strategy, authority \\ :construct) do
     body = %{
       attempt_id: attempt_id,
       standing: standing,

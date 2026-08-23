@@ -12,8 +12,7 @@ defmodule Ex4pmCore.CapsuleGraph.Capability do
     end
   end
 
-  def new(name, protocol),
-    do: {:error, {:refused, :invalid_capability_protocol, {name, protocol}}}
+  def new(name, protocol), do: {:error, {:refused, :invalid_capability_protocol, {name, protocol}}}
 
   def satisfies?(%__MODULE__{} = provided, %__MODULE__{} = required), do: provided == required
 end

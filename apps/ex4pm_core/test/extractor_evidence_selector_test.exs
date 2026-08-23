@@ -10,12 +10,10 @@ defmodule Ex4pmCore.ExtractorEvidenceSelectorTest do
       %{name: :ash_state_machine, standing: :partial_alive}
     ]
 
-    assert {:ok, %{name: :ash}, [:ash, :ash_state_machine, :reactor]} =
-             Selector.select(candidates)
+    assert {:ok, %{name: :ash}, [:ash, :ash_state_machine, :reactor]} = Selector.select(candidates)
   end
 
   test "refuses graph with no viable edge" do
-    assert {:error, {:refused, :no_viable_extractor}} =
-             Selector.select([%{name: :ash, standing: :unsupported}])
+    assert {:error, {:refused, :no_viable_extractor}} = Selector.select([%{name: :ash, standing: :unsupported}])
   end
 end

@@ -13,8 +13,7 @@ defmodule Ex4pmCore.CapsuleGraph.Dependency do
 
   defp validate_edges(keys, edges) do
     if Enum.all?(edges, fn {%Subject{} = from, %Subject{} = to} ->
-         Map.has_key?(keys, key(from)) and Map.has_key?(keys, key(to)) and
-           not Subject.same?(from, to)
+         Map.has_key?(keys, key(from)) and Map.has_key?(keys, key(to)) and not Subject.same?(from, to)
        end) do
       :ok
     else
@@ -22,16 +21,14 @@ defmodule Ex4pmCore.CapsuleGraph.Dependency do
     end
   end
 
-  defp topo(keys, [], acc), do: {:ok, (Enum.reverse(acc) ++ Map.values(keys)) |> Enum.uniq()}
+  defp topo(keys, [], acc), do: {:ok, Enum.reverse(acc) ++ Map.values(keys) |> Enum.uniq()}
 
   defp topo(keys, edges, acc) do
     incoming = MapSet.new(Enum.map(edges, fn {_, to} -> key(to) end))
     roots = keys |> Map.keys() |> Enum.reject(&MapSet.member?(incoming, &1)) |> Enum.sort()
 
     case roots do
-      [] ->
-        {:error, {:refused, :capsule_dependency_cycle}}
-
+      [] -> {:error, {:refused, :capsule_dependency_cycle}}
       [root | _] ->
         subject = Map.fetch!(keys, root)
         next_keys = Map.delete(keys, root)

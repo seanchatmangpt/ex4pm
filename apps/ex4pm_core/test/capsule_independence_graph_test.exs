@@ -13,13 +13,11 @@ defmodule Ex4pmCore.CapsuleIndependenceGraphTest do
     one_edge = MapSet.new([Relation.canonical_pair(a.id, b.id)])
     assert length(IndependenceGraph.maximum_clique(clusters, provenance, one_edge)) == 2
 
-    all_edges =
-      MapSet.new([
-        Relation.canonical_pair(a.id, b.id),
-        Relation.canonical_pair(a.id, c.id),
-        Relation.canonical_pair(b.id, c.id)
-      ])
-
+    all_edges = MapSet.new([
+      Relation.canonical_pair(a.id, b.id),
+      Relation.canonical_pair(a.id, c.id),
+      Relation.canonical_pair(b.id, c.id)
+    ])
     assert length(IndependenceGraph.maximum_clique(clusters, provenance, all_edges)) == 3
   end
 end

@@ -13,10 +13,7 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.Frontier do
 
   defp unique_evidence(witnesses) do
     ids = Enum.map(witnesses, & &1.evidence_id)
-
-    if length(ids) == MapSet.size(MapSet.new(ids)),
-      do: :ok,
-      else: {:error, {:refused, :duplicate_evidence_id}}
+    if length(ids) == MapSet.size(MapSet.new(ids)), do: :ok, else: {:error, {:refused, :duplicate_evidence_id}}
   end
 
   defp nonfuture(witnesses, %DateTime{} = now) do

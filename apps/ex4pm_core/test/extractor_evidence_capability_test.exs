@@ -5,10 +5,7 @@ defmodule Ex4pmCore.ExtractorEvidenceCapabilityTest do
 
   test "known capability admits and unknown capability refuses" do
     assert {:ok, :actions} = Capability.admit(:actions)
-
-    assert {:error, {:refused, :unknown_introspection_capability, :telepathy}} =
-             Capability.admit(:telepathy)
-
+    assert {:error, {:refused, :unknown_introspection_capability, :telepathy}} = Capability.admit(:telepathy)
     assert :steps in Capability.known()
   end
 end

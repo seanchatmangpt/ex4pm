@@ -46,11 +46,7 @@ defmodule Ex4pm.Evidence.ReplayChainTest do
     assert {:error,
             %Ex4pm.Refusal{
               code: :receipt_parent_mismatch,
-              details: %{
-                mismatches: %{
-                  subject_hash: %{pending: "sha256:subject-b", outcome: "sha256:subject-a"}
-                }
-              }
+              details: %{mismatches: %{subject_hash: %{pending: "sha256:subject-b", outcome: "sha256:subject-a"}}}
             }} = Chain.verify(outcome, :replay_chain_test_store)
   end
 

@@ -75,9 +75,7 @@ defmodule Ex4pm.Engine.Ex4pmPlanTest do
 
     transport = fn _request, _opts -> {:ok, worker_response()} end
     candidates = Engine.candidates(:plan, ex4pm_plan_fun: transport)
-
-    assert %{id: :ex4pm_plan, standing: :partial_alive} =
-             Enum.find(candidates, &(&1.id == :ex4pm_plan))
+    assert %{id: :ex4pm_plan, standing: :partial_alive} = Enum.find(candidates, &(&1.id == :ex4pm_plan))
   end
 
   defp worker_response do
