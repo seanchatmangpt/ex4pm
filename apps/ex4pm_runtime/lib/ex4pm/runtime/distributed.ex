@@ -1,8 +1,9 @@
 defmodule Ex4pm.Runtime.Distributed do
-  @moduledoc "Evidence-bounded distributed POWL execution over Erlang distribution."
+  @moduledoc "Evidence-bounded distributed POWL execution scheduled exclusively by Reactor."
 
   alias Ex4pm.Evidence.{Replay, Store}
   alias Ex4pm.Refusal
+  alias Ex4pm.Runtime
   alias Ex4pm.Runtime.{Intent, Plan}
 
   def execute(plan, authority, opts \\ [])
@@ -16,15 +17,31 @@ defmodule Ex4pm.Runtime.Distributed do
 
     with :ok <- admit_distribution(nodes),
          :ok <- admit_nodes(nodes) do
-      execute_layers(
-        plan,
-        authority,
-        nodes,
-        timeout,
-        max_concurrency,
-        origin_store,
-        remote_store
-      )
+      placements = placement_map(plan, nodes)
+
+      task_runner = fn task, _runtime_context ->
+        node = Map.fetch!(placements, task.id)
+
+        execute_on_node(
+          plan.subject_hash,
+          task,
+          node,
+          authority,
+          timeout,
+          origin_store,
+          remote_store
+        )
+      end
+
+      case Runtime.execute(plan, authority,
+             task_runner: task_runner,
+             store: origin_store,
+             max_concurrency: max_concurrency,
+             timeout: timeout
+           ) do
+        {:ok, execution} -> {:ok, distributed_execution(execution, nodes)}
+        {:error, _reason} = error -> error
+      end
     end
   end
 
@@ -49,6 +66,7 @@ defmodule Ex4pm.Runtime.Distributed do
       metadata: %{
         distributed: true,
         executing_node: Node.self(),
+        runtime: :reactor,
         task_id: task.id,
         task_label: task.label
       }
@@ -73,89 +91,45 @@ defmodule Ex4pm.Runtime.Distributed do
     }
   end
 
-  defp execute_layers(
-         plan,
-         authority,
-         nodes,
-         timeout,
-         max_concurrency,
-         origin_store,
-         remote_store
-       ) do
-    plan.layers
-    |> Enum.with_index()
-    |> Enum.reduce_while({:ok, [], []}, fn {layer, layer_index},
-                                           {:ok, completed_layers, placements} ->
-      work = place_layer(layer, nodes, layer_index)
-
-      results =
-        Task.Supervisor.async_stream_nolink(
-          Ex4pm.Runtime.TaskSupervisor,
-          work,
-          fn {task, node} ->
-            execute_on_node(
-              plan.subject_hash,
-              task,
-              node,
-              authority,
-              timeout,
-              origin_store,
-              remote_store
-            )
-          end,
-          ordered: true,
-          max_concurrency: max_concurrency,
-          timeout: timeout + 1_000,
-          on_timeout: :kill_task
-        )
-        |> Enum.to_list()
-
-      case normalize_layer_results(results) do
-        {:ok, layer_results} ->
-          layer_placements = Enum.map(layer_results, &Map.take(&1, [:task_id, :node]))
-
-          {:cont, {:ok, [layer_results | completed_layers], placements ++ layer_placements}}
-
-        {:error, failure} ->
-          {:halt,
-           {:error,
-            %{
-              failure: failure,
-              completed_layers: Enum.reverse(completed_layers),
-              placements: placements
-            }}}
-      end
-    end)
-    |> case do
-      {:ok, layers, placements} ->
-        trace = Enum.reverse(layers)
-
-        {:ok,
-         %{
-           plan_hash: Ex4pm.Core.Hash.digest(plan),
-           subject_hash: plan.subject_hash,
-           layers: trace,
-           placements: placements,
-           nodes: nodes,
-           standing: :alive,
-           security: security_posture(),
-           receipt_hashes: for(layer <- trace, item <- layer, do: item.receipt.hash)
-         }}
-
-      error ->
-        error
-    end
-  end
-
-  defp place_layer(layer, nodes, layer_index) do
+  defp placement_map(plan, nodes) do
     node_count = length(nodes)
 
-    layer
+    plan.layers
     |> Enum.with_index()
-    |> Enum.map(fn {task, task_index} ->
-      node = Enum.at(nodes, rem(layer_index + task_index, node_count))
-      {task, node}
+    |> Enum.flat_map(fn {layer, layer_index} ->
+      layer
+      |> Enum.with_index()
+      |> Enum.map(fn {task, task_index} ->
+        {task.id, Enum.at(nodes, rem(layer_index + task_index, node_count))}
+      end)
     end)
+    |> Map.new()
+  end
+
+  defp distributed_execution(execution, nodes) do
+    layers =
+      Enum.map(execution.layers, fn layer ->
+        Enum.map(layer, fn item ->
+          %{node: node, value: value} = item.result
+
+          %{
+            task_id: item.task_id,
+            node: node,
+            result: value,
+            pending: item.pending,
+            receipt: item.receipt
+          }
+        end)
+      end)
+
+    placements = for layer <- layers, item <- layer, do: Map.take(item, [:task_id, :node])
+
+    execution
+    |> Map.put(:layers, layers)
+    |> Map.put(:placements, placements)
+    |> Map.put(:nodes, nodes)
+    |> Map.put(:runtime, :reactor_distributed)
+    |> Map.put(:security, security_posture())
   end
 
   defp execute_on_node(subject_hash, task, node, authority, timeout, origin_store, remote_store) do
@@ -173,17 +147,18 @@ defmodule Ex4pm.Runtime.Distributed do
                :ok <- mirror_receipt(receipt, origin_store) do
             {:ok,
              %{
-               task_id: task.id,
-               node: node,
-               result: result,
+               result: %{node: node, value: result},
                pending: pending,
                receipt: receipt
              }}
           end
 
-        {:error, %{receipt: receipt} = failure} ->
-          _ = mirror_receipt(receipt, origin_store)
-          {:error, %{failure: failure, node: node, task_id: task.id}}
+        {:error, %{pending: pending, receipt: receipt} = failure} ->
+          with :ok <- verify_receipt_chain(subject_hash, pending, receipt),
+               :ok <- mirror_receipt(pending, origin_store),
+               :ok <- mirror_receipt(receipt, origin_store) do
+            {:error, %{failure: failure, node: node, task_id: task.id}}
+          end
 
         {:error, %Refusal{} = refusal} ->
           {:error, %{failure: refusal, node: node, task_id: task.id}}
@@ -263,27 +238,6 @@ defmodule Ex4pm.Runtime.Distributed do
              do_attempted: true
            }
          )}
-    end
-  end
-
-  defp normalize_layer_results(results) do
-    Enum.reduce_while(results, {:ok, []}, fn
-      {:ok, {:ok, item}}, {:ok, acc} ->
-        {:cont, {:ok, [item | acc]}}
-
-      {:ok, {:error, failure}}, _acc ->
-        {:halt, {:error, failure}}
-
-      {:exit, reason}, _acc ->
-        {:halt,
-         {:error,
-          Refusal.new(:distributed_driver_exit, "distributed task driver exited",
-            details: %{reason: inspect(reason), do_may_have_been_attempted: true}
-          )}}
-    end)
-    |> case do
-      {:ok, values} -> {:ok, Enum.reverse(values)}
-      error -> error
     end
   end
 
