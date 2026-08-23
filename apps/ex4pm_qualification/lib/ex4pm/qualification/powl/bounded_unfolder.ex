@@ -25,8 +25,12 @@ defmodule Ex4pm.Qualification.Powl.BoundedUnfolder do
 
     0..bound
     |> Enum.flat_map(fn repetitions ->
-      pieces = [body_lang] ++ List.flatten(List.duplicate([redo_lang, body_lang], repetitions))
-      concat_languages(pieces)
+      cycles =
+        [redo_lang, body_lang]
+        |> List.duplicate(repetitions)
+        |> Enum.concat()
+
+      concat_languages([body_lang | cycles])
     end)
     |> Enum.uniq()
   end
