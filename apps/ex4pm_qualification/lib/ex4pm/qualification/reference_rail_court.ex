@@ -97,11 +97,13 @@ defmodule Ex4pm.Qualification.ReferenceRailCourt do
       toolchain: toolchain
     }
 
-    Nif.execute(:qualification_probe, 21,
-      nif_module: Ex4pm.Qualification.ReferenceNif,
-      nif_identity: identity,
-      nif_digest: "sha256:" <> digest
-    )
+    with :ok <- Ex4pm.Qualification.ReferenceNif.load_nif() do
+      Nif.execute(:qualification_probe, 21,
+        nif_module: Ex4pm.Qualification.ReferenceNif,
+        nif_identity: identity,
+        nif_digest: "sha256:" <> digest
+      )
+    end
   end
 
   defp remote_result do
@@ -140,7 +142,8 @@ defmodule Ex4pm.Qualification.ReferenceRailCourt do
     ssl = [
       verify: :verify_peer,
       cacertfile: String.to_charlist(ca),
-      server_name_indication: ~c"localhost"
+      server_name_indication: ~c"localhost",
+      customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
     ]
 
     request = {String.to_charlist(url), [], ~c"application/json", body}

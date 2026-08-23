@@ -1,7 +1,7 @@
 defmodule Ex4pmCore.MixProject do
   use Mix.Project
 
-  @version "26.8.22"
+  @version "26.8.23"
   @source_url "https://github.com/seanchatmangpt/ex4pm"
 
   def project do

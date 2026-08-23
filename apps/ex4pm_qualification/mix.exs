@@ -4,7 +4,7 @@ defmodule Ex4pmQualification.MixProject do
   def project do
     [
       app: :ex4pm_qualification,
-      version: "26.8.22",
+      version: "26.8.23",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
@@ -15,7 +15,7 @@ defmodule Ex4pmQualification.MixProject do
     ]
   end
 
-  def application, do: [extra_applications: [:logger, :crypto]]
+  def application, do: [extra_applications: [:logger, :crypto, :inets, :ssl]]
 
   defp deps do
     [

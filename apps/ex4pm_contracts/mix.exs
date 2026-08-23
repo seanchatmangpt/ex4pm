@@ -1,7 +1,7 @@
 defmodule Ex4pmContracts.MixProject do
   use Mix.Project
 
-  @version "26.8.22"
+  @version "26.8.23"
   @source_url "https://github.com/seanchatmangpt/ex4pm"
 
   def project do
@@ -16,7 +16,7 @@ defmodule Ex4pmContracts.MixProject do
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      deps: [{:ex4pm_core, "~> 26.8.22", in_umbrella: true}]
+      deps: [{:ex4pm_core, "~> 26.8.23", in_umbrella: true}]
     ]
   end
 

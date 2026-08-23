@@ -4,7 +4,7 @@ defmodule Ex4pm.Umbrella.MixProject do
   def project do
     [
       apps_path: "apps",
-      version: "26.8.22",
+      version: "26.8.23",
       start_permanent: Mix.env() == :prod,
       deps: [{:stream_data, "~> 1.0"}],
       aliases: aliases(),
@@ -14,7 +14,9 @@ defmodule Ex4pm.Umbrella.MixProject do
         chicago: :test,
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
-        "ex4pm.crown": :test
+        "ex4pm.crown": :test,
+        "ex4pm.release.contract": :test,
+        "ex4pm.rails.court": :test
       ],
       dialyzer: [
         plt_core_path: "priv/plts/core.plt",
@@ -32,7 +34,9 @@ defmodule Ex4pm.Umbrella.MixProject do
         chicago: :test,
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
-        "ex4pm.crown": :test
+        "ex4pm.crown": :test,
+        "ex4pm.release.contract": :test,
+        "ex4pm.rails.court": :test
       ]
     ]
   end

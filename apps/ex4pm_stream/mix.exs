@@ -1,7 +1,7 @@
 defmodule Ex4pmStream.MixProject do
   use Mix.Project
 
-  @version "26.8.22"
+  @version "26.8.23"
   @source_url "https://github.com/seanchatmangpt/ex4pm"
 
   def project do
@@ -27,10 +27,10 @@ defmodule Ex4pmStream.MixProject do
 
   defp deps do
     [
-      {:ex4pm_core, "~> 26.8.22", in_umbrella: true},
-      {:ex4pm_evidence, "~> 26.8.22", in_umbrella: true},
-      {:ex4pm_engine, "~> 26.8.22", in_umbrella: true},
-      {:ex4pm_domain, "~> 26.8.22", in_umbrella: true},
+      {:ex4pm_core, "~> 26.8.23", in_umbrella: true},
+      {:ex4pm_evidence, "~> 26.8.23", in_umbrella: true},
+      {:ex4pm_engine, "~> 26.8.23", in_umbrella: true},
+      {:ex4pm_domain, "~> 26.8.23", in_umbrella: true},
       {:broadway, "~> 1.3"},
       {:phoenix_pubsub, "~> 2.1"},
       {:plug, "~> 1.14"},
