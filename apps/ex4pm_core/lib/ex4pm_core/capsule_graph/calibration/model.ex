@@ -41,7 +41,19 @@ defmodule Ex4pmCore.CapsuleGraph.Calibration.Model do
     tpr = (tp + 1) / (tp + fnn + 2)
     fpr = (fp + 1) / (fp + tn + 2)
     brier = Enum.reduce(trials, 0.0, fn t, acc -> acc + brier_term(t) end) / support
-    {:ok, %__MODULE__{source_id: source_id, support: support, tp: tp, tn: tn, fp: fp, fn: fnn, tpr: tpr, fpr: fpr, brier: brier}}
+
+    {:ok,
+     %__MODULE__{
+       source_id: source_id,
+       support: support,
+       tp: tp,
+       tn: tn,
+       fp: fp,
+       fn: fnn,
+       tpr: tpr,
+       fpr: fpr,
+       brier: brier
+     }}
   end
 
   defp brier_term(%{truth: truth, prediction: prediction}) do

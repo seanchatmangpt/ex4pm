@@ -10,8 +10,18 @@ defmodule Ex4pmCore.CapsuleGraph.Calibration.Source do
     parts = [producer, run, artifact, family]
 
     if Enum.all?(parts, &(String.trim(&1) != "")) do
-      fingerprint = :crypto.hash(:sha256, :erlang.term_to_binary(parts, [:deterministic])) |> Base.encode16(case: :lower)
-      {:ok, %__MODULE__{producer: producer, run: run, artifact: artifact, family: family, fingerprint: fingerprint}}
+      fingerprint =
+        :crypto.hash(:sha256, :erlang.term_to_binary(parts, [:deterministic]))
+        |> Base.encode16(case: :lower)
+
+      {:ok,
+       %__MODULE__{
+         producer: producer,
+         run: run,
+         artifact: artifact,
+         family: family,
+         fingerprint: fingerprint
+       }}
     else
       {:error, {:refused, :incomplete_evidence_source}}
     end

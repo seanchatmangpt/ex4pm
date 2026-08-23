@@ -7,7 +7,8 @@ defmodule Ex4pmCore.CapsuleGraph.Calibration.Contribution do
   defstruct [:outcome, :log_likelihood]
 
   @spec from(Model.t() | struct(), atom()) :: {:ok, struct()} | {:error, term()}
-  def from(%Model{} = model, outcome) when outcome in [:pass, :fail, :pending, :unknown, :unsupported] do
+  def from(%Model{} = model, outcome)
+      when outcome in [:pass, :fail, :pending, :unknown, :unsupported] do
     value =
       case outcome do
         :pass -> :math.log(model.tpr / model.fpr)

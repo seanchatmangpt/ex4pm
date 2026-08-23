@@ -5,12 +5,16 @@ defmodule Ex4pmCore.CapsuleCalibrationInformationTest do
 
   test "pass and fail evidence point in opposite directions while unknown is zero" do
     now = DateTime.from_unix!(1_700_000_000)
-    trials = [
-      Trial.new("source", :pass, :pass, now),
-      Trial.new("source", :pass, :pass, DateTime.add(now, 1, :second)),
-      Trial.new("source", :fail, :fail, DateTime.add(now, 2, :second)),
-      Trial.new("source", :fail, :fail, DateTime.add(now, 3, :second))
-    ] |> Enum.map(fn {:ok, t} -> t end)
+
+    trials =
+      [
+        Trial.new("source", :pass, :pass, now),
+        Trial.new("source", :pass, :pass, DateTime.add(now, 1, :second)),
+        Trial.new("source", :fail, :fail, DateTime.add(now, 2, :second)),
+        Trial.new("source", :fail, :fail, DateTime.add(now, 3, :second))
+      ]
+      |> Enum.map(fn {:ok, t} -> t end)
+
     {:ok, model} = Model.fit(trials)
     {:ok, pass} = Contribution.from(model, :pass)
     {:ok, fail} = Contribution.from(model, :fail)

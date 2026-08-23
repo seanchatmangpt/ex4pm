@@ -5,12 +5,20 @@ defmodule Ex4pmCore.CapsuleGraph.Calibration.Strategy do
 
   @spec evaluate(atom(), [number()], [non_neg_integer()]) :: {:ok, number()} | {:error, term()}
   def evaluate(strategy, contributions, supports)
-      when strategy in @strategies and is_list(contributions) and is_list(supports) and length(contributions) == length(supports) do
+      when strategy in @strategies and is_list(contributions) and is_list(supports) and
+             length(contributions) == length(supports) do
     value =
       case strategy do
-        :uniform_cluster -> if contributions == [], do: 0.0, else: Enum.sum(contributions) / length(contributions)
-        :calibrated_log_odds -> Enum.sum(contributions)
-        :minimax_under_support -> Enum.zip(contributions, supports) |> Enum.map(fn {v, n} -> v * min(n, 8) / 8 end) |> Enum.min(fn -> 0.0 end)
+        :uniform_cluster ->
+          if contributions == [], do: 0.0, else: Enum.sum(contributions) / length(contributions)
+
+        :calibrated_log_odds ->
+          Enum.sum(contributions)
+
+        :minimax_under_support ->
+          Enum.zip(contributions, supports)
+          |> Enum.map(fn {v, n} -> v * min(n, 8) / 8 end)
+          |> Enum.min(fn -> 0.0 end)
       end
 
     {:ok, value}

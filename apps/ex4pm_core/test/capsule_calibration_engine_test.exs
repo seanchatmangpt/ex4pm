@@ -43,7 +43,9 @@ defmodule Ex4pmCore.CapsuleCalibrationEngineTest do
       ]
       |> Enum.with_index()
       |> Enum.map(fn {{truth, prediction}, i} ->
-        {:ok, trial} = Trial.new(source_id, truth, prediction, DateTime.add(base, -10 - i, :second))
+        {:ok, trial} =
+          Trial.new(source_id, truth, prediction, DateTime.add(base, -10 - i, :second))
+
         trial
       end)
 

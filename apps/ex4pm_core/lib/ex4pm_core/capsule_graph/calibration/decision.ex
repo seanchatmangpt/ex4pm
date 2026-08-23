@@ -6,7 +6,8 @@ defmodule Ex4pmCore.CapsuleGraph.Calibration.Decision do
 
   @spec decide([number()], number(), number()) :: {:ok, struct()} | {:error, term()}
   def decide(values, accept_threshold, reject_threshold)
-      when is_list(values) and is_number(accept_threshold) and is_number(reject_threshold) and accept_threshold > reject_threshold do
+      when is_list(values) and is_number(accept_threshold) and is_number(reject_threshold) and
+             accept_threshold > reject_threshold do
     statistic = Enum.reduce(values, 0.0, &+/2)
 
     result =

@@ -14,13 +14,21 @@ defmodule Ex4pmCore.CapsuleGraph.Calibration.Dependency do
 
   defp visit(graph, node, stack, seen) do
     cond do
-      MapSet.member?(stack, node) -> {:error, {:refused, :dependency_cycle}}
-      MapSet.member?(seen, node) -> {:ok, {seen, MapSet.new()}}
+      MapSet.member?(stack, node) ->
+        {:error, {:refused, :dependency_cycle}}
+
+      MapSet.member?(seen, node) ->
+        {:ok, {seen, MapSet.new()}}
+
       true ->
         entry = Map.get(graph, node, %{standing: :unknown, dependencies: []})
         next_stack = MapSet.put(stack, node)
         next_seen = MapSet.put(seen, node)
-        own = if entry.standing in [:blocked, :build_broken], do: MapSet.new([node]), else: MapSet.new()
+
+        own =
+          if entry.standing in [:blocked, :build_broken],
+            do: MapSet.new([node]),
+            else: MapSet.new()
 
         Enum.reduce_while(entry.dependencies, {:ok, {next_seen, own}}, fn dep, {:ok, {s, acc}} ->
           case visit(graph, dep, next_stack, s) do
