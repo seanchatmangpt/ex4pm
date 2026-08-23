@@ -1,0 +1,40 @@
+name: ex4pm-source-capsule
+
+on:
+  push:
+    branches:
+      - release/**
+      - feat/**
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  source-capsule:
+    runs-on: ubuntu-latest
+    env:
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+          fetch-depth: 0
+      - name: Verify exact subject identity
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          tree="$(git rev-parse 'HEAD^{tree}')"
+          test "$actual" = "$EX4PM_SUBJECT_SHA"
+          mkdir -p .source-capsule
+          printf 'source_sha=%s\ntree_sha=%s\n' "$actual" "$tree" | tee .source-capsule/identity.txt
+      - name: Manufacture exact source capsule
+        run: |
+          set -euo pipefail
+          git archive --format=tar.gz --output=.source-capsule/ex4pm-source.tar.gz HEAD
+          sha256sum .source-capsule/ex4pm-source.tar.gz > .source-capsule/ex4pm-source.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source-capsule-${{ env.EX4PM_SUBJECT_SHA }}
+          path: .source-capsule/
+          if-no-files-found: error
