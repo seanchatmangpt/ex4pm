@@ -83,6 +83,29 @@ defmodule Ex4pm do
      )}
   end
 
+  @doc """
+  Computes a BCINR CMCA consequence allocation through the pinned wasm4pm bridge.
+
+  This is an analytical CONSTRUCT-only path. The result has no ambient SELECT or DO
+  authority; consequential execution remains exclusive to `operate/3` and BRCE.
+  """
+  def cmca(problem, opts \\ [])
+
+  def cmca(problem, opts) when is_map(problem) do
+    opts = Keyword.put_new(opts, :engine, :cmca_wasm)
+
+    with {:ok, engine_result} <- Engine.execute(:cmca, problem, opts) do
+      receipted_run(:cmca, Ex4pm.Core.Hash.digest(problem), engine_result, opts)
+    end
+  end
+
+  def cmca(other, _opts) do
+    {:error,
+     Refusal.new(:invalid_cmca_problem, "cmca requires an admitted consequence-allocation map",
+       subject: other
+     )}
+  end
+
   def operate(subject, authority, opts \\ [])
 
   def operate(%POWL{} = model, authority, opts) do

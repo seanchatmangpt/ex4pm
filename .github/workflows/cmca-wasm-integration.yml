@@ -1,0 +1,175 @@
+name: BCINR CMCA WASM integration
+
+on:
+  pull_request:
+    paths:
+      - "apps/ex4pm/lib/ex4pm.ex"
+      - "apps/ex4pm/test/cmca_test.exs"
+      - "apps/ex4pm_engine/lib/ex4pm/engine.ex"
+      - "apps/ex4pm_engine/lib/ex4pm/engine/cmca_wasm.ex"
+      - "apps/ex4pm_engine/test/cmca_wasm_test.exs"
+      - "docs/PRD-v26.8.22.md"
+      - "docs/ARD-v26.8.22.md"
+      - ".github/workflows/cmca-wasm-integration.yml"
+  push:
+    branches:
+      - "feat/v26.8.22-bcinr-cmca-wasm"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cmca-cross-repo:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      EX4PM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      WASM4PM_CMCA_SHA: e9f38ef4312790ff52a8cf85c2b78b7cba5c0d9c
+      BCINR_CMCA_SHA: b76dcb377b297cb8826a5256b55f8b57a6b76462
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SOURCE_SHA }}
+
+      - name: Verify exact ex4pm source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EX4PM_SOURCE_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Resolve exact ex4pm lock and compile
+        run: |
+          mix deps.get --check-locked
+          mix compile --warnings-as-errors
+
+      - name: Execute ex4pm CMCA admission and receipt courts
+        run: mix test apps/ex4pm_engine/test/cmca_wasm_test.exs apps/ex4pm/test/cmca_test.exs
+
+      - name: Checkout exact wasm4pm CMCA export source
+        uses: actions/checkout@v4
+        with:
+          repository: seanchatmangpt/wasm4pm
+          ref: ${{ env.WASM4PM_CMCA_SHA }}
+          path: .ci/wasm4pm
+          fetch-depth: 1
+
+      - name: Verify exact wasm4pm source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .ci/wasm4pm rev-parse HEAD)" = "$WASM4PM_CMCA_SHA"
+
+      - name: Install wasm4pm repository Rust toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          rustup toolchain install nightly-2026-04-15 --profile minimal --target wasm32-unknown-unknown
+
+      - name: Verify exact BCINR CMCA dependency
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd .ci/wasm4pm
+          cargo +nightly-2026-04-15 metadata --format-version 1 > /tmp/wasm4pm-metadata.json
+          python3 - <<'PY'
+          import json, os
+          metadata = json.load(open('/tmp/wasm4pm-metadata.json'))
+          expected = os.environ['BCINR_CMCA_SHA']
+          candidates = [
+              p for p in metadata['packages']
+              if p['name'] == 'bcinr-cmca'
+              and (p.get('source') or '').startswith('git+https://github.com/seanchatmangpt/bcinr')
+          ]
+          assert len(candidates) == 1, candidates
+          assert candidates[0]['source'].endswith('#' + expected), candidates[0]['source']
+          PY
+
+      - name: Execute and compile the exact CMCA bridge
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd .ci/wasm4pm
+          cargo +nightly-2026-04-15 test -p wasm4pm-cmca
+          cargo +nightly-2026-04-15 check -p wasm4pm-cmca --target wasm32-unknown-unknown
+
+      - name: Build exact CMCA WebAssembly artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo +nightly-2026-04-15 install wasm-pack --version 0.13.1 --locked
+          cd .ci/wasm4pm
+          wasm-pack build crates/wasm4pm-cmca --target nodejs --out-dir pkg
+
+      - name: Execute CMCA allocation and replay through WebAssembly
+        shell: bash
+        run: |
+          set -euo pipefail
+          node .ci/wasm4pm/crates/wasm4pm-cmca/tests/node_smoke.js \
+            | tee .ci/cmca-execution.json
+          sha256sum .ci/wasm4pm/crates/wasm4pm-cmca/pkg/wasm4pm_cmca_bg.wasm \
+            | awk '{print $1}' > .ci/cmca-wasm.sha256
+
+      - name: Admit exact WASM execution into ex4pm and replay receipt chain
+        shell: bash
+        run: |
+          set -euo pipefail
+          export CMCA_WASM_SHA256="$(cat .ci/cmca-wasm.sha256)"
+          mix run -e '
+            payload = Jason.decode!(File.read!(".ci/cmca-execution.json"))
+            problem = payload["request"]
+            response = payload["response"]
+            true = payload["replay_verified"]
+            transport = fn generated_request, _opts ->
+              if generated_request != problem, do: raise("CMCA request correspondence mismatch")
+              {:ok, response, %{
+                observed: true,
+                wasm4pm_source_sha: System.fetch_env!("WASM4PM_CMCA_SHA"),
+                wasm_sha256: System.fetch_env!("CMCA_WASM_SHA256"),
+                cmca_replay_verified: true
+              }}
+            end
+            {:ok, run} = Ex4pm.cmca(problem, cmca_wasm_fun: transport)
+            :alive = run.standing
+            false = run.engine_result.evidence.actuation_performed
+            :construct_only = run.engine_result.evidence.authority
+            {:ok, %{replay: :chain_match}} = Ex4pm.replay(run.receipt.hash)
+            receipt = %{
+              schema: "ex4pm.cmca-wasm-integration/v1",
+              ex4pm_source_sha: System.fetch_env!("EX4PM_SOURCE_SHA"),
+              wasm4pm_source_sha: System.fetch_env!("WASM4PM_CMCA_SHA"),
+              bcinr_source_sha: System.fetch_env!("BCINR_CMCA_SHA"),
+              wasm_sha256: System.fetch_env!("CMCA_WASM_SHA256"),
+              cmca_replay_verified: true,
+              ex4pm_receipt_hash: run.receipt.hash,
+              ex4pm_parent_receipt_hash: run.pending.hash,
+              ex4pm_replay: "chain_match",
+              authority: "CONSTRUCT_ONLY",
+              actuation_performed: false,
+              standing: "ALIVE"
+            }
+            File.write!(".ci/ex4pm-cmca-integration-receipt.json", Jason.encode!(receipt, pretty: true))
+            IO.puts("BCINR -> wasm4pm/WASM -> ex4pm CMCA: ALIVE")
+          '
+
+      - name: Upload cross-repository receipt evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-cmca-${{ env.EX4PM_SOURCE_SHA }}
+          path: |
+            .ci/cmca-execution.json
+            .ci/cmca-wasm.sha256
+            .ci/ex4pm-cmca-integration-receipt.json
+            .ci/wasm4pm/crates/wasm4pm-cmca/pkg/wasm4pm_cmca_bg.wasm
+          if-no-files-found: error
+          retention-days: 14
