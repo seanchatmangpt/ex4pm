@@ -9,17 +9,49 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.Quorum do
     passes = Enum.count(outcomes, &(&1 == :pass))
 
     cond do
-      :fail in outcomes -> %{standing: :build_broken, pass_clusters: passes, independent_clusters: proven_independent_count, cluster_outcomes: outcomes}
-      Enum.all?(outcomes, &(&1 == :unsupported)) -> %{standing: :unsupported, pass_clusters: passes, independent_clusters: proven_independent_count, cluster_outcomes: outcomes}
-      passes >= minimum and proven_independent_count >= minimum -> %{standing: :partial_alive, pass_clusters: passes, independent_clusters: proven_independent_count, cluster_outcomes: outcomes}
-      true -> %{standing: :unknown, pass_clusters: passes, independent_clusters: proven_independent_count, cluster_outcomes: outcomes}
+      :fail in outcomes ->
+        %{
+          standing: :build_broken,
+          pass_clusters: passes,
+          independent_clusters: proven_independent_count,
+          cluster_outcomes: outcomes
+        }
+
+      Enum.all?(outcomes, &(&1 == :unsupported)) ->
+        %{
+          standing: :unsupported,
+          pass_clusters: passes,
+          independent_clusters: proven_independent_count,
+          cluster_outcomes: outcomes
+        }
+
+      passes >= minimum and proven_independent_count >= minimum ->
+        %{
+          standing: :partial_alive,
+          pass_clusters: passes,
+          independent_clusters: proven_independent_count,
+          cluster_outcomes: outcomes
+        }
+
+      true ->
+        %{
+          standing: :unknown,
+          pass_clusters: passes,
+          independent_clusters: proven_independent_count,
+          cluster_outcomes: outcomes
+        }
     end
   end
 
-  def evaluate(_, _, _, _), do: %{standing: :unknown, pass_clusters: 0, independent_clusters: 0, cluster_outcomes: []}
+  def evaluate(_, _, _, _),
+    do: %{standing: :unknown, pass_clusters: 0, independent_clusters: 0, cluster_outcomes: []}
 
   defp cluster_outcome(cluster, by_source) do
-    outcomes = Enum.map(cluster, fn source -> Map.get(by_source, source.id, %{outcome: :unknown}).outcome end)
+    outcomes =
+      Enum.map(cluster, fn source ->
+        Map.get(by_source, source.id, %{outcome: :unknown}).outcome
+      end)
+
     cond do
       :fail in outcomes -> :fail
       Enum.all?(outcomes, &(&1 == :pass)) -> :pass

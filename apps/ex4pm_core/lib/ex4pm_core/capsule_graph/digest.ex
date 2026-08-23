@@ -18,6 +18,9 @@ defmodule Ex4pmCore.CapsuleGraph.Digest do
   end
 
   def canonicalize(list) when is_list(list), do: Enum.map(list, &canonicalize/1)
-  def canonicalize(tuple) when is_tuple(tuple), do: tuple |> Tuple.to_list() |> Enum.map(&canonicalize/1) |> List.to_tuple()
+
+  def canonicalize(tuple) when is_tuple(tuple),
+    do: tuple |> Tuple.to_list() |> Enum.map(&canonicalize/1) |> List.to_tuple()
+
   def canonicalize(value), do: value
 end

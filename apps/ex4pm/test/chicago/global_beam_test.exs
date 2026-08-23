@@ -84,9 +84,10 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     assert Enum.uniq(remote_versions) == [:erlang.system_info(:version)]
   end
 
-  test "the same admitted POWL subject is semantically equivalent locally and across three peers", %{
-    nodes: nodes
-  } do
+  test "the same admitted POWL subject is semantically equivalent locally and across three peers",
+       %{
+         nodes: nodes
+       } do
     model =
       powl!(
         for(id <- ~w(a b c d e f), do: %{id: id, intent: %{value: %{completed: id}}}),
@@ -205,7 +206,9 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     assert refusal.details.node == node
   end
 
-  test "remote application exceptions terminate in mirrored blocked receipts", %{nodes: [node | _]} do
+  test "remote application exceptions terminate in mirrored blocked receipts", %{
+    nodes: [node | _]
+  } do
     task = %{
       id: "explode",
       intent: %{operation: :explode, mfa: {:erlang, :error, [:chicago_boom]}}
@@ -240,9 +243,13 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     {:ok, pid} = DetsStore.start_link(name: name, table: table, path: path)
 
     assert {:ok, %{receipt: receipt}} =
-             BRCE.execute("subject", :durable_probe, %{id: "chicago", capabilities: [:do]}, fn ->
-               %{persisted: true}
-             end,
+             BRCE.execute(
+               "subject",
+               :durable_probe,
+               %{id: "chicago", capabilities: [:do]},
+               fn ->
+                 %{persisted: true}
+               end,
                store: name
              )
 
@@ -268,9 +275,14 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     end)
 
     assert {:ok, %{receipt: receipt}} =
-             BRCE.execute("restart-subject", :restart_probe, %{id: "chicago", capabilities: [:do]}, fn ->
-               :after_restart
-             end)
+             BRCE.execute(
+               "restart-subject",
+               :restart_probe,
+               %{id: "chicago", capabilities: [:do]},
+               fn ->
+                 :after_restart
+               end
+             )
 
     assert {:ok, stored} = Store.get(receipt.hash)
     assert stored.hash == receipt.hash
@@ -278,9 +290,14 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
 
   test "tampering with a completed receipt is independently rejected" do
     assert {:ok, %{receipt: receipt}} =
-             BRCE.execute("tamper-subject", :tamper_probe, %{id: "chicago", capabilities: [:do]}, fn ->
-               %{value: 42}
-             end)
+             BRCE.execute(
+               "tamper-subject",
+               :tamper_probe,
+               %{id: "chicago", capabilities: [:do]},
+               fn ->
+                 %{value: 42}
+               end
+             )
 
     tampered = %{receipt | artifact_hash: "sha256:deadbeef"}
 
@@ -302,15 +319,17 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     {:ok, sink} = Agent.start_link(fn -> MapSet.new() end)
 
     pipeline =
-      start_supervised!({Ex4pm.Stream.Pipeline,
-        name: :ex4pm_chicago_stream,
-        events: events,
-        sink: fn event -> Agent.update(sink, &MapSet.put(&1, event.id)) end,
-        ack_target: self(),
-        producer_concurrency: 1,
-        processor_concurrency: 2,
-        max_demand: 8,
-        min_demand: 4})
+      start_supervised!(
+        {Ex4pm.Stream.Pipeline,
+         name: :ex4pm_chicago_stream,
+         events: events,
+         sink: fn event -> Agent.update(sink, &MapSet.put(&1, event.id)) end,
+         ack_target: self(),
+         producer_concurrency: 1,
+         processor_concurrency: 2,
+         max_demand: 8,
+         min_demand: 4}
+      )
 
     assert is_pid(pipeline)
     assert collect_acks(event_count, 0) == event_count

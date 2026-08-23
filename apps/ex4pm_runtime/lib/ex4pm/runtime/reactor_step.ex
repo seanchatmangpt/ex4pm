@@ -34,7 +34,9 @@ defmodule Ex4pm.Runtime.ReactorStep do
 
   def run(arguments, context, _options) do
     {:error,
-     Refusal.new(:invalid_reactor_step_context, "POWL Reactor step lacks admitted runtime context",
+     Refusal.new(
+       :invalid_reactor_step_context,
+       "POWL Reactor step lacks admitted runtime context",
        details: %{arguments: inspect(arguments), context_keys: context_keys(context)}
      )}
   end
@@ -59,7 +61,9 @@ defmodule Ex4pm.Runtime.ReactorStep do
 
       :error ->
         {:error,
-         Refusal.new(:invalid_task_runner_result, "task runner omitted required execution evidence",
+         Refusal.new(
+           :invalid_task_runner_result,
+           "task runner omitted required execution evidence",
            details: %{key: key}
          )}
     end

@@ -47,7 +47,8 @@ defmodule Ex4pm.Runtime.Distributed do
 
   def execute(other, _authority, _opts) do
     {:error,
-     Refusal.new(:invalid_distributed_execution_plan,
+     Refusal.new(
+       :invalid_distributed_execution_plan,
        "distributed execution requires a compiled runtime plan",
        subject: other
      )}
@@ -56,7 +57,11 @@ defmodule Ex4pm.Runtime.Distributed do
   def execute_remote_task(subject_hash, task, authority, store \\ Store) do
     operation = Intent.operation(task)
 
-    Ex4pm.Evidence.BRCE.execute(subject_hash, operation, authority, fn -> Intent.execute(task) end,
+    Ex4pm.Evidence.BRCE.execute(
+      subject_hash,
+      operation,
+      authority,
+      fn -> Intent.execute(task) end,
       store: store,
       metadata: %{
         distributed: true,
@@ -160,7 +165,8 @@ defmodule Ex4pm.Runtime.Distributed do
 
         other ->
           {:error,
-           Refusal.new(:invalid_distributed_task_result,
+           Refusal.new(
+             :invalid_distributed_task_result,
              "remote runtime returned an unrecognized result",
              details: %{node: node, task_id: task.id, result: inspect(other)}
            )}
@@ -198,7 +204,8 @@ defmodule Ex4pm.Runtime.Distributed do
 
       _ ->
         {:error,
-         Refusal.new(:distributed_receipt_chain_mismatch,
+         Refusal.new(
+           :distributed_receipt_chain_mismatch,
            "remote pending/outcome receipts do not close over the admitted subject"
          )}
     end
@@ -212,7 +219,8 @@ defmodule Ex4pm.Runtime.Distributed do
 
         other ->
           {:error,
-           Refusal.new(:distributed_receipt_mirror_failed,
+           Refusal.new(
+             :distributed_receipt_mirror_failed,
              "remote receipt could not be mirrored into the origin ledger",
              details: %{receipt_hash: receipt.hash, result: inspect(other), do_attempted: true}
            )}
@@ -220,7 +228,8 @@ defmodule Ex4pm.Runtime.Distributed do
     catch
       kind, reason ->
         {:error,
-         Refusal.new(:distributed_receipt_mirror_failed,
+         Refusal.new(
+           :distributed_receipt_mirror_failed,
            "remote receipt mirror crashed",
            details: %{
              receipt_hash: receipt.hash,
@@ -234,7 +243,8 @@ defmodule Ex4pm.Runtime.Distributed do
 
   defp admit_distribution([]) do
     {:error,
-     Refusal.new(:distributed_nodes_required,
+     Refusal.new(
+       :distributed_nodes_required,
        "distributed execution requires at least one explicit node"
      )}
   end
@@ -243,7 +253,8 @@ defmodule Ex4pm.Runtime.Distributed do
     cond do
       not Node.alive?() ->
         {:error,
-         Refusal.new(:distribution_not_started,
+         Refusal.new(
+           :distribution_not_started,
            "the origin BEAM node is not running Erlang distribution"
          )}
 
@@ -265,7 +276,8 @@ defmodule Ex4pm.Runtime.Distributed do
       :ok
     else
       {:error,
-       Refusal.new(:distributed_nodes_unreachable,
+       Refusal.new(
+         :distributed_nodes_unreachable,
          "one or more admitted distributed nodes are unreachable",
          details: %{nodes: unreachable, do_attempted: false}
        )}

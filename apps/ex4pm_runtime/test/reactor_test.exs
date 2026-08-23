@@ -11,13 +11,13 @@ defmodule Ex4pm.ReactorTest do
   defmodule WrappedAshReactor do
     use Ex4pm.Reactor
 
-    input :value
+    input(:value)
 
     step :echo, Ex4pm.ReactorTest.EchoStep do
-      argument :value, input(:value)
+      argument(:value, input(:value))
     end
 
-    return :echo
+    return(:echo)
   end
 
   test "Ex4pm.Reactor is an Ash.Reactor extension over the canonical Reactor runtime" do

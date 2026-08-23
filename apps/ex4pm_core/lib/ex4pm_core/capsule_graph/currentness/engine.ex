@@ -7,7 +7,14 @@ defmodule Ex4pmCore.CapsuleGraph.Currentness.Engine do
          current <- List.last(contexts),
          {:ok, admission} <- Admission.admit(attempt, current, witness, now) do
       receipt = Receipt.issue(admission)
-      {:ok, %{admission: admission, receipt: receipt, replay: Receipt.replay(receipt), actuation_performed: false}}
+
+      {:ok,
+       %{
+         admission: admission,
+         receipt: receipt,
+         replay: Receipt.replay(receipt),
+         actuation_performed: false
+       }}
     end
   end
 

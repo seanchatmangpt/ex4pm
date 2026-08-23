@@ -225,7 +225,9 @@ defmodule Ex4pm.Runtime do
         :error ->
           {:halt,
            {:error,
-            Refusal.new(:missing_reactor_task_result, "Reactor completed without a POWL task result",
+            Refusal.new(
+              :missing_reactor_task_result,
+              "Reactor completed without a POWL task result",
               subject: plan.model,
               details: %{task_id: id}
             )}}
