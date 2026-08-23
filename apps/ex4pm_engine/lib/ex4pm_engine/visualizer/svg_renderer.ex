@@ -113,6 +113,7 @@ defmodule Ex4pmEngine.Visualizer.SVGRenderer do
     |> Enum.with_index()
     |> Enum.map(fn {p_id, idx} ->
       x = 60 + idx * 110
+
       """
       <circle cx="#{x}" cy="110" r="22" fill="#e2e8f0" stroke="#0f172a" stroke-width="2" />
       <text x="#{x}" y="115" text-anchor="middle" font-family="system-ui" font-size="11">#{p_id}</text>

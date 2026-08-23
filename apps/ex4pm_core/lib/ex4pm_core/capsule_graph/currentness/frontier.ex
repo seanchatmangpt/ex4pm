@@ -6,8 +6,11 @@ defmodule Ex4pmCore.CapsuleGraph.Currentness.Frontier do
     current = Enum.filter(attempts, &(&1.ordinal == max_ordinal))
 
     case current do
-      [attempt] -> {:ok, %{current: attempt, historical: Enum.reject(attempts, &(&1.id == attempt.id))}}
-      _ -> {:error, {:refused, :divergent_attempt_frontier}}
+      [attempt] ->
+        {:ok, %{current: attempt, historical: Enum.reject(attempts, &(&1.id == attempt.id))}}
+
+      _ ->
+        {:error, {:refused, :divergent_attempt_frontier}}
     end
   end
 

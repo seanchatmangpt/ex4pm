@@ -77,7 +77,7 @@ defmodule Ex4pmEvidence.EngineTest do
       assert {:ok, spdx} =
                Engine.build_spdx_manifest(
                  name: "ex4pm_core",
-                 version: "0.1.0"
+                 version: "26.8.22"
                )
 
       assert is_binary(spdx.digest)

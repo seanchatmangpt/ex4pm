@@ -7,7 +7,8 @@ defmodule Ex4pmWeb.PowlMinerChicagoE2ETest do
   import Phoenix.LiveViewTest
 
   describe "Chicago-Style E2E: Paper Author Discovery & Export Workflow on /powl-miner" do
-    test "uploads real Order-to-Delivery CSV log, discovers model, switches views, and validates export links", %{conn: conn} do
+    test "uploads real Order-to-Delivery CSV log, discovers model, switches views, and validates export links",
+         %{conn: conn} do
       {:ok, view, html} = live(conn, "/powl-miner")
 
       assert html =~ "POWL Miner 2.0"

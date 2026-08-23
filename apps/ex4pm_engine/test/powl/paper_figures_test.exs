@@ -53,7 +53,13 @@ defmodule Ex4pmEngine.POWL.PaperFiguresTest do
       assert ["CheckCredit", "RegularShip", "Deliver"] in lang
 
       # 3. Compile to WF-Net and prove soundness
-      cg_node = POWL.choice_graph("cg_fig2b", [t_check, t_express, t_regular, t_insure, t_deliver], cg.edges)
+      cg_node =
+        POWL.choice_graph(
+          "cg_fig2b",
+          [t_check, t_express, t_regular, t_insure, t_deliver],
+          cg.edges
+        )
+
       net = POWL.to_workflow_net(cg_node)
       report = SoundnessProver.verify_soundness(net)
 
@@ -68,7 +74,8 @@ defmodule Ex4pmEngine.POWL.PaperFiguresTest do
       # PO submodel over concurrent cutting and drilling
       t_cut = POWL.activity("cut", "CutMaterial")
       t_drill = POWL.activity("drill", "DrillHoles")
-      po_prep = POWL.partial_order("po_prep", [t_cut, t_drill], []) # concurrent, no order
+      # concurrent, no order
+      po_prep = POWL.partial_order("po_prep", [t_cut, t_drill], [])
 
       t_order = POWL.activity("order", "ReceiveOrder")
       t_assemble = POWL.activity("assemble", "Assemble")
@@ -88,7 +95,8 @@ defmodule Ex4pmEngine.POWL.PaperFiguresTest do
             {"assemble", "inspect"},
             {"inspect", "rework"},
             {"inspect", "ship"},
-            {"rework", "assemble"}, # cyclic jump in choice graph!
+            # cyclic jump in choice graph!
+            {"rework", "assemble"},
             {"ship", "□"}
           ]
         )

@@ -9,11 +9,15 @@ defmodule Ex4pmCore.CapsuleCurrentnessEngineTest do
     {:ok, attempt} = Attempt.new(subject, digest, digest, 1, "nonce", lease)
     {:ok, witness} = Witness.new(digest, digest, :exact, :pass)
 
-    assert {:ok, %{replay: true, actuation_performed: false, receipt: receipt}} = Engine.qualify(attempt, [context], witness, 15)
+    assert {:ok, %{replay: true, actuation_performed: false, receipt: receipt}} =
+             Engine.qualify(attempt, [context], witness, 15)
+
     assert receipt.body.authority == :construct
 
     {:ok, moved, moved_digest} = Context.new(subject, 2, "cut-b", "policy", "frontier")
     {:ok, moved_witness} = Witness.new(moved_digest, moved_digest, :exact, :pass)
-    assert {:error, {:refused, :stale_target}} = Engine.qualify(attempt, [moved], moved_witness, 15)
+
+    assert {:error, {:refused, :stale_target}} =
+             Engine.qualify(attempt, [moved], moved_witness, 15)
   end
 end

@@ -40,6 +40,7 @@ defmodule Ex4pmEngine.POWL.ChicagoIntegrationTest do
 
     # 3. Prove language contains 100% of the input log traces
     model_lang = Language.evaluate(model)
+
     for trace <- log do
       assert trace in model_lang
     end

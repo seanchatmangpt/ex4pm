@@ -20,6 +20,7 @@ defmodule Ex4pmEngine.IO.BPMNExporter do
     task_elements =
       Enum.map(cg.nodes, fn {id, node} ->
         label = Map.get(node, :label, id)
+
         """
             <bpmn:task id="task_#{id}" name="#{label}" />
         """

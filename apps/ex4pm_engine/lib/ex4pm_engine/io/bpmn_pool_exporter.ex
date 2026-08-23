@@ -10,7 +10,8 @@ defmodule Ex4pmEngine.IO.BPMNPoolExporter do
   alias Ex4pmEngine.POWL.{ChoiceGraph, Node}
 
   @doc "Serializes a POWL model with an activity-to-pool/lane map into standard BPMN 2.0 Collaboration XML."
-  @spec to_xml(Node.t() | ChoiceGraph.t(), %{String.t() => {String.t(), String.t()}}) :: String.t()
+  @spec to_xml(Node.t() | ChoiceGraph.t(), %{String.t() => {String.t(), String.t()}}) ::
+          String.t()
   def to_xml(_model, activity_to_pool_lane \\ %{}) do
     pools =
       activity_to_pool_lane

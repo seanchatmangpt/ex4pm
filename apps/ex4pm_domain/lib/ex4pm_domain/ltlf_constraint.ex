@@ -14,6 +14,7 @@ defmodule Ex4pmDomain.LtlfConstraint do
 
     create :create do
       primary?(true)
+
       accept([
         :name,
         :formula_type,

@@ -75,7 +75,9 @@ defmodule Ex4pmEngine.POWL.ChoiceGraph do
          :ok <- validate_unique_source_sink(normalized_edges),
          :ok <- validate_full_connectivity(node_map, normalized_edges) do
       cyclic? = detect_cycles(node_map, normalized_edges)
-      {:ok, %__MODULE__{nodes: node_map, edges: normalized_edges, cyclic?: cyclic?, metadata: metadata}}
+
+      {:ok,
+       %__MODULE__{nodes: node_map, edges: normalized_edges, cyclic?: cyclic?, metadata: metadata}}
     end
   end
 
@@ -127,11 +129,16 @@ defmodule Ex4pmEngine.POWL.ChoiceGraph do
   end
 
   defp validate_delimiters(node_map, edges) do
-    valid_ids = MapSet.put(MapSet.new(Map.keys(node_map)), @start_delimiter) |> MapSet.put(@end_delimiter)
+    valid_ids =
+      MapSet.put(MapSet.new(Map.keys(node_map)), @start_delimiter) |> MapSet.put(@end_delimiter)
+
     edge_ids = Enum.flat_map(edges, fn {s, d} -> [s, d] end) |> MapSet.new()
 
     unknown = MapSet.difference(edge_ids, valid_ids)
-    if MapSet.size(unknown) == 0, do: :ok, else: {:error, "unknown edge nodes: #{inspect(MapSet.to_list(unknown))}"}
+
+    if MapSet.size(unknown) == 0,
+      do: :ok,
+      else: {:error, "unknown edge nodes: #{inspect(MapSet.to_list(unknown))}"}
   end
 
   defp validate_unique_source_sink(edges) do
@@ -189,6 +196,7 @@ defmodule Ex4pmEngine.POWL.ChoiceGraph do
   end
 
   defp do_bfs([], _adj, visited), do: visited
+
   defp do_bfs([curr | rest], adj, visited) do
     if MapSet.member?(visited, curr) do
       do_bfs(rest, adj, visited)

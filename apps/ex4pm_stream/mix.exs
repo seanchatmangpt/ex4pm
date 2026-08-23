@@ -4,7 +4,7 @@ defmodule Ex4pmStream.MixProject do
   def project do
     [
       app: :ex4pm_stream,
-      version: "0.1.0",
+      version: "26.8.22",
       build_path: "../../_build",
       config_path: "../../config/config.exs",
       deps_path: "../../deps",

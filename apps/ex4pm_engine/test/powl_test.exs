@@ -51,7 +51,13 @@ defmodule Ex4pm.Engine.PowlTest do
              ]
 
       # Compile to WF-net per Section 4.1 [BPM25 p. 9] and assert mathematical soundness
-      cg_node = POWL.choice_graph("cg_order", [t_check, t_express, t_regular, t_insure, t_deliver], cg.edges)
+      cg_node =
+        POWL.choice_graph(
+          "cg_order",
+          [t_check, t_express, t_regular, t_insure, t_deliver],
+          cg.edges
+        )
+
       net = POWL.to_workflow_net(cg_node)
       report = SoundnessProver.verify_soundness(net)
 

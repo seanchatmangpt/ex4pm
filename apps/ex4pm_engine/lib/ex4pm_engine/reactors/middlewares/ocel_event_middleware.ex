@@ -27,35 +27,53 @@ defmodule Ex4pmEngine.Reactors.Middlewares.OCELEventMiddleware do
   @impl true
   def event({:run_start, _args}, step, context) do
     target = Map.get(context, :test_pid, self())
-    send(target, {:ocel_step_event, %{
-      activity: to_string(step.name),
-      lifecycle: :start,
-      timestamp: DateTime.utc_now(),
-      type: :forward
-    }})
+
+    send(
+      target,
+      {:ocel_step_event,
+       %{
+         activity: to_string(step.name),
+         lifecycle: :start,
+         timestamp: DateTime.utc_now(),
+         type: :forward
+       }}
+    )
+
     :ok
   end
 
   @impl true
   def event(:undo_start, step, context) do
     target = Map.get(context, :test_pid, self())
-    send(target, {:ocel_step_event, %{
-      activity: "undo_" <> to_string(step.name),
-      lifecycle: :undo,
-      timestamp: DateTime.utc_now(),
-      type: :compensation
-    }})
+
+    send(
+      target,
+      {:ocel_step_event,
+       %{
+         activity: "undo_" <> to_string(step.name),
+         lifecycle: :undo,
+         timestamp: DateTime.utc_now(),
+         type: :compensation
+       }}
+    )
+
     :ok
   end
 
   def event({:undo_start, _res}, step, context) do
     target = Map.get(context, :test_pid, self())
-    send(target, {:ocel_step_event, %{
-      activity: "undo_" <> to_string(step.name),
-      lifecycle: :undo,
-      timestamp: DateTime.utc_now(),
-      type: :compensation
-    }})
+
+    send(
+      target,
+      {:ocel_step_event,
+       %{
+         activity: "undo_" <> to_string(step.name),
+         lifecycle: :undo,
+         timestamp: DateTime.utc_now(),
+         type: :compensation
+       }}
+    )
+
     :ok
   end
 

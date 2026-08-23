@@ -12,7 +12,9 @@ defmodule Ex4pmCore.CapsuleIndependenceFrontierTest do
 
     assert {:ok, %{current: [^w1], historical: [^w2]}} = Frontier.build([w1, w2], current, now)
 
-    {:ok, future} = Witness.new(source, current, :pass, :repository, DateTime.add(now, 1, :second), "future")
+    {:ok, future} =
+      Witness.new(source, current, :pass, :repository, DateTime.add(now, 1, :second), "future")
+
     assert {:error, {:refused, :future_evidence}} = Frontier.build([future], current, now)
   end
 end

@@ -22,7 +22,15 @@ defmodule Ex4pmEngine.POWL do
 
   defmodule Node do
     @enforce_keys [:id, :operator]
-    defstruct [:id, :operator, :label, children: [], order_edges: [], choice_graph: nil, metadata: %{}]
+    defstruct [
+      :id,
+      :operator,
+      :label,
+      children: [],
+      order_edges: [],
+      choice_graph: nil,
+      metadata: %{}
+    ]
   end
 
   @doc "Constructs a leaf activity node."
@@ -199,7 +207,12 @@ defmodule Ex4pmEngine.POWL do
     {merged_net, p_in, p_out, final_id}
   end
 
-  defp compile_node(%Node{operator: :choice_graph, children: children, choice_graph: cg}, p_in, p_out, next_id) do
+  defp compile_node(
+         %Node{operator: :choice_graph, children: children, choice_graph: cg},
+         p_in,
+         p_out,
+         next_id
+       ) do
     # Section 4.1 [BPM25 p. 9]:
     # (i) Unique source p_in and sink p_out
     # (ii) Recursively convert each submodel
@@ -211,7 +224,9 @@ defmodule Ex4pmEngine.POWL do
 
     # Compile children into isolated subnets
     {children_net, id_after_children} =
-      Enum.reduce(children, {%{places: [p_in, p_out], transitions: %{}}, next_id + 1}, fn child, {acc_net, cur_id} ->
+      Enum.reduce(children, {%{places: [p_in, p_out], transitions: %{}}, next_id + 1}, fn child,
+                                                                                          {acc_net,
+                                                                                           cur_id} ->
         {_id, c_in, c_out} = Enum.find(node_places, &(elem(&1, 0) == child.id))
         {child_net, _, _, next_c_id} = compile_node(child, c_in, c_out, cur_id)
         {merge_nets(acc_net, child_net), next_c_id}
@@ -225,7 +240,9 @@ defmodule Ex4pmEngine.POWL do
       Enum.reduce(cg.edges, {children_net, id_after_children}, fn {src, dst}, {acc_net, cur_id} ->
         src_place =
           case src do
-            ^start_del -> p_in
+            ^start_del ->
+              p_in
+
             other ->
               {_, _, out_p} = Enum.find(node_places, &(elem(&1, 0) == other))
               out_p
@@ -233,13 +250,16 @@ defmodule Ex4pmEngine.POWL do
 
         dst_place =
           case dst do
-            ^end_del -> p_out
+            ^end_del ->
+              p_out
+
             other ->
               {_, in_p, _} = Enum.find(node_places, &(elem(&1, 0) == other))
               in_p
           end
 
         t_edge_name = :"t_cg_edge_#{src}_to_#{dst}_#{cur_id}"
+
         t_edge_def = %{
           inputs: [src_place],
           outputs: [dst_place],
@@ -267,6 +287,7 @@ defmodule Ex4pmEngine.POWL do
     p_body_out = "p_loop_body_out_#{next_id}"
 
     t_init_name = :"t_init_loop_#{next_id}"
+
     t_init_def = %{
       inputs: [p_in],
       outputs: [p_loop_in],
@@ -278,6 +299,7 @@ defmodule Ex4pmEngine.POWL do
     {net_redo, _, _, id2} = compile_node(redo_node, p_body_out, p_loop_in, id1)
 
     t_exit_name = :"t_exit_#{id2}"
+
     exit_trans = %{
       inputs: [p_body_out],
       outputs: [p_out],

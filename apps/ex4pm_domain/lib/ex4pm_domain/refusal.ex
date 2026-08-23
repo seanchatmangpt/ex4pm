@@ -14,7 +14,17 @@ defmodule Ex4pmDomain.Refusal do
 
     create :create do
       primary?(true)
-      accept([:code, :reason, :agent_id, :run_id, :refusal_payload, :details, :subject_hash, :timestamp])
+
+      accept([
+        :code,
+        :reason,
+        :agent_id,
+        :run_id,
+        :refusal_payload,
+        :details,
+        :subject_hash,
+        :timestamp
+      ])
     end
   end
 

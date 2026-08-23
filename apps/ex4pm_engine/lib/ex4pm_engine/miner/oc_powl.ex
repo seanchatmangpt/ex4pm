@@ -14,13 +14,14 @@ defmodule Ex4pmEngine.Miner.OCPOWL do
   alias Ex4pmEngine.InductiveMiner
 
   @type ocel_event :: %{
-    activity: String.t(),
-    timestamp: DateTime.t(),
-    objects: %{String.t() => [String.t()]}
-  }
+          activity: String.t(),
+          timestamp: DateTime.t(),
+          objects: %{String.t() => [String.t()]}
+        }
 
   @doc "Discovers an Object-Centric POWL model from an OCEL event list."
-  @spec mine_oc_powl([ocel_event()]) :: {:ok, %{object_types: [String.t()], models: %{String.t() => term()}}}
+  @spec mine_oc_powl([ocel_event()]) ::
+          {:ok, %{object_types: [String.t()], models: %{String.t() => term()}}}
   def mine_oc_powl(ocel_events) when is_list(ocel_events) do
     object_types =
       Enum.flat_map(ocel_events, fn ev -> Map.keys(ev.objects || %{}) end)

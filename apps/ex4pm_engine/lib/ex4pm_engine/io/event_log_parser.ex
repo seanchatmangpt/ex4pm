@@ -35,15 +35,23 @@ defmodule Ex4pmEngine.IO.EventLogParser do
         {:ok, []}
 
       [header | data_lines] ->
-        cols = String.split(header, [",", ";"]) |> Enum.map(&String.trim/1) |> Enum.map(&String.downcase/1)
+        cols =
+          String.split(header, [",", ";"])
+          |> Enum.map(&String.trim/1)
+          |> Enum.map(&String.downcase/1)
+
         case_idx = Enum.find_index(cols, &(&1 =~ "case" or &1 =~ "id")) || 0
-        act_idx = Enum.find_index(cols, &(&1 =~ "activity" or &1 =~ "concept:name" or &1 =~ "task")) || 1
+
+        act_idx =
+          Enum.find_index(cols, &(&1 =~ "activity" or &1 =~ "concept:name" or &1 =~ "task")) || 1
 
         traces =
           data_lines
           |> Enum.map(fn line -> String.split(line, [",", ";"]) |> Enum.map(&String.trim/1) end)
           |> Enum.filter(fn row -> length(row) > max(case_idx, act_idx) end)
-          |> Enum.group_by(fn row -> Enum.at(row, case_idx) end, fn row -> Enum.at(row, act_idx) end)
+          |> Enum.group_by(fn row -> Enum.at(row, case_idx) end, fn row ->
+            Enum.at(row, act_idx)
+          end)
           |> Map.values()
 
         {:ok, traces}
@@ -55,15 +63,22 @@ defmodule Ex4pmEngine.IO.EventLogParser do
       {:ok, list} when is_list(list) ->
         traces =
           Enum.map(list, fn
-            trace when is_list(trace) -> Enum.map(trace, &to_string/1)
-            %{"trace" => t} when is_list(t) -> Enum.map(t, &to_string/1)
+            trace when is_list(trace) ->
+              Enum.map(trace, &to_string/1)
+
+            %{"trace" => t} when is_list(t) ->
+              Enum.map(t, &to_string/1)
+
             %{"events" => events} when is_list(events) ->
               Enum.map(events, fn
                 %{"activity" => a} -> to_string(a)
                 other -> to_string(other)
               end)
-            other -> [to_string(other)]
+
+            other ->
+              [to_string(other)]
           end)
+
         {:ok, traces}
 
       {:ok, %{"traces" => traces}} when is_list(traces) ->

@@ -35,7 +35,7 @@ defmodule Ex4pmEngine.InductiveMiner do
   Discovers a sound-by-construction POWL 2.0 model from an event log $L$.
   Guarantees 100% trace fitness $\\forall \\sigma \\in L, \\sigma \\in L(PM^\\times(L))$ (Theorem 1 [BPM25]).
   """
-  @spec mine(event_log(), keyword()) :: {:ok, Node.t()}
+  @spec mine(event_log(), keyword()) :: {:ok, Node.t()} | {:error, term()}
   def mine(log, opts \\ []) when is_list(log) do
     sigma_l = get_alphabet(log)
 
@@ -63,7 +63,8 @@ defmodule Ex4pmEngine.InductiveMiner do
 
             case ChoiceGraph.new(nodes, edges, %{id: "cg_discovered"}) do
               {:ok, cg} ->
-                {:ok, %Node{id: "cg_root", operator: :choice_graph, children: nodes, choice_graph: cg}}
+                {:ok,
+                 %Node{id: "cg_root", operator: :choice_graph, children: nodes, choice_graph: cg}}
 
               {:error, _reason} ->
                 fall_through(log, sigma_l)
@@ -126,8 +127,10 @@ defmodule Ex4pmEngine.InductiveMiner do
   end
 
   defp bfs_search([], _target, _adj, _visited), do: false
+
   defp bfs_search([curr | rest], target, adj, visited) do
     nexts = Map.get(adj, curr, [])
+
     if target in nexts do
       true
     else
@@ -152,7 +155,10 @@ defmodule Ex4pmEngine.InductiveMiner do
       edges_d =
         Enum.flat_map(candidate_parts, fn p ->
           p_name = Map.get(part_names, p)
-          start_edge = if Enum.any?(p, &MapSet.member?(start_acts, &1)), do: [{"▷", p_name}], else: []
+
+          start_edge =
+            if Enum.any?(p, &MapSet.member?(start_acts, &1)), do: [{"▷", p_name}], else: []
+
           end_edge = if Enum.any?(p, &MapSet.member?(end_acts, &1)), do: [{p_name, "□"}], else: []
           start_edge ++ end_edge
         end)
@@ -165,7 +171,9 @@ defmodule Ex4pmEngine.InductiveMiner do
             do: {Map.get(part_names, p1), Map.get(part_names, p2)}
 
       all_edges = Enum.uniq(edges_d ++ inter_part_edges)
-      named_parts = Enum.map(candidate_parts, fn p -> {Map.get(part_names, p), MapSet.to_list(p)} end)
+
+      named_parts =
+        Enum.map(candidate_parts, fn p -> {Map.get(part_names, p), MapSet.to_list(p)} end)
 
       {:ok, named_parts, all_edges}
     else

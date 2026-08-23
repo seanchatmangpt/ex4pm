@@ -27,7 +27,8 @@ defmodule Ex4pmEngine.WorkflowNet.Composition do
   @doc """
   Executes substitutive composition $N[t \\to N']$.
   """
-  @spec substitute(WorkflowNet.t(), String.t(), WorkflowNet.t()) :: {:ok, WorkflowNet.t()} | {:error, String.t()}
+  @spec substitute(WorkflowNet.t(), String.t(), WorkflowNet.t()) ::
+          {:ok, WorkflowNet.t()} | {:error, String.t()}
   def substitute(%WorkflowNet{} = n, t_target, %WorkflowNet{} = n_prime) do
     n_trans_keys = if is_map(n.transitions), do: Map.keys(n.transitions), else: n.transitions
     t_target_str = to_string(t_target)
@@ -36,35 +37,59 @@ defmodule Ex4pmEngine.WorkflowNet.Composition do
       {:error, "transition #{inspect(t_target_str)} not in target net N"}
     else
       n_places = if is_map(n.places), do: Map.keys(n.places), else: n.places
-      n_prime_places = if is_map(n_prime.places), do: Map.keys(n_prime.places), else: n_prime.places
-      n_prime_trans = if is_map(n_prime.transitions), do: Map.keys(n_prime.transitions), else: n_prime.transitions
+
+      n_prime_places =
+        if is_map(n_prime.places), do: Map.keys(n_prime.places), else: n_prime.places
+
+      n_prime_trans =
+        if is_map(n_prime.transitions),
+          do: Map.keys(n_prime.transitions),
+          else: n_prime.transitions
 
       p_prime_internal = n_prime_places -- [n_prime.source_place, n_prime.sink_place]
       p_double_prime = Enum.uniq(n_places ++ p_prime_internal)
-      t_double_prime = Enum.uniq(Enum.reject(n_trans_keys, &(to_string(&1) == t_target_str)) ++ n_prime_trans)
 
-      n_arcs = Enum.map(n.arcs, fn
-        %WorkflowNet.Arc{source: s, target: d} -> {s, d}
-        {s, d} -> {to_string(s), to_string(d)}
-      end)
+      t_double_prime =
+        Enum.uniq(Enum.reject(n_trans_keys, &(to_string(&1) == t_target_str)) ++ n_prime_trans)
 
-      n_prime_arcs = Enum.map(n_prime.arcs, fn
-        %WorkflowNet.Arc{source: s, target: d} -> {s, d}
-        {s, d} -> {to_string(s), to_string(d)}
-      end)
+      n_arcs =
+        Enum.map(n.arcs, fn
+          %WorkflowNet.Arc{source: s, target: d} -> {s, d}
+          {s, d} -> {to_string(s), to_string(d)}
+        end)
+
+      n_prime_arcs =
+        Enum.map(n_prime.arcs, fn
+          %WorkflowNet.Arc{source: s, target: d} -> {s, d}
+          {s, d} -> {to_string(s), to_string(d)}
+        end)
 
       # Inflow to t_target from N
-      in_places = Enum.filter(n_arcs, fn {_p, t} -> to_string(t) == t_target_str end) |> Enum.map(&elem(&1, 0))
+      in_places =
+        Enum.filter(n_arcs, fn {_p, t} -> to_string(t) == t_target_str end)
+        |> Enum.map(&elem(&1, 0))
+
       # Outflow from t_target to N
-      out_places = Enum.filter(n_arcs, fn {t, _p} -> to_string(t) == t_target_str end) |> Enum.map(&elem(&1, 1))
+      out_places =
+        Enum.filter(n_arcs, fn {t, _p} -> to_string(t) == t_target_str end)
+        |> Enum.map(&elem(&1, 1))
 
       # Inflow from N'_source to N'
-      prime_starts = Enum.filter(n_prime_arcs, fn {p, _t} -> p == n_prime.source_place end) |> Enum.map(&elem(&1, 1))
+      prime_starts =
+        Enum.filter(n_prime_arcs, fn {p, _t} -> p == n_prime.source_place end)
+        |> Enum.map(&elem(&1, 1))
+
       # Outflow from N' to N'_sink
-      prime_ends = Enum.filter(n_prime_arcs, fn {_t, p} -> p == n_prime.sink_place end) |> Enum.map(&elem(&1, 0))
+      prime_ends =
+        Enum.filter(n_prime_arcs, fn {_t, p} -> p == n_prime.sink_place end)
+        |> Enum.map(&elem(&1, 0))
 
       # Retain non-t arcs from N
-      f_n_retained = Enum.reject(n_arcs, fn {u, v} -> to_string(u) == t_target_str or to_string(v) == t_target_str end)
+      f_n_retained =
+        Enum.reject(n_arcs, fn {u, v} ->
+          to_string(u) == t_target_str or to_string(v) == t_target_str
+        end)
+
       # Retain internal arcs from N'
       f_prime_retained =
         Enum.reject(n_prime_arcs, fn {u, v} ->

@@ -30,8 +30,12 @@ defmodule Ex4pmEngine.Reactors.NegativeConformanceRollbackTest do
 
       # 2. Collect emitted OCEL lifecycle events from process mailbox
       ocel_events = drain_ocel_events([])
-      forward_activities = Enum.filter(ocel_events, &(&1.type == :forward)) |> Enum.map(&(&1.activity))
-      undo_activities = Enum.filter(ocel_events, &(&1.type == :compensation)) |> Enum.map(&(&1.activity))
+
+      forward_activities =
+        Enum.filter(ocel_events, &(&1.type == :forward)) |> Enum.map(& &1.activity)
+
+      undo_activities =
+        Enum.filter(ocel_events, &(&1.type == :compensation)) |> Enum.map(& &1.activity)
 
       # Forward activities executed before failure
       assert "check_credit" in forward_activities

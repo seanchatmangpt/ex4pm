@@ -54,8 +54,16 @@ defmodule Ex4pmEngine.Adversarial.POWLReactorFalsificationTest do
 
       ocel_events = [
         %{activity: "CreateOrder", timestamp: now, objects: %{"order" => ["ord_1"]}},
-        %{activity: "AddItem", timestamp: now, objects: %{"order" => ["ord_1"], "item" => ["i_1"]}},
-        %{activity: "AddItem", timestamp: now, objects: %{"order" => ["ord_1"], "item" => ["i_2"]}},
+        %{
+          activity: "AddItem",
+          timestamp: now,
+          objects: %{"order" => ["ord_1"], "item" => ["i_1"]}
+        },
+        %{
+          activity: "AddItem",
+          timestamp: now,
+          objects: %{"order" => ["ord_1"], "item" => ["i_2"]}
+        },
         %{activity: "PackageItem", timestamp: now, objects: %{"item" => ["i_1"]}},
         %{activity: "PackageItem", timestamp: now, objects: %{"item" => ["i_2"]}},
         %{activity: "DeliverOrder", timestamp: now, objects: %{"order" => ["ord_1"]}}

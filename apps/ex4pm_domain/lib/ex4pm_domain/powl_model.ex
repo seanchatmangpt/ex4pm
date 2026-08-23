@@ -14,6 +14,7 @@ defmodule Ex4pmDomain.PowlModel do
 
     create :create do
       primary?(true)
+
       accept([
         :name,
         :root_operator,

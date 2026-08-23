@@ -19,5 +19,6 @@ defmodule Ex4pmCore.CapsuleGraph.Evidence do
   def new(_, kind, outcome, identity),
     do: {:error, {:refused, :invalid_capsule_evidence, {kind, outcome, identity}}}
 
-  def standing(evidence) when is_list(evidence), do: Standing.from_outcomes(Enum.map(evidence, & &1.outcome))
+  def standing(evidence) when is_list(evidence),
+    do: Standing.from_outcomes(Enum.map(evidence, & &1.outcome))
 end

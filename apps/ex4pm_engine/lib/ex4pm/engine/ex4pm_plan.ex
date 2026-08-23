@@ -62,14 +62,19 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
 
           other ->
             {:error,
-             Refusal.new(:invalid_ex4pm_plan_transport_result, "ex4pm-plan transport returned an invalid value",
+             Refusal.new(
+               :invalid_ex4pm_plan_transport_result,
+               "ex4pm-plan transport returned an invalid value",
                details: %{result: inspect(other)}
              )}
         end
 
       _ ->
         {:error,
-         Refusal.new(:ex4pm_plan_unavailable, "ex4pm-plan requires an explicit transport callback")}
+         Refusal.new(
+           :ex4pm_plan_unavailable,
+           "ex4pm-plan requires an explicit transport callback"
+         )}
     end
   end
 
@@ -102,7 +107,9 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
 
       "UNSUPPORTED" ->
         {:error,
-         Refusal.new(:planner_unsupported, "ex4pm-plan does not support the requested planning edge",
+         Refusal.new(
+           :planner_unsupported,
+           "ex4pm-plan does not support the requested planning edge",
            subject: subject,
            details: %{remote_reason: field(response, :reason)}
          )}
@@ -121,7 +128,8 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
          true <- field(response, :standing) == "ALIVE",
          true <- is_map(evidence),
          true <- field(evidence, :replay_verified) == true,
-         worker_subject_hash when is_binary(worker_subject_hash) <- field(evidence, :subject_hash),
+         worker_subject_hash when is_binary(worker_subject_hash) <-
+           field(evidence, :subject_hash),
          worker_result_hash when is_binary(worker_result_hash) <- field(evidence, :result_hash),
          true <- is_map(result),
          :ok <- validate_observed_identity(identity) do
@@ -152,7 +160,9 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
 
       _ ->
         {:error,
-         Refusal.new(:invalid_ex4pm_plan_response, "ex4pm-plan response failed protocol admission",
+         Refusal.new(
+           :invalid_ex4pm_plan_response,
+           "ex4pm-plan response failed protocol admission",
            subject: subject,
            details: %{protocol: field(response, :protocol), standing: field(response, :standing)}
          )}
@@ -162,7 +172,9 @@ defmodule Ex4pm.Engine.Ex4pmPlan do
   defp validate_observed_identity(identity) do
     if observed_identity?(identity) and field(identity, :source_sha) != @source_sha do
       {:error,
-       Refusal.new(:ex4pm_plan_identity_mismatch, "observed planner source does not match the pinned fork head",
+       Refusal.new(
+         :ex4pm_plan_identity_mismatch,
+         "observed planner source does not match the pinned fork head",
          details: %{expected: @source_sha, observed: field(identity, :source_sha)}
        )}
     else

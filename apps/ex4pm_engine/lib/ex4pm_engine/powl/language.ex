@@ -115,6 +115,7 @@ defmodule Ex4pmEngine.POWL.Language do
   end
 
   defp cartesian([]), do: [[]]
+
   defp cartesian([h | t]) do
     for x <- h, y <- cartesian(t), do: [x | y]
   end

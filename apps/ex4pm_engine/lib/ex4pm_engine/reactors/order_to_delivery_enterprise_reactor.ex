@@ -16,75 +16,76 @@ defmodule Ex4pmEngine.Reactors.OrderToDeliveryEnterpriseReactor do
   use Reactor
 
   middlewares do
-    middleware Ex4pmEngine.Reactors.Middlewares.OCELEventMiddleware
+    middleware(Ex4pmEngine.Reactors.Middlewares.OCELEventMiddleware)
   end
 
-  input :order_id
-  input :amount
-  input :shipping_type
-  input :insure?
-  input :trigger_terminal_fault?
+  input(:order_id)
+  input(:amount)
+  input(:shipping_type)
+  input(:insure?)
+  input(:trigger_terminal_fault?)
 
   # Step 1: Check Credit
   step :check_credit, Ex4pmEngine.Reactors.Steps.EnterpriseSteps.CheckCredit do
-    argument :order_id, input(:order_id)
-    argument :amount, input(:amount)
+    argument(:order_id, input(:order_id))
+    argument(:amount, input(:amount))
   end
 
   # Step 2: Switch for Express vs Regular Shipping
   switch :shipping_branch do
-    on input(:shipping_type)
+    on(input(:shipping_type))
 
     matches? &(&1 == :express) do
       step :express_ship, Ex4pmEngine.Reactors.Steps.EnterpriseSteps.ExpressShip do
-        argument :order_id, input(:order_id)
-        wait_for :check_credit
+        argument(:order_id, input(:order_id))
+        wait_for(:check_credit)
       end
     end
 
     default do
       step :regular_ship, Ex4pmEngine.Reactors.Steps.EnterpriseSteps.RegularShip do
-        argument :order_id, input(:order_id)
-        wait_for :check_credit
+        argument(:order_id, input(:order_id))
+        wait_for(:check_credit)
       end
     end
   end
 
   # Step 3: Conditional Insurance via Where clause
   step :add_insurance do
-    argument :order_id, input(:order_id)
-    argument :insure?, input(:insure?)
-    wait_for :shipping_branch
-    where fn %{insure?: ins} -> ins == true end
-    run fn %{order_id: id}, _ctx -> {:ok, %{insured: true, policy: "POL-#{id}"}} end
-    undo fn _res, %{order_id: id}, _ctx ->
+    argument(:order_id, input(:order_id))
+    argument(:insure?, input(:insure?))
+    wait_for(:shipping_branch)
+    where(fn %{insure?: ins} -> ins == true end)
+    run(fn %{order_id: id}, _ctx -> {:ok, %{insured: true, policy: "POL-#{id}"}} end)
+
+    undo(fn _res, %{order_id: id}, _ctx ->
       send(self(), {:step_undone, :add_insurance, id})
       :ok
-    end
+    end)
   end
 
   # Step 4: Terminal Delivery with Fault Injection capability
   step :deliver, Ex4pmEngine.Reactors.Steps.EnterpriseSteps.FaultyTerminalDelivery do
-    argument :order_id, input(:order_id)
-    argument :trigger_fault?, input(:trigger_terminal_fault?)
-    wait_for [:shipping_branch, :add_insurance]
+    argument(:order_id, input(:order_id))
+    argument(:trigger_fault?, input(:trigger_terminal_fault?))
+    wait_for([:shipping_branch, :add_insurance])
   end
 
   # Step 5: Collect Final Order Manifest
   collect :order_manifest do
-    argument :order_id, input(:order_id)
-    argument :credit, result(:check_credit)
-    argument :delivery, result(:deliver)
+    argument(:order_id, input(:order_id))
+    argument(:credit, result(:check_credit))
+    argument(:delivery, result(:deliver))
 
-    transform fn inputs ->
+    transform(fn inputs ->
       %{
         order_id: inputs.order_id,
         status: :delivered,
         credit: inputs.credit,
         delivery: inputs.delivery
       }
-    end
+    end)
   end
 
-  return :order_manifest
+  return(:order_manifest)
 end

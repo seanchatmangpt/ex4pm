@@ -227,31 +227,26 @@ defmodule Ex4pmWeb.PowlMinerLive do
       [{filename, content}] ->
         case EventLogParser.parse(filename, content) do
           {:ok, log} ->
-            case InductiveMiner.mine(log, threshold: socket.assigns.threshold) do
-              {:ok, powl_model} ->
-                wf_net = POWL.to_workflow_net(powl_model)
-                soundness = SoundnessProver.verify_soundness(wf_net)
-                bpmn_xml = BPMNExporter.to_xml(powl_model)
-                pnml_xml = PNMLExporter.to_xml(wf_net)
-                lang = Language.evaluate(powl_model, max_unroll: 1)
-                svg = render_selected_view(socket.assigns.view_type, powl_model, wf_net)
+            {:ok, powl_model} = InductiveMiner.mine(log, threshold: socket.assigns.threshold)
+            wf_net = POWL.to_workflow_net(powl_model)
+            soundness = SoundnessProver.verify_soundness(wf_net)
+            bpmn_xml = BPMNExporter.to_xml(powl_model)
+            pnml_xml = PNMLExporter.to_xml(wf_net)
+            lang = Language.evaluate(powl_model, max_unroll: 1)
+            svg = render_selected_view(socket.assigns.view_type, powl_model, wf_net)
 
-                {:noreply,
-                 assign(socket,
-                   model: powl_model,
-                   wf_net: wf_net,
-                   soundness_report: soundness,
-                   bpmn_xml: bpmn_xml,
-                   pnml_xml: pnml_xml,
-                   language_traces: lang,
-                   svg_content: svg,
-                   error_message: nil,
-                   discovered?: true
-                 )}
-
-              {:error, reason} ->
-                {:noreply, assign(socket, error_message: "Discovery failed: #{inspect(reason)}")}
-            end
+            {:noreply,
+             assign(socket,
+               model: powl_model,
+               wf_net: wf_net,
+               soundness_report: soundness,
+               bpmn_xml: bpmn_xml,
+               pnml_xml: pnml_xml,
+               language_traces: lang,
+               svg_content: svg,
+               error_message: nil,
+               discovered?: true
+             )}
 
           {:error, err} ->
             {:noreply, assign(socket, error_message: "Failed to parse log: #{err}")}
@@ -262,9 +257,15 @@ defmodule Ex4pmWeb.PowlMinerLive do
     end
   end
 
-  defp render_selected_view(:powl, model, _wf_net) when not is_nil(model), do: SVGRenderer.render_powl(model)
-  defp render_selected_view(:petri, _model, wf_net) when not is_nil(wf_net), do: SVGRenderer.render_petri_net(wf_net)
-  defp render_selected_view(:bpmn, model, _wf_net) when not is_nil(model), do: SVGRenderer.render_bpmn(model)
+  defp render_selected_view(:powl, model, _wf_net) when not is_nil(model),
+    do: SVGRenderer.render_powl(model)
+
+  defp render_selected_view(:petri, _model, wf_net) when not is_nil(wf_net),
+    do: SVGRenderer.render_petri_net(wf_net)
+
+  defp render_selected_view(:bpmn, model, _wf_net) when not is_nil(model),
+    do: SVGRenderer.render_bpmn(model)
+
   defp render_selected_view(_type, _model, _wf), do: nil
 
   defp run_default_example(socket) do

@@ -91,7 +91,13 @@ defmodule Ex4pmEngine.Decomposition.WFNetToPOWL do
 
     case ChoiceGraph.new(nodes, edges, %{id: "cg_decomposed_#{net.id || "sm"}"}) do
       {:ok, cg} ->
-        {:ok, %Node{id: "cg_root_#{net.id || "sm"}", operator: :choice_graph, children: nodes, choice_graph: cg}}
+        {:ok,
+         %Node{
+           id: "cg_root_#{net.id || "sm"}",
+           operator: :choice_graph,
+           children: nodes,
+           choice_graph: cg
+         }}
 
       {:error, _} ->
         partition_mg(net)
@@ -100,7 +106,8 @@ defmodule Ex4pmEngine.Decomposition.WFNetToPOWL do
 
   defp marked_graph?(net) do
     Enum.all?(net.places, fn {p_id, _} ->
-      length(get_input_transitions(net, p_id)) <= 1 and length(get_output_transitions(net, p_id)) <= 1
+      length(get_input_transitions(net, p_id)) <= 1 and
+        length(get_output_transitions(net, p_id)) <= 1
     end)
   end
 
