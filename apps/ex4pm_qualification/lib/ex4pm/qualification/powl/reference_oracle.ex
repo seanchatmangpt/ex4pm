@@ -163,5 +163,7 @@ defmodule Ex4pm.Qualification.Powl.ReferenceOracle do
   end
 
   defp cartesian([]), do: [[]]
-  defp cartesian([head | tail]), do: for(value <- head, rest <- cartesian(tail), do: [value | rest])
+
+  defp cartesian([head | tail]),
+    do: for(value <- head, rest <- cartesian(tail), do: [value | rest])
 end
