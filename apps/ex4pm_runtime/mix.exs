@@ -42,5 +42,6 @@ defmodule Ex4pmRuntime.MixProject do
     ]
   end
 
-  defp package, do: [licenses: ["MIT"], links: %{"GitHub" => @source_url}, files: ["lib", "mix.exs"]]
+  defp package,
+    do: [licenses: ["MIT"], links: %{"GitHub" => @source_url}, files: ["lib", "mix.exs"]]
 end

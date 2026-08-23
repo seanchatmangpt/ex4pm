@@ -6,6 +6,11 @@ defmodule Ex4pm.Qualification.Powl.Semantics do
 
   def identity(model, bound) do
     language = ReferenceOracle.language(model, bound)
-    %{bound: bound, language: language, semantics_hash: Hash.digest(%{bound: bound, language: language})}
+
+    %{
+      bound: bound,
+      language: language,
+      semantics_hash: Hash.digest(%{bound: bound, language: language})
+    }
   end
 end

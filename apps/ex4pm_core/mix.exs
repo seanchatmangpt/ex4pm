@@ -25,5 +25,7 @@ defmodule Ex4pmCore.MixProject do
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
   defp deps, do: [{:ash, "~> 3.31"}, {:sweet_xml, "~> 0.7.5"}]
-  defp package, do: [licenses: ["MIT"], links: %{"GitHub" => @source_url}, files: ["lib", "mix.exs"]]
+
+  defp package,
+    do: [licenses: ["MIT"], links: %{"GitHub" => @source_url}, files: ["lib", "mix.exs"]]
 end

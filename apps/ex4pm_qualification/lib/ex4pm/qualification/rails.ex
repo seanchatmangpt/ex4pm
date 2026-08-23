@@ -35,5 +35,13 @@ defmodule Ex4pm.Qualification.Rails do
   end
 
   defp canonical_hash(%Result{value: value}), do: Hash.digest(value)
-  defp summary(result), do: %{engine: result.engine, operation: result.operation, standing: result.standing, result_hash: canonical_hash(result), evidence: result.evidence}
+
+  defp summary(result),
+    do: %{
+      engine: result.engine,
+      operation: result.operation,
+      standing: result.standing,
+      result_hash: canonical_hash(result),
+      evidence: result.evidence
+    }
 end

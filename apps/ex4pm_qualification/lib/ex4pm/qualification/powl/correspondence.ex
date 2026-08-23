@@ -40,7 +40,13 @@ defmodule Ex4pm.Qualification.Powl.Correspondence do
 
     if Enum.all?(results, &match?({:ok, _}, &1)) do
       certificates = Enum.map(results, fn {:ok, certificate} -> certificate end)
-      {:ok, %{models: length(corpus), traces: Enum.sum(Enum.map(certificates, & &1.trace_count)), certificates: certificates}}
+
+      {:ok,
+       %{
+         models: length(corpus),
+         traces: Enum.sum(Enum.map(certificates, & &1.trace_count)),
+         certificates: certificates
+       }}
     else
       {:error, results}
     end
@@ -68,16 +74,29 @@ defmodule Ex4pm.Qualification.Powl.Correspondence do
     end
   end
 
-  defp compile_trace([], index), do: {:ok, %{index: index, plan_hash: Hash.digest({:empty, index}), refined: true}}
+  defp compile_trace([], index),
+    do: {:ok, %{index: index, plan_hash: Hash.digest({:empty, index}), refined: true}}
 
   defp compile_trace(trace, index) do
-    tasks = Enum.with_index(trace, 1) |> Enum.map(fn {label, i} -> %{id: "q#{index}-#{i}", label: label, intent: %{value: label}} end)
+    tasks =
+      Enum.with_index(trace, 1)
+      |> Enum.map(fn {label, i} ->
+        %{id: "q#{index}-#{i}", label: label, intent: %{value: label}}
+      end)
+
     ids = Enum.map(tasks, & &1.id)
-    edges = ids |> Enum.chunk_every(2, 1, :discard) |> Enum.map(fn [left, right] -> {left, right} end)
+
+    edges =
+      ids |> Enum.chunk_every(2, 1, :discard) |> Enum.map(fn [left, right] -> {left, right} end)
 
     with {:ok, model} <- Ex4pm.POWL.new(tasks, edges),
          {:ok, plan} <- Runtime.compile(model) do
-      {:ok, %{index: index, plan_hash: Hash.digest(plan), refined: plan.model.edges == edges and plan.metadata.scheduler == Reactor.Executor}}
+      {:ok,
+       %{
+         index: index,
+         plan_hash: Hash.digest(plan),
+         refined: plan.model.edges == edges and plan.metadata.scheduler == Reactor.Executor
+       }}
     end
   end
 
@@ -91,7 +110,10 @@ defmodule Ex4pm.Qualification.Powl.Correspondence do
   defp mutate([[a, b | rest] | tail], :wrong_order), do: [[b, a | rest] | tail]
   defp mutate(language, :wrong_order), do: Enum.uniq([["__wrong_order__"] | language])
   defp mutate([trace | rest], :duplicate_execution), do: [trace, trace | rest]
-  defp mutate(language, :duplicate_execution), do: [["__duplicate__"], ["__duplicate__"] | language]
+
+  defp mutate(language, :duplicate_execution),
+    do: [["__duplicate__"], ["__duplicate__"] | language]
+
   defp mutate([_trace | rest], :lost_terminal), do: rest
   defp mutate(language, :lost_terminal), do: [["__lost__"] | language]
   defp mutate(language, :wrong_bound), do: Enum.uniq([["__bound__"] | language])

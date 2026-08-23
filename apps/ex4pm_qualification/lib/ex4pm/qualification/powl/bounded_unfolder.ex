@@ -31,7 +31,8 @@ defmodule Ex4pm.Qualification.Powl.BoundedUnfolder do
     |> Enum.uniq()
   end
 
-  defp unfold(%Node{operator: :choice_graph, choice_graph: graph}, bound), do: unfold(graph, bound)
+  defp unfold(%Node{operator: :choice_graph, choice_graph: graph}, bound),
+    do: unfold(graph, bound)
 
   defp unfold(%ChoiceGraph{nodes: nodes, edges: edges}, bound) do
     successors = Enum.group_by(edges, &elem(&1, 0), &elem(&1, 1))
@@ -80,7 +81,8 @@ defmodule Ex4pm.Qualification.Powl.BoundedUnfolder do
     if Enum.all?(states, fn {_id, trace} -> trace == [] end) do
       [Enum.reverse(prefix)]
     else
-      completed = states |> Enum.filter(fn {_id, trace} -> trace == [] end) |> MapSet.new(&elem(&1, 0))
+      completed =
+        states |> Enum.filter(fn {_id, trace} -> trace == [] end) |> MapSet.new(&elem(&1, 0))
 
       states
       |> Enum.with_index()
@@ -95,6 +97,7 @@ defmodule Ex4pm.Qualification.Powl.BoundedUnfolder do
   end
 
   defp concat_languages([]), do: [[]]
+
   defp concat_languages(languages) do
     Enum.reduce(languages, [[]], fn language, acc ->
       for prefix <- acc, suffix <- language, do: prefix ++ suffix

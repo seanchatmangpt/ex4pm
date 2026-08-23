@@ -36,16 +36,22 @@ defmodule Ex4pm.Qualification.Verifier do
       field(powl, "correspondence") == true and field(powl, "sabotage") == true and
       field(powl, "compiler_refinement") == true
   end
+
   defp powl_ok?(_), do: false
 
   defp rails_ok?(rails) when is_map(rails) do
     Enum.all?(@rails, fn rail ->
       case field(rails, rail) do
-        value when is_map(value) -> field(value, "standing") in [:alive, "ALIVE", "alive"] and nonempty?(field(value, "artifact_digest")) and nonempty?(field(value, "result_hash"))
-        _ -> false
+        value when is_map(value) ->
+          field(value, "standing") in [:alive, "ALIVE", "alive"] and
+            nonempty?(field(value, "artifact_digest")) and nonempty?(field(value, "result_hash"))
+
+        _ ->
+          false
       end
     end)
   end
+
   defp rails_ok?(_), do: false
 
   defp global_ok?(global) when is_map(global) do
@@ -59,9 +65,12 @@ defmodule Ex4pm.Qualification.Verifier do
       field(global, "no_duplicate_do") == true and field(global, "mixed_version_refused") == true and
       field(global, "clock_skew_safe") == true
   end
+
   defp global_ok?(_), do: false
 
-  defp commands_ok?(commands) when is_list(commands), do: commands != [] and Enum.all?(commands, &(field(&1, "exit") == 0))
+  defp commands_ok?(commands) when is_list(commands),
+    do: commands != [] and Enum.all?(commands, &(field(&1, "exit") == 0))
+
   defp commands_ok?(_), do: false
 
   defp sha?(value), do: is_binary(value) and String.match?(value, ~r/^[0-9a-f]{40}$/)
@@ -69,12 +78,13 @@ defmodule Ex4pm.Qualification.Verifier do
 
   defp field(map, key) when is_map(map) do
     Map.get(map, key) ||
-      (try do
-         Map.get(map, String.to_existing_atom(key))
-       rescue
-         ArgumentError -> nil
-       end)
+      try do
+        Map.get(map, String.to_existing_atom(key))
+      rescue
+        ArgumentError -> nil
+      end
   end
+
   defp field(_, _), do: nil
 
   defp drop_field(map, key) do

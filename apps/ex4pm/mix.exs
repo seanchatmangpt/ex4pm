@@ -38,7 +38,10 @@ defmodule Ex4pmPublic.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      links: %{"GitHub" => @source_url, "Architecture" => @source_url <> "/blob/main/docs/ARCHITECTURE.md"},
+      links: %{
+        "GitHub" => @source_url,
+        "Architecture" => @source_url <> "/blob/main/docs/ARCHITECTURE.md"
+      },
       files: ["lib", "mix.exs"]
     ]
   end

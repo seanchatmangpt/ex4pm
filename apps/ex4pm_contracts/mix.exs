@@ -21,5 +21,7 @@ defmodule Ex4pmContracts.MixProject do
   end
 
   def application, do: [extra_applications: [:logger, :crypto]]
-  defp package, do: [licenses: ["MIT"], links: %{"GitHub" => @source_url}, files: ["lib", "priv", "mix.exs"]]
+
+  defp package,
+    do: [licenses: ["MIT"], links: %{"GitHub" => @source_url}, files: ["lib", "priv", "mix.exs"]]
 end

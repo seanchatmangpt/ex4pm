@@ -24,5 +24,6 @@ defmodule Ex4pmEvidence.MixProject do
     [mod: {Ex4pm.Evidence.Application, []}, extra_applications: [:logger, :crypto]]
   end
 
-  defp package, do: [licenses: ["MIT"], links: %{"GitHub" => @source_url}, files: ["lib", "mix.exs"]]
+  defp package,
+    do: [licenses: ["MIT"], links: %{"GitHub" => @source_url}, files: ["lib", "mix.exs"]]
 end
