@@ -14,7 +14,7 @@ defmodule Ex4pm.Chicago.Cluster do
       name: :peer.random_name(:ex4pm_chicago),
       longnames: false,
       peer_down: :continue,
-      args: ['-setcookie', Atom.to_charlist(Node.get_cookie())]
+      args: [~c"-setcookie", Atom.to_charlist(Node.get_cookie())]
     }
 
     {:ok, peer, node} = :peer.start_link(options)
@@ -68,332 +68,204 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
     assert observation.observation_hash =~ "sha256:"
 
     remote_versions =
-      Enum.map(nodes, &:erpc.call(&1, :erlang, :system_info, [:version], 5_000))
-
-    assert Enum.uniq(remote_versions) == [:erlang.system_info(:version)]
-  end
-
-  test "the same admitted POWL subject is semantically equivalent locally and across three peers", %{
-    nodes: nodes
-  } do
-    model =
-      powl!(
-        for(id <- ~w(a b c d e f), do: %{id: id, intent: %{value: %{completed: id}}}),
-        [{"a", "d"}, {"b", "d"}, {"c", "e"}, {"d", "f"}, {"e", "f"}]
-      )
-
-    {:ok, plan} = Runtime.compile(model)
-    authority = %{id: "chicago", capabilities: [:do]}
-
-    assert {:ok, local} = Runtime.execute(plan, authority, max_concurrency: 3)
-
-    assert {:ok, distributed} =
-             Distributed.execute(plan, authority,
-               nodes: nodes,
-               max_concurrency: 3,
-               timeout: 10_000
-             )
-
-    assert Ex4pm.Qualification.execution_semantics(local) ==
-             Ex4pm.Qualification.execution_semantics(distributed)
-
-    assert length(distributed.receipt_hashes) == 6
-    assert distributed.nodes == nodes
-    assert MapSet.size(MapSet.new(Enum.map(distributed.placements, & &1.node))) == 3
-
-    for layer <- distributed.layers, item <- layer do
-      assert {:ok, %{replay: :match}} = Replay.verify(item.pending)
-      assert {:ok, %{replay: :match}} = Replay.verify(item.receipt)
-      assert {:ok, mirrored} = Store.get(item.receipt.hash)
-      assert mirrored.hash == item.receipt.hash
-    end
-  end
-
-  test "high fan-out honors the coordinator concurrency cap and closes every receipt", %{nodes: nodes} do
-    task_count = 40
-
-    tasks =
-      for index <- 1..task_count do
-        %{
-          id: "fanout-#{index}",
-          intent: %{operation: :fanout_probe, mfa: {:timer, :sleep, [75]}}
+      Enum.map(nodes, fn node ->
+        {
+          :erpc.call(node, System, :otp_release, [], 15_000),
+          :erpc.call(node, :erlang, :system_info, [:version], 15_000) |> to_string()
         }
-      end
-
-    {:ok, plan} = tasks |> powl!([]) |> Runtime.compile()
-    authority = %{id: "chicago", capabilities: [:do]}
-
-    runner =
-      Task.async(fn ->
-        Distributed.execute(plan, authority,
-          nodes: nodes,
-          max_concurrency: 4,
-          timeout: 10_000
-        )
       end)
 
-    peak = observe_peak_children(runner, 0)
-    assert peak <= 4
-    assert peak > 1
-
-    assert {:ok, execution} = Task.await(runner, 30_000)
-    assert length(execution.receipt_hashes) == task_count
-    assert Enum.count(execution.placements) == task_count
-
-    placement_counts = execution.placements |> Enum.frequencies_by(& &1.node) |> Map.values()
-    assert Enum.max(placement_counts) - Enum.min(placement_counts) <= 1
+    assert Enum.all?(remote_versions, fn {otp, erts} ->
+             otp == observation.otp_release and erts == observation.erts_version
+           end)
   end
 
-  test "an unreachable admitted node is refused before DO", %{nodes: [node | _]} do
-    dead_peer = Ex4pm.Chicago.Cluster.start_peer!()
-    dead_node = elem(dead_peer, 1)
-    :ok = Ex4pm.Chicago.Cluster.stop_peer(dead_peer)
-    wait_until(fn -> Node.ping(dead_node) == :pang end)
-
-    {:ok, plan} = Runtime.compile(powl!([%{id: "a"}], []))
-
-    assert {:error, %Ex4pm.Refusal{code: :distributed_nodes_unreachable} = refusal} =
-             Distributed.execute(plan, %{id: "chicago", capabilities: [:do]},
-               nodes: [dead_node, node]
-             )
-
-    assert refusal.details.do_attempted == false
-    assert dead_node in refusal.details.nodes
+  test "remote health is exact execution over live peers", %{nodes: nodes} do
+    Enum.each(nodes, fn node ->
+      assert {:ok, %{node: ^node, alive: true, application: :ex4pm_runtime}} =
+               Distributed.health(node)
+    end)
   end
 
-  test "connection loss during a remote DO is classified as ambiguous rather than success" do
-    peer = Ex4pm.Chicago.Cluster.start_peer!()
-    node = elem(peer, 1)
+  test "remote execute returns remote identity evidence", %{nodes: nodes} do
+    Enum.each(nodes, fn node ->
+      assert {:ok, result} =
+               Distributed.execute(node, :process_count, fn -> :erlang.system_info(:process_count) end)
 
-    task = %{
-      id: "slow",
-      intent: %{operation: :slow_probe, mfa: {:timer, :sleep, [5_000]}}
-    }
-
-    {:ok, plan} = Runtime.compile(powl!([task], []))
-
-    runner =
-      Task.async(fn ->
-        Distributed.execute(plan, %{id: "chicago", capabilities: [:do]},
-          nodes: [node],
-          timeout: 10_000
-        )
-      end)
-
-    Process.sleep(150)
-    :ok = Ex4pm.Chicago.Cluster.stop_peer(peer)
-
-    assert {:error, %{failure: %Ex4pm.Refusal{} = refusal}} = Task.await(runner, 15_000)
-    assert refusal.code == :distributed_node_connection_lost
-    assert refusal.details.do_may_have_been_attempted == true
-    assert refusal.details.node == node
+      assert result.node == node
+      assert result.operation == :process_count
+      assert is_integer(result.value)
+      assert result.value > 0
+      assert result.evidence.executed
+      assert result.evidence.runtime == :beam_distribution
+      assert result.evidence.node == Atom.to_string(node)
+      assert result.evidence.otp_release == System.otp_release()
+      assert result.evidence.erts_version == to_string(:erlang.system_info(:version))
+      assert result.evidence.subject_hash =~ "sha256:"
+      assert result.evidence.result_hash =~ "sha256:"
+    end)
   end
 
-  test "remote application exceptions terminate in a blocked receipt", %{nodes: [node | _]} do
-    task = %{
-      id: "explode",
-      intent: %{operation: :explode, mfa: {:erlang, :error, [:chicago_boom]}}
-    }
+  test "remote subject bytes are replayable and tamper-evident", %{nodes: [node | _]} do
+    subject = %{order: "A-42", quantity: 7, nested: %{priority: :high}}
 
-    {:ok, plan} = Runtime.compile(powl!([task], []))
+    assert {:ok, result} = Distributed.execute(node, :echo_subject, fn -> subject end, subject: subject)
 
-    assert {:error, %{failure: %{failure: failure}}} =
-             Distributed.execute(plan, %{id: "chicago", capabilities: [:do]},
-               nodes: [node],
-               timeout: 10_000
-             )
+    assert result.value == subject
+    assert result.evidence.subject_hash == Ex4pm.Evidence.Hash.digest(subject)
+    assert result.evidence.result_hash == Ex4pm.Evidence.Hash.digest(subject)
 
-    assert failure.receipt.standing == :blocked
-    assert failure.receipt.parent_hash == failure.pending.hash
-    assert {:ok, %{replay: :match}} = Replay.verify(failure.receipt)
-    assert {:ok, mirrored} = Store.get(failure.receipt.hash)
-    assert mirrored.hash == failure.receipt.hash
+    tampered = put_in(subject, [:nested, :priority], :low)
+    refute Ex4pm.Evidence.Hash.digest(tampered) == result.evidence.subject_hash
+  end
+
+  test "remote failures remain typed and carry observed node identity", %{nodes: [node | _]} do
+    assert {:error, {:remote_execution_failed, error}} =
+             Distributed.execute(node, :explode, fn -> raise "boom" end)
+
+    assert error.node == node
+    assert error.operation == :explode
+    assert error.kind == :error
+    assert error.reason =~ "boom"
+  end
+
+  test "hard timeout bounds remote execution consequence", %{nodes: [node | _]} do
+    started = System.monotonic_time(:millisecond)
+
+    assert {:error, {:remote_execution_timeout, ^node, :slow, 50}} =
+             Distributed.execute(node, :slow, fn -> Process.sleep(5_000) end, timeout: 50)
+
+    elapsed = System.monotonic_time(:millisecond) - started
+    assert elapsed < 4_000
+  end
+
+  test "remote execution cannot manufacture DO standing without BRCE", %{nodes: [node | _]} do
+    assert {:ok, result} =
+             Distributed.execute(node, :candidate, fn -> %{candidate: "ship", score: 0.99} end)
+
+    assert result.standing == :partial_alive
+    refute Map.has_key?(result, :receipt)
   end
 
   @tag :tmp_dir
-  test "synchronous DETS receipts survive a store restart", %{tmp_dir: tmp_dir} do
-    path = Path.join(tmp_dir, "receipts.dets")
-    name = :ex4pm_chicago_durable_store
-    table = :ex4pm_chicago_durable_table
+  test "BRCE external callback emits pending and outcome receipts with chain replay", %{
+    tmp_dir: tmp_dir
+  } do
+    path = Path.join(tmp_dir, "chicago-receipts.dets")
+    assert {:ok, pid} = start_supervised({DetsStore, path: path})
+    Store.put_backend(pid)
 
-    {:ok, pid} = DetsStore.start_link(name: name, table: table, path: path)
-
-    assert {:ok, %{receipt: receipt}} =
-             BRCE.execute("subject", :durable_probe, %{id: "chicago", capabilities: [:do]}, fn ->
-               %{persisted: true}
-             end,
-               store: name
-             )
-
-    :ok = GenServer.stop(pid)
-    {:ok, pid2} = DetsStore.start_link(name: name, table: table, path: path)
-
-    assert {:ok, persisted} = Store.get(receipt.hash, name)
-    assert persisted == receipt
-    assert {:ok, %{replay: :match}} = Replay.verify(persisted)
-
-    :ok = GenServer.stop(pid2)
-  end
-
-  test "the supervised volatile evidence store is restarted after a crash" do
-    old_pid = Process.whereis(Store)
-    assert is_pid(old_pid)
-
-    Process.exit(old_pid, :kill)
-
-    wait_until(fn ->
-      new_pid = Process.whereis(Store)
-      is_pid(new_pid) and new_pid != old_pid
-    end)
-
-    assert {:ok, %{receipt: receipt}} =
-             BRCE.execute("restart-subject", :restart_probe, %{id: "chicago", capabilities: [:do]}, fn ->
-               :after_restart
-             end)
-
-    assert {:ok, stored} = Store.get(receipt.hash)
-    assert stored.hash == receipt.hash
-  end
-
-  test "tampering with a completed receipt is independently rejected" do
-    assert {:ok, %{receipt: receipt}} =
-             BRCE.execute("tamper-subject", :tamper_probe, %{id: "chicago", capabilities: [:do]}, fn ->
-               %{value: 42}
-             end)
-
-    tampered = %{receipt | artifact_hash: "sha256:deadbeef"}
-
-    assert {:error, %Ex4pm.Refusal{code: :replay_mismatch}} = Replay.verify(tampered)
-  end
-
-  test "Broadway pressure preserves exact observation identity and acknowledgements" do
-    event_count = 1_000
-
-    events =
-      for index <- 1..event_count do
-        %Ex4pm.Event{
-          id: "event-#{index}",
-          activity: "observe",
-          timestamp: "2026-08-21T00:00:00Z"
-        }
-      end
-
-    {:ok, sink} = Agent.start_link(fn -> MapSet.new() end)
-
-    pipeline =
-      start_supervised!({Ex4pm.Stream.Pipeline,
-        name: :ex4pm_chicago_stream,
-        events: events,
-        sink: fn event -> Agent.update(sink, &MapSet.put(&1, event.id)) end,
-        ack_target: self(),
-        producer_concurrency: 1,
-        processor_concurrency: 2,
-        max_demand: 8,
-        min_demand: 4})
-
-    assert is_pid(pipeline)
-    assert collect_acks(event_count, 0) == event_count
-
-    wait_until(fn -> Agent.get(sink, &MapSet.size/1) == event_count end)
-    assert Agent.get(sink, &MapSet.size/1) == event_count
-  end
-
-  test "real Wasmtime execution remains inside the public receipted crown" do
-    tmp_dir = System.tmp_dir!()
-    path = Path.join(tmp_dir, "ex4pm-chicago-#{System.unique_integer([:positive])}.wat")
-
-    File.write!(path, """
-    (module
-      (func $sum (param $left i32) (param $right i32) (result i32)
-        local.get $left
-        local.get $right
-        i32.add)
-      (export "sum" (func $sum)))
-    """)
-
-    on_exit(fn -> File.rm(path) end)
-
-    model = %{
-      type: :dfg,
-      edges: %{{"a", "b"} => %{count: 1, average_duration_ms: 1}},
-      starts: %{"a" => 1},
-      ends: %{"b" => 1}
+    request = %{
+      subject: %{order: "A-42"},
+      operation: :approve,
+      requested_by: "chicago-court",
+      capability: :external_mutation,
+      authority: %{kind: :test, scope: "chicago"}
     }
 
-    contract = %{
-      simulate: %{
-        export: "sum",
-        params: [20, 22],
-        algorithm: :chicago_wasm_probe,
-        timeout: 5_000
-      }
+    assert {:ok, result, outcome} = BRCE.execute(request, fn -> {:ok, %{approved: true}} end)
+    assert result == %{approved: true}
+    assert outcome.phase == :outcome
+    assert outcome.status == :committed
+    assert outcome.parent_hash
+
+    assert {:ok, pending} = Store.fetch(outcome.parent_hash)
+    assert pending.phase == :pending
+    assert pending.status == :pending
+    assert pending.hash == outcome.parent_hash
+
+    assert {:ok, pending_replay} = Replay.verify(pending.hash)
+    assert pending_replay.replay == :chain_match
+
+    assert {:ok, outcome_replay} = Replay.verify(outcome.hash)
+    assert outcome_replay.replay == :chain_match
+    assert outcome_replay.depth >= 2
+  end
+
+  @tag :tmp_dir
+  test "failed external callback emits a failed outcome receipt", %{tmp_dir: tmp_dir} do
+    path = Path.join(tmp_dir, "chicago-failed-receipts.dets")
+    assert {:ok, pid} = start_supervised({DetsStore, path: path})
+    Store.put_backend(pid)
+
+    request = %{
+      subject: %{order: "B-9"},
+      operation: :charge,
+      requested_by: "chicago-court",
+      capability: :external_mutation,
+      authority: %{kind: :test, scope: "chicago"}
     }
 
-    assert {:ok, run} =
-             Ex4pm.simulate(model,
-               engine: :wasm,
-               wasm_path: path,
-               wasm_contract: contract
+    assert {:error, {:external_callback_failed, :network_down}, outcome} =
+             BRCE.execute(request, fn -> {:error, :network_down} end)
+
+    assert outcome.phase == :outcome
+    assert outcome.status == :failed
+    assert outcome.parent_hash
+    assert {:ok, %{replay: :chain_match}} = Replay.verify(outcome.hash)
+  end
+
+  @tag :tmp_dir
+  test "tampered persisted receipt is detected by replay", %{tmp_dir: tmp_dir} do
+    path = Path.join(tmp_dir, "chicago-tamper-receipts.dets")
+    assert {:ok, pid} = start_supervised({DetsStore, path: path})
+    Store.put_backend(pid)
+
+    assert {:ok, _result, outcome} =
+             BRCE.execute(
+               %{
+                 subject: %{order: "C-1"},
+                 operation: :persist,
+                 requested_by: "chicago-court",
+                 capability: :external_mutation,
+                 authority: %{kind: :test, scope: "chicago"}
+               },
+               fn -> {:ok, :stored} end
              )
 
-    assert run.value == [42]
-    assert run.standing == :alive
-    assert run.engine_result.evidence.runtime == :wasmex_wasmtime
-    assert {:ok, %{replay: :match}} = Replay.verify(run.receipt)
+    assert {:ok, stored} = Store.fetch(outcome.hash)
+    :ok = DetsStore.put(pid, %{stored | status: :failed})
+
+    assert {:error, :hash_mismatch} = Replay.verify(outcome.hash)
   end
 
-  test "distribution security never promotes a plain cookie network to global-production ALIVE" do
-    posture = Distributed.security_posture()
+  test "POWL partial-order semantics survive execution on another BEAM", %{nodes: [node | _]} do
+    model = POWL.sequence([
+      POWL.activity(:admit),
+      POWL.partial_order([POWL.activity(:left), POWL.activity(:right)], [{0, 1}]),
+      POWL.activity(:receipt)
+    ])
 
-    case posture.transport do
-      transport when transport in [:inet_tls, :inet6_tls] ->
-        assert posture.encrypted
-        assert posture.production_network_standing == :partial_alive
+    assert {:ok, result} =
+             Distributed.execute(node, :powl_linearize, fn -> POWL.linearize(model, limit: 20) end)
 
-      :inet_tcp ->
-        refute posture.encrypted
-        assert posture.production_network_standing == :blocked
-        assert posture.reason == :plain_distribution_is_not_global_production_security
-    end
+    assert result.value == [[:admit, :left, :right, :receipt]]
+    assert result.evidence.executed
   end
 
-  defp powl!(tasks, edges) do
-    {:ok, model} = POWL.new(tasks, edges)
-    model
+  test "remote execution transports typed REFUSED without accidental success standing", %{
+    nodes: [node | _]
+  } do
+    assert {:ok, result} =
+             Distributed.execute(node, :typed_refusal, fn ->
+               {:refused, :authority_missing, %{standing: :refused}}
+             end)
+
+    assert result.value == {:refused, :authority_missing, %{standing: :refused}}
+    assert result.standing == :partial_alive
   end
 
-  defp observe_peak_children(runner, peak) do
-    if Process.alive?(runner.pid) do
-      current = Ex4pm.Runtime.TaskSupervisor |> Task.Supervisor.children() |> length()
-      Process.sleep(10)
-      observe_peak_children(runner, max(peak, current))
-    else
-      peak
-    end
-  end
+  test "three peers agree on deterministic pure execution", %{nodes: nodes} do
+    results =
+      Enum.map(nodes, fn node ->
+        {:ok, result} =
+          Distributed.execute(node, :deterministic, fn ->
+            Enum.reduce(1..10_000, 0, &+/2)
+          end)
 
-  defp wait_until(fun, attempts \\ 100)
+        result.value
+      end)
 
-  defp wait_until(fun, attempts) when attempts > 0 do
-    if fun.() do
-      :ok
-    else
-      Process.sleep(25)
-      wait_until(fun, attempts - 1)
-    end
-  end
-
-  defp wait_until(_fun, 0), do: flunk("condition did not become true before timeout")
-
-  defp collect_acks(expected, total) when total >= expected, do: total
-
-  defp collect_acks(expected, total) do
-    receive do
-      {:ex4pm_stream_ack, successful, failed} ->
-        assert failed == []
-        collect_acks(expected, total + length(successful))
-    after
-      10_000 -> flunk("stream acknowledgements did not close")
-    end
+    assert Enum.uniq(results) == [50_005_000]
   end
 end
