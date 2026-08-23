@@ -127,7 +127,7 @@ jobs:
               json.dump(worker_request, handle, sort_keys=True, separators=(',', ':'))
               handle.write('\n')
           PY
-          docker run --rm "ex4pm-plan:${EX4PM_PLAN_SHA}" \
+          docker run --rm -i "ex4pm-plan:${EX4PM_PLAN_SHA}" \
             < /tmp/ex4pm-plan-worker-request.json \
             > /tmp/ex4pm-plan-result.json
           cat /tmp/ex4pm-plan-result.json
