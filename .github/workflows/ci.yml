@@ -129,17 +129,37 @@ jobs:
           PY
           docker run --rm -i "ex4pm-plan:${EX4PM_PLAN_SHA}" \
             < /tmp/ex4pm-plan-worker-request.json \
-            > /tmp/ex4pm-plan-result.json
-          cat /tmp/ex4pm-plan-result.json
-          docker image inspect --format='{{.Id}}' "ex4pm-plan:${EX4PM_PLAN_SHA}" > /tmp/ex4pm-plan-image-digest
+            > /tmp/ex4pm-plan-worker-output.log
+          cat /tmp/ex4pm-plan-worker-output.log
           python - <<'PY'
           import json
-          result = json.load(open('/tmp/ex4pm-plan-result.json'))
+
+          frames = []
+          with open('/tmp/ex4pm-plan-worker-output.log') as handle:
+              for line_number, line in enumerate(handle, 1):
+                  candidate = line.strip()
+                  if not candidate:
+                      continue
+                  try:
+                      value = json.loads(candidate)
+                  except json.JSONDecodeError:
+                      continue
+                  if isinstance(value, dict) and value.get('protocol') == 'ex4pm-plan/v1':
+                      frames.append((line_number, value))
+
+          assert len(frames) == 1, f'expected exactly one ex4pm-plan/v1 protocol frame, got {len(frames)}'
+          _, result = frames[0]
           assert result['standing'] == 'ALIVE'
           assert result['result']['solved'] is True
           assert result['result']['total_cost'] == 2.0
           assert result['evidence']['replay_verified'] is True
+
+          with open('/tmp/ex4pm-plan-result.json', 'w') as handle:
+              json.dump(result, handle, sort_keys=True, separators=(',', ':'))
+              handle.write('\n')
           PY
+          cat /tmp/ex4pm-plan-result.json
+          docker image inspect --format='{{.Id}}' "ex4pm-plan:${EX4PM_PLAN_SHA}" > /tmp/ex4pm-plan-image-digest
 
       - name: Admit exact planner result through ex4pm and replay receipt
         run: |
