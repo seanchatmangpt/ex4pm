@@ -90,7 +90,9 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
   test "remote execute returns remote identity evidence", %{nodes: nodes} do
     Enum.each(nodes, fn node ->
       assert {:ok, result} =
-               Distributed.execute(node, :process_count, fn -> :erlang.system_info(:process_count) end)
+               Distributed.execute(node, :process_count, fn ->
+                 :erlang.system_info(:process_count)
+               end)
 
       assert result.node == node
       assert result.operation == :process_count
@@ -109,7 +111,8 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
   test "remote subject bytes are replayable and tamper-evident", %{nodes: [node | _]} do
     subject = %{order: "A-42", quantity: 7, nested: %{priority: :high}}
 
-    assert {:ok, result} = Distributed.execute(node, :echo_subject, fn -> subject end, subject: subject)
+    assert {:ok, result} =
+             Distributed.execute(node, :echo_subject, fn -> subject end, subject: subject)
 
     assert result.value == subject
     assert result.evidence.subject_hash == Ex4pm.Evidence.Hash.digest(subject)
@@ -230,11 +233,12 @@ defmodule Ex4pm.Chicago.GlobalBeamTest do
   end
 
   test "POWL partial-order semantics survive execution on another BEAM", %{nodes: [node | _]} do
-    model = POWL.sequence([
-      POWL.activity(:admit),
-      POWL.partial_order([POWL.activity(:left), POWL.activity(:right)], [{0, 1}]),
-      POWL.activity(:receipt)
-    ])
+    model =
+      POWL.sequence([
+        POWL.activity(:admit),
+        POWL.partial_order([POWL.activity(:left), POWL.activity(:right)], [{0, 1}]),
+        POWL.activity(:receipt)
+      ])
 
     assert {:ok, result} =
              Distributed.execute(node, :powl_linearize, fn -> POWL.linearize(model, limit: 20) end)

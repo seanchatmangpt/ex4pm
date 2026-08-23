@@ -32,7 +32,10 @@ defmodule Ex4pm.Evidence.Replay.Chain do
   end
 
   def verify(other, _store) do
-    {:error, Refusal.new(:invalid_receipt, "receipt chain replay requires a receipt struct", subject: other)}
+    {:error,
+     Refusal.new(:invalid_receipt, "receipt chain replay requires a receipt struct",
+       subject: other
+     )}
   end
 
   defp fetch_parent(parent_hash, store) do
@@ -48,7 +51,9 @@ defmodule Ex4pm.Evidence.Replay.Chain do
 
       :error ->
         {:error,
-         Refusal.new(:receipt_parent_not_found, "outcome parent is not present in the receipt ledger",
+         Refusal.new(
+           :receipt_parent_not_found,
+           "outcome parent is not present in the receipt ledger",
            details: %{parent_hash: parent_hash}
          )}
     end
@@ -68,7 +73,9 @@ defmodule Ex4pm.Evidence.Replay.Chain do
       :ok
     else
       {:error,
-       Refusal.new(:receipt_parent_mismatch, "outcome receipt does not correspond to its pending parent",
+       Refusal.new(
+         :receipt_parent_mismatch,
+         "outcome receipt does not correspond to its pending parent",
          details: %{parent_hash: parent.hash, receipt_hash: outcome.hash, mismatches: mismatches}
        )}
     end

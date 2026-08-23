@@ -5,6 +5,8 @@ defmodule Ex4pmCore.ExtractorEvidenceAdmissionTest do
 
   test "partial candidate admits and unsupported candidate does not" do
     assert {:ok, %{name: :ash}} = Admission.admit(%{name: :ash, standing: :partial_alive})
-    assert {:error, {:unsupported, :extractor_unavailable, :ash}} = Admission.admit(%{name: :ash, standing: :unsupported})
+
+    assert {:error, {:unsupported, :extractor_unavailable, :ash}} =
+             Admission.admit(%{name: :ash, standing: :unsupported})
   end
 end

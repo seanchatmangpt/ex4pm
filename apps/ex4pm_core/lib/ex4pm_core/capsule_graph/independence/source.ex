@@ -11,7 +11,16 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.Source do
          true <- Enum.all?([producer, run, artifact, family], &nonblank?/1) do
       fields = [subject, producer, run, artifact, family]
       id = :crypto.hash(:sha256, Enum.join(fields, "\u0000")) |> Base.encode16(case: :lower)
-      {:ok, %__MODULE__{subject: subject, producer: producer, run: run, artifact: artifact, family: family, id: id}}
+
+      {:ok,
+       %__MODULE__{
+         subject: subject,
+         producer: producer,
+         run: run,
+         artifact: artifact,
+         family: family,
+         id: id
+       }}
     else
       false -> {:error, {:refused, :incomplete_evidence_source}}
       {:error, _} = error -> error

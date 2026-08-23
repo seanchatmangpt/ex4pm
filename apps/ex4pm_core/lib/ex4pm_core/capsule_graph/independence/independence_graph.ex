@@ -17,12 +17,16 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.IndependenceGraph do
 
   defp clique?(members, provenance, independent_pairs) do
     pairs(members)
-    |> Enum.all?(fn {{_, left}, {_, right}} -> clusters_independent?(left, right, provenance, independent_pairs) end)
+    |> Enum.all?(fn {{_, left}, {_, right}} ->
+      clusters_independent?(left, right, provenance, independent_pairs)
+    end)
   end
 
   defp clusters_independent?(left, right, provenance, independent_pairs) do
     Enum.all?(left, fn l ->
-      Enum.all?(right, fn r -> Relation.classify(l, r, provenance, independent_pairs) == :independent end)
+      Enum.all?(right, fn r ->
+        Relation.classify(l, r, provenance, independent_pairs) == :independent
+      end)
     end)
   end
 

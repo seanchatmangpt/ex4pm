@@ -5,7 +5,8 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.Strategy do
 
   def strategies, do: @strategies
 
-  def evaluate(strategy, outcomes, {numerator, denominator}) when strategy in @strategies and is_list(outcomes) do
+  def evaluate(strategy, outcomes, {numerator, denominator})
+      when strategy in @strategies and is_list(outcomes) do
     pass = Enum.count(outcomes, &(&1 == :pass))
     fail = Enum.count(outcomes, &(&1 == :fail))
     unknown = length(outcomes) - pass - fail

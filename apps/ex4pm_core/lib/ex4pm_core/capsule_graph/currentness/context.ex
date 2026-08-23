@@ -7,8 +7,16 @@ defmodule Ex4pmCore.CapsuleGraph.Currentness.Context do
 
   def new(subject, generation, cut_id, policy_digest, frontier_digest)
       when is_integer(generation) and generation >= 0 and is_binary(cut_id) and cut_id != "" and
-             is_binary(policy_digest) and policy_digest != "" and is_binary(frontier_digest) and frontier_digest != "" do
-    context = %__MODULE__{subject: subject, generation: generation, cut_id: cut_id, policy_digest: policy_digest, frontier_digest: frontier_digest}
+             is_binary(policy_digest) and policy_digest != "" and is_binary(frontier_digest) and
+             frontier_digest != "" do
+    context = %__MODULE__{
+      subject: subject,
+      generation: generation,
+      cut_id: cut_id,
+      policy_digest: policy_digest,
+      frontier_digest: frontier_digest
+    }
+
     {:ok, context, digest(context)}
   end
 

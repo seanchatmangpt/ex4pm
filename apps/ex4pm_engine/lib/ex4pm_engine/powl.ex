@@ -880,7 +880,9 @@ defmodule Ex4pmEngine.POWL do
     maximal = Enum.filter(node.children, &(Map.fetch!(outgoing, &1) == []))
 
     init_places = Map.new(minimal, fn child -> {child, gen_id("p_init_#{child}", counter)} end)
-    finish_places = Map.new(maximal, fn child -> {child, gen_id("p_finish_#{child}", counter)} end)
+
+    finish_places =
+      Map.new(maximal, fn child -> {child, gen_id("p_finish_#{child}", counter)} end)
 
     base_places =
       %{p_in => %Place{id: p_in}, p_out => %Place{id: p_out}}
@@ -890,7 +892,7 @@ defmodule Ex4pmEngine.POWL do
 
     merged =
       Enum.reduce(child_nets, %{places: base_places, transitions: %{}, arcs: []}, fn {_id, net},
-                                                                                   acc ->
+                                                                                     acc ->
         %{
           places: Map.merge(acc.places, net.places),
           transitions: Map.merge(acc.transitions, net.transitions),
@@ -1157,7 +1159,8 @@ defmodule Ex4pmEngine.POWL do
     }
   end
 
-  defp normalize_type(type) when type in [:activity, :silent, :partial_order, :choice, :loop], do: type
+  defp normalize_type(type) when type in [:activity, :silent, :partial_order, :choice, :loop],
+    do: type
 
   defp normalize_type(type) when is_binary(type) do
     case type do
@@ -1191,6 +1194,7 @@ defmodule Ex4pmEngine.POWL do
 
   defp transitive_closure(edges) do
     relation = MapSet.new(edges)
+
     close_relation(relation)
     |> MapSet.to_list()
     |> Enum.sort()
