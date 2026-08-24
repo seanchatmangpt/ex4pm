@@ -21,11 +21,11 @@ export function queryBeamClusterStats(): BeamClusterStats {
       process_limit: :erlang.system_info(:process_limit),
       ets_count: :erlang.system_info(:ets_count),
       atom_count: :erlang.system_info(:atom_count),
-      ocel_events: (if :ets.whereis(:ex4pm_domain_events) != :undefined, do: :ets.info(:ex4pm_domain_events, :size), else: 0),
-      ocel_objects: (if :ets.whereis(:ex4pm_domain_objects) != :undefined, do: :ets.info(:ex4pm_domain_objects, :size), else: 0),
-      receipts_count: (if :ets.whereis(:ex4pm_domain_receipts) != :undefined, do: :ets.info(:ex4pm_domain_receipts, :size), else: 0)
+      ocel_events: (case Ash.read(Ex4pm.Domain.Event) do {:ok, l} -> length(l); _ -> 0 end),
+      ocel_objects: (case Ash.read(Ex4pm.Domain.Object) do {:ok, l} -> length(l); _ -> 0 end),
+      receipts_count: (case Ash.read(Ex4pm.Domain.ReceiptProjection) do {:ok, l} -> length(l); _ -> 0 end)
     }) |> IO.puts()
-  `.replace(/\s+/g, ' ').trim();
+  `.replace(/\\s+/g, ' ').trim();
 
   const rawOutput = execSync(
     `kubectl exec deployment/ex4pm -- bin/ex4pm_umbrella rpc "${elixirCode}"`,

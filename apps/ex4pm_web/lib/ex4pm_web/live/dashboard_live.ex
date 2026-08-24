@@ -274,22 +274,25 @@ defmodule Ex4pmWeb.DashboardLive do
 
   defp query_ash_entity_counts do
     resources = [
-      {"Agents", :ex4pm_domain_agents},
-      {"Events", :ex4pm_domain_events},
-      {"Objects", :ex4pm_domain_objects},
-      {"Receipts", :ex4pm_domain_receipts},
-      {"Deployments", :beamops_deployments},
-      {"Cluster Nodes", :beamops_cluster_nodes},
-      {"Kanban Cards", :beamops_kanban_cards},
-      {"Metric Probes", :beamops_metric_probes}
+      {"Agents", Ex4pm.Domain.Agent},
+      {"Events", Ex4pm.Domain.Event},
+      {"Objects", Ex4pm.Domain.Object},
+      {"Receipts", Ex4pm.Domain.ReceiptProjection},
+      {"Deployments", Ex4pmDomain.BEAMOps.Deployment},
+      {"Cluster Nodes", Ex4pmDomain.BEAMOps.ClusterNode},
+      {"Kanban Cards", Ex4pmDomain.BEAMOps.KanbanCard},
+      {"Metric Probes", Ex4pmDomain.BEAMOps.MetricProbe}
     ]
 
-    Enum.map(resources, fn {name, table} ->
+    Enum.map(resources, fn {name, resource_mod} ->
       count =
-        if :ets.whereis(table) != :undefined do
-          :ets.info(table, :size) || 0
-        else
-          0
+        case Ash.read(resource_mod) do
+          {:ok, list} ->
+            length(list)
+
+          _ ->
+            table = Ash.DataLayer.Ets.Info.table(resource_mod)
+            if :ets.whereis(table) != :undefined, do: :ets.info(table, :size) || 0, else: 0
         end
 
       {name, count}
