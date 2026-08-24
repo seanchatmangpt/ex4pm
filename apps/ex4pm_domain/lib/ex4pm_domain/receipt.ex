@@ -5,7 +5,13 @@ defmodule Ex4pmDomain.Receipt do
 
   use Ash.Resource,
     domain: Ex4pmDomain,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    extensions: [AshAdmin.Resource]
+
+  admin do
+    name("Receipt")
+    read_actions([:read])
+  end
 
   ets do
     private?(false)

@@ -5,7 +5,13 @@ defmodule Ex4pmDomain.BayesianNetwork do
 
   use Ash.Resource,
     domain: Ex4pmDomain,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    extensions: [AshAdmin.Resource]
+
+  admin do
+    name("Bayesian Network")
+    read_actions([:read])
+  end
 
   actions do
     defaults([:read, :destroy])

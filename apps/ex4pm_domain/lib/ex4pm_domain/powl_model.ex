@@ -5,7 +5,13 @@ defmodule Ex4pmDomain.PowlModel do
 
   use Ash.Resource,
     domain: Ex4pmDomain,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    extensions: [AshAdmin.Resource]
+
+  admin do
+    name("POWL Model")
+    read_actions([:read])
+  end
 
   alias Wasm4pmCompat.AshTypes.Powl
 

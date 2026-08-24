@@ -9,7 +9,13 @@ defmodule Ex4pmDomain.BEAMOps.Deployment do
   """
   use Ash.Resource,
     domain: Ex4pmDomain,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    extensions: [AshAdmin.Resource]
+
+  admin do
+    name("Deployment")
+    read_actions([:read])
+  end
 
   ets do
     private?(false)
