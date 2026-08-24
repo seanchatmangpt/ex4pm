@@ -2,11 +2,16 @@ defmodule Ex4pm.Explore.BellmanFord do
   @moduledoc false
   def shortest(nodes, edges, source) do
     dist = Map.new(nodes, &{&1, :infinity}) |> Map.put(source, 0)
-    dist = Enum.reduce(1..max(length(nodes) - 1, 0), dist, fn _, acc -> Enum.reduce(edges, acc, &relax/2) end)
+    dist = relax_rounds(dist, edges, max(length(nodes) - 1, 0))
     if Enum.any?(edges, &improves?(&1, dist)), do: {:error, :negative_cycle}, else: {:ok, dist}
   end
 
-  defp relax({_u, _v, _w}, dist) when map_size(dist) == 0, do: dist
+  defp relax_rounds(dist, _edges, 0), do: dist
+  defp relax_rounds(dist, edges, rounds) do
+    next = Enum.reduce(edges, dist, &relax/2)
+    relax_rounds(next, edges, rounds - 1)
+  end
+
   defp relax({u, v, w}, dist) do
     case Map.fetch!(dist, u) do
       :infinity -> dist
@@ -23,7 +28,7 @@ defmodule Ex4pm.Explore.BellmanFord do
   defp improves?({u, v, w}, dist) do
     case {Map.fetch!(dist, u), Map.fetch!(dist, v)} do
       {:infinity, _} -> false
-      {du, :infinity} -> true
+      {_du, :infinity} -> true
       {du, dv} -> du + w < dv
     end
   end
