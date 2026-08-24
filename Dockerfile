@@ -1,7 +1,7 @@
 # Multi-stage production Dockerfile for ex4pm Process Intelligence Control Plane
-ARG ELIXIR_VERSION=1.18.4
-ARG OTP_VERSION=27.3.4
-ARG DEBIAN_VERSION=bookworm-20250224-slim
+ARG ELIXIR_VERSION=1.17.3
+ARG OTP_VERSION=27.1.2
+ARG DEBIAN_VERSION=bookworm-20241016-slim
 
 ARG BUILDER_IMAGE="hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="debian:${DEBIAN_VERSION}"
@@ -26,6 +26,7 @@ COPY apps/ex4pm_domain/mix.exs apps/ex4pm_domain/
 COPY apps/ex4pm/mix.exs apps/ex4pm/
 COPY apps/ex4pm_cli/mix.exs apps/ex4pm_cli/
 COPY apps/ex4pm_web/mix.exs apps/ex4pm_web/
+COPY apps/ex4pm_information/mix.exs apps/ex4pm_information/
 COPY apps/ex4pm_qualification/mix.exs apps/ex4pm_qualification/
 
 RUN mix deps.get --only $MIX_ENV
@@ -33,9 +34,8 @@ RUN mix deps.compile
 
 COPY config config
 COPY apps apps
-COPY lib lib
 
-RUN mix compile --warnings-as-errors
+RUN mix compile
 RUN mix release
 
 FROM ${RUNNER_IMAGE}

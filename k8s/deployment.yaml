@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ex4pm
+  labels:
+    app: ex4pm
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: ex4pm
+  template:
+    metadata:
+      labels:
+        app: ex4pm
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - ex4pm
+              topologyKey: kubernetes.io/hostname
+      containers:
+      - name: ex4pm
+        image: ex4pm:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: PORT
+          value: "8080"
+        - name: MIX_ENV
+          value: "prod"
+        - name: SECRET_KEY_BASE
+          valueFrom:
+            secretKeyRef:
+              name: ex4pm-secrets
+              key: SECRET_KEY_BASE
+        - name: RELEASE_COOKIE
+          valueFrom:
+            secretKeyRef:
+              name: ex4pm-secrets
+              key: RELEASE_COOKIE
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: ex4pm-secrets
+              key: DATABASE_URL
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: RELEASE_DISTRIBUTION
+          value: "name"
+        - name: RELEASE_NODE
+          value: "ex4pm@$(POD_IP)"
+        ports:
+        - name: http
+          containerPort: 8080
+        - name: epmd
+          containerPort: 4369
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 3
+          failureThreshold: 2
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5

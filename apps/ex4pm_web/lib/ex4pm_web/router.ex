@@ -26,7 +26,9 @@ defmodule Ex4pmWeb.Router do
     pipe_through(:api)
 
     get("/health", HealthController, :health)
+    get("/healthz", HealthController, :health)
     get("/health/ready", HealthController, :ready)
+    get("/readyz", HealthController, :ready)
   end
 
   scope "/", Ex4pmWeb do

@@ -20,6 +20,23 @@ defmodule Ex4pm.Umbrella.MixProject do
         plt_core_path: "priv/plts/core.plt",
         plt_file: {:no_warn, "priv/plts/project.plt"},
         plt_add_apps: [:ex_unit, :mix]
+      ],
+      releases: [
+        ex4pm_umbrella: [
+          applications: [
+            ex4pm: :permanent,
+            ex4pm_web: :permanent,
+            ex4pm_engine: :permanent,
+            ex4pm_domain: :permanent,
+            ex4pm_runtime: :permanent,
+            ex4pm_evidence: :permanent,
+            ex4pm_core: :permanent,
+            ex4pm_contracts: :permanent,
+            ex4pm_stream: :permanent,
+            ex4pm_information: :permanent,
+            ex4pm_qualification: :permanent
+          ]
+        ]
       ]
     ]
   end
