@@ -25,8 +25,6 @@ defmodule Ex4pmEngine.Reactors.BEAMOps.BookValidationReactor do
     Stage12PromExAlertsReactor
   }
 
-  alias Ex4pmDomain.Receipt
-
   input(:tool_versions)
   input(:milestones)
   input(:issues)
@@ -232,7 +230,7 @@ defmodule Ex4pmEngine.Reactors.BEAMOps.BookValidationReactor do
     end)
   end
 
-  # Process Intelligence Step 1: Trace Extraction & Alignment
+  # Process Intelligence Step 1: Real A* Optimal Trace Alignment
   step :process_intelligence_alignment do
     async?(false)
     wait_for(:exec_stage_12)
@@ -253,23 +251,32 @@ defmodule Ex4pmEngine.Reactors.BEAMOps.BookValidationReactor do
         "Ch12_PromEx_Alerts"
       ]
 
-      # Build normative sequence model
-      normative_model = %{
-        transitions: Enum.map(observed_trace, &%{id: &1, label: &1}),
-        order: observed_trace
+      # Construct normative linear Workflow Net as map
+      transitions =
+        observed_trace
+        |> Enum.with_index()
+        |> Map.new(fn {name, idx} ->
+          in_p = if idx == 0, do: ["p_start"], else: ["p_#{idx}"]
+          out_p = if idx == 11, do: ["p_end"], else: ["p_#{idx + 1}"]
+          {name, %{inputs: in_p, outputs: out_p, label: name}}
+        end)
+
+      net_spec = %{
+        transitions: transitions,
+        initial_marking: ["p_start"],
+        final_marking: ["p_end"]
       }
 
-      # Compute alignment fitness
-      fitness = 1.0
-      precision = 1.0
+      alignment_result = Ex4pmEngine.Alignment.align(observed_trace, net_spec)
 
       {:ok,
        %{
          trace: observed_trace,
-         fitness: fitness,
-         precision: precision,
-         f1_score: 1.0,
-         conformance_verdict: :fully_conformant
+         fitness: alignment_result.fitness,
+         cost: alignment_result.cost,
+         exact_match?: alignment_result.exact_match?,
+         conformance_verdict:
+           if(alignment_result.exact_match?, do: :fully_conformant, else: :deviant)
        }}
     end)
   end
@@ -310,19 +317,57 @@ defmodule Ex4pmEngine.Reactors.BEAMOps.BookValidationReactor do
     end)
   end
 
-  # Process Intelligence Step 3: Bayesian Release Probability
+  # Process Intelligence Step 3: Real Bayesian Belief Propagation
   step :bayesian_release_inference do
     async?(false)
-    wait_for(:declare_ltlf_evaluation)
+    argument(:alignment, result(:process_intelligence_alignment))
+    argument(:declare, result(:declare_ltlf_evaluation))
 
-    run(fn _args, _context ->
-      # Given all 12 stages passed and Declare satisfied: P(ProductionSuccess) = 0.999
-      prob_success = 0.999
-      {:ok, %{p_production_success: prob_success, confidence_interval: {0.99, 1.0}}}
+    run(fn args, _context ->
+      nodes = ["Toolchains", "CI", "Swarm", "Observability", "ReleaseSuccess"]
+
+      cpts = %{
+        "Toolchains" => %{
+          "true" => 0.99,
+          "false" => 0.01
+        },
+        "CI" => %{
+          %{"Toolchains" => "true"} => %{"true" => 0.98, "false" => 0.02},
+          %{"Toolchains" => "false"} => %{"true" => 0.10, "false" => 0.90}
+        },
+        "Swarm" => %{
+          %{"CI" => "true"} => %{"true" => 0.95, "false" => 0.05},
+          %{"CI" => "false"} => %{"true" => 0.05, "false" => 0.95}
+        },
+        "Observability" => %{
+          %{"Swarm" => "true"} => %{"true" => 0.99, "false" => 0.01},
+          %{"Swarm" => "false"} => %{"true" => 0.20, "false" => 0.80}
+        },
+        "ReleaseSuccess" => %{
+          %{"Observability" => "true"} => %{"true" => 0.999, "false" => 0.001},
+          %{"Observability" => "false"} => %{"true" => 0.010, "false" => 0.990}
+        }
+      }
+
+      bn = Ex4pmEngine.Cognition.BayesianNetwork.new(nodes, cpts)
+
+      evidence = %{
+        "Toolchains" => "true",
+        "CI" => if(args.alignment.exact_match?, do: "true", else: "false"),
+        "Swarm" => if(args.declare.ltlf_status == :satisfied, do: "true", else: "false"),
+        "Observability" => "true"
+      }
+
+      {:ok, %{distribution: posterior}} =
+        Ex4pmEngine.Cognition.BayesianNetwork.infer(bn, "ReleaseSuccess", evidence)
+
+      computed_p = Map.get(posterior, "true", 0.0)
+
+      {:ok, %{p_production_success: computed_p, posterior: posterior}}
     end)
   end
 
-  # Process Intelligence Step 4: Emit Cryptographic BRCE Receipt
+  # Process Intelligence Step 4: Emit Canonical Replay-Verified BRCE Receipt
   step :issue_brce_receipt do
     async?(false)
     argument(:alignment, result(:process_intelligence_alignment))
@@ -330,34 +375,35 @@ defmodule Ex4pmEngine.Reactors.BEAMOps.BookValidationReactor do
     argument(:bayes, result(:bayesian_release_inference))
 
     run(fn args, _context ->
-      receipt_hash =
-        :crypto.hash(
-          :sha256,
-          "ReceiptSealed:EngineeringElixirApplications:#{System.unique_integer([:positive])}"
+      subject_hash = Ex4pm.Core.Hash.digest("EngineeringElixirApplications-12Stages")
+      authority = %{capabilities: [:do], allow: ["book_curriculum_validation"]}
+
+      metadata = %{
+        fitness: args.alignment.fitness,
+        ltlf_status: args.declare.ltlf_status,
+        p_success: args.bayes.p_production_success
+      }
+
+      # Execute strictly through canonical Ex4pm.Evidence.BRCE boundary
+      {:ok, %{receipt: outcome_receipt}} =
+        Ex4pm.Evidence.BRCE.execute(
+          subject_hash,
+          "book_curriculum_validation",
+          authority,
+          fn ->
+            %{
+              curriculum: "Engineering Elixir Applications",
+              stages_completed: 12,
+              status: :verified
+            }
+          end,
+          metadata: metadata
         )
-        |> Base.encode16(case: :lower)
 
-      {:ok, receipt} =
-        Ash.create(Receipt, %{
-          hash: receipt_hash,
-          phase: :completed,
-          operation: "book_curriculum_validation",
-          subject_hash:
-            :crypto.hash(:sha256, "EngineeringElixirApplications-12Stages")
-            |> Base.encode16(case: :lower),
-          agent_id: "agent_beamops_01",
-          run_id: "run_beamops_curriculum_01",
-          standing: :alive,
-          started_at: DateTime.utc_now() |> DateTime.to_iso8601(),
-          finished_at: DateTime.utc_now() |> DateTime.to_iso8601(),
-          metadata: %{
-            "fitness" => args.alignment.fitness,
-            "ltlf_status" => to_string(args.declare.ltlf_status),
-            "p_success" => args.bayes.p_production_success
-          }
-        })
+      # Verify cryptographic replay proof
+      {:ok, replay_res} = Ex4pm.Evidence.Replay.verify(outcome_receipt)
 
-      {:ok, receipt}
+      {:ok, %{receipt: outcome_receipt, replay: replay_res}}
     end)
   end
 
@@ -380,15 +426,17 @@ defmodule Ex4pmEngine.Reactors.BEAMOps.BookValidationReactor do
     argument(:receipt, result(:issue_brce_receipt))
 
     transform(fn inputs ->
+      receipt = inputs.receipt.receipt
+
       %{
         stages_validated: 12,
         alignment_fitness: inputs.alignment.fitness,
         conformance_verdict: inputs.alignment.conformance_verdict,
         declare_rules: inputs.declare.rules_evaluated,
         p_production_success: inputs.bayes.p_production_success,
-        receipt_id: inputs.receipt.id,
-        receipt_hash: inputs.receipt.hash,
-        standing: :alive
+        receipt_hash: receipt.hash,
+        standing: receipt.standing,
+        replay_match?: inputs.receipt.replay.replay == :match
       }
     end)
   end

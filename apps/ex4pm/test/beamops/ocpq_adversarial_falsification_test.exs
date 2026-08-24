@@ -6,7 +6,6 @@ defmodule Ex4pm.Beamops.OcpqAdversarialFalsificationTest do
   use ExUnit.Case, async: true
 
   alias Ex4pm.{Event, EventLog, ObjectRef, ObjectRelationship, Subject}
-  alias Ex4pmDomain.Receipt
   alias Ex4pmEngine.Cognition.Ocpq.{BindingBox, QueryTree, VarDecl}
   alias Ex4pmEngine.Reactors.BEAMOps.OcpqAdversarialReactor
 
@@ -123,13 +122,15 @@ defmodule Ex4pm.Beamops.OcpqAdversarialFalsificationTest do
       assert bundle.ocpq_status == :satisfied
       assert bundle.bindings_found == 1
       assert bundle.standing == :alive
-      assert is_binary(bundle.receipt_id)
+      assert is_binary(bundle.receipt_hash)
+      assert bundle.replay_match? == true
 
-      # Verify sealed BRCE receipt in control plane
-      {:ok, receipt} = Ash.get(Receipt, bundle.receipt_id)
+      # Verify sealed canonical BRCE receipt in Ex4pm.Evidence.Store
+      {:ok, receipt} = Ex4pm.Evidence.Store.get(bundle.receipt_hash)
       assert receipt.operation == "ocpq_multi_object_validation"
       assert receipt.standing == :alive
-      assert receipt.metadata["bindings_count"] == 1
+      assert receipt.metadata[:bindings_count] == 1
+      assert {:ok, _} = Ex4pm.Evidence.Replay.verify(receipt)
     end
   end
 

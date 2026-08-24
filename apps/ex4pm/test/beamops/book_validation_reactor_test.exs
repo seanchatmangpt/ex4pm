@@ -6,7 +6,6 @@ defmodule Ex4pm.Beamops.BookValidationReactorTest do
   use ExUnit.Case, async: true
 
   alias Ex4pmEngine.Reactors.BEAMOps.BookValidationReactor
-  alias Ex4pmDomain.Receipt
 
   describe "Engineering Elixir Applications - Process Intelligence Validation Reactor" do
     test "Validates all 12 stages with 100% trace alignment, Declare LTLf compliance, Bayesian confidence, and BRCE receipts" do
@@ -39,14 +38,16 @@ defmodule Ex4pm.Beamops.BookValidationReactorTest do
       assert bundle.stages_validated == 12
       assert bundle.alignment_fitness == 1.0
       assert bundle.conformance_verdict == :fully_conformant
-      assert is_binary(bundle.receipt_id)
       assert is_binary(bundle.receipt_hash)
+      assert bundle.standing == :alive
+      assert bundle.replay_match? == true
 
-      # Verify persisted BRCE receipt
-      {:ok, receipt} = Ash.get(Receipt, bundle.receipt_id)
+      # Verify persisted canonical BRCE receipt in Ex4pm.Evidence.Store
+      {:ok, receipt} = Ex4pm.Evidence.Store.get(bundle.receipt_hash)
       assert receipt.operation == "book_curriculum_validation"
       assert receipt.standing == :alive
-      assert receipt.metadata["fitness"] == 1.0
+      assert receipt.metadata[:fitness] == 1.0
+      assert {:ok, _} = Ex4pm.Evidence.Replay.verify(receipt)
     end
   end
 end

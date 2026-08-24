@@ -11,7 +11,6 @@ defmodule Ex4pmEngine.Reactors.BEAMOps.OcpqAdversarialReactor do
   """
   use Reactor
 
-  alias Ex4pmDomain.Receipt
   alias Ex4pmEngine.Cognition.Ocpq
 
   input(:event_log)
@@ -60,33 +59,31 @@ defmodule Ex4pmEngine.Reactors.BEAMOps.OcpqAdversarialReactor do
     argument(:eval_res, result(:evaluate_ocpq_invariants))
 
     run(fn args, _context ->
-      receipt_hash =
-        :crypto.hash(
-          :sha256,
-          "ReceiptSealed:OCPQ:#{System.unique_integer([:positive])}"
+      subject_hash = Ex4pm.Core.Hash.digest("OCPQ:MultiObject:Invariants")
+      authority = %{capabilities: [:do], allow: ["ocpq_multi_object_validation"]}
+
+      metadata = %{
+        bindings_count: args.eval_res.bindings_found,
+        ocpq_status: args.eval_res.ocpq_status
+      }
+
+      {:ok, %{receipt: outcome_receipt}} =
+        Ex4pm.Evidence.BRCE.execute(
+          subject_hash,
+          "ocpq_multi_object_validation",
+          authority,
+          fn ->
+            %{
+              bindings_count: args.eval_res.bindings_found,
+              status: args.eval_res.ocpq_status
+            }
+          end,
+          metadata: metadata
         )
-        |> Base.encode16(case: :lower)
 
-      {:ok, receipt} =
-        Ash.create(Receipt, %{
-          hash: receipt_hash,
-          phase: :completed,
-          operation: "ocpq_multi_object_validation",
-          subject_hash:
-            :crypto.hash(:sha256, "OCPQ:MultiObject:Invariants")
-            |> Base.encode16(case: :lower),
-          agent_id: "agent_ocpq_adversary_01",
-          run_id: "run_ocpq_01",
-          standing: :alive,
-          started_at: DateTime.utc_now() |> DateTime.to_iso8601(),
-          finished_at: DateTime.utc_now() |> DateTime.to_iso8601(),
-          metadata: %{
-            "bindings_count" => args.eval_res.bindings_found,
-            "ocpq_status" => to_string(args.eval_res.ocpq_status)
-          }
-        })
+      {:ok, replay_res} = Ex4pm.Evidence.Replay.verify(outcome_receipt)
 
-      {:ok, receipt}
+      {:ok, %{receipt: outcome_receipt, replay: replay_res}}
     end)
   end
 
@@ -95,12 +92,14 @@ defmodule Ex4pmEngine.Reactors.BEAMOps.OcpqAdversarialReactor do
     argument(:receipt, result(:record_ocpq_receipt))
 
     transform(fn inputs ->
+      receipt = inputs.receipt.receipt
+
       %{
         ocpq_status: inputs.eval_res.ocpq_status,
         bindings_found: inputs.eval_res.bindings_found,
-        receipt_id: inputs.receipt.id,
-        receipt_hash: inputs.receipt.hash,
-        standing: :alive
+        receipt_hash: receipt.hash,
+        standing: receipt.standing,
+        replay_match?: inputs.receipt.replay.replay == :match
       }
     end)
   end

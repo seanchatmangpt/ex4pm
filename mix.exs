@@ -14,6 +14,7 @@ defmodule Ex4pm.Umbrella.MixProject do
         chicago: :test,
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
+        "ex4pm.lint.truth": :test,
         "ex4pm.crown": :test
       ],
       dialyzer: [
@@ -49,6 +50,7 @@ defmodule Ex4pm.Umbrella.MixProject do
         chicago: :test,
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
+        "ex4pm.lint.truth": :test,
         "ex4pm.crown": :test
       ]
     ]
@@ -59,6 +61,7 @@ defmodule Ex4pm.Umbrella.MixProject do
       verify: [
         "format --check-formatted",
         "compile --warnings-as-errors",
+        "ex4pm.lint.truth",
         "test",
         "ex4pm.powl.court",
         "ex4pm.sabotage.court"
