@@ -7,6 +7,11 @@ defmodule Ex4pmDomain.Receipt do
     domain: Ex4pmDomain,
     data_layer: Ash.DataLayer.Ets
 
+  ets do
+    private?(false)
+    table(:ex4pm_domain_receipts)
+  end
+
   alias Wasm4pmCompat.AshTypes.Receipt
 
   actions do

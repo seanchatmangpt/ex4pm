@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 
 defmodule Ex4pm.Beamops.AshBeamopsDomainTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Ex4pmDomain.BEAMOps.{KanbanCard, ClusterNode, Deployment, MetricProbe}
 
