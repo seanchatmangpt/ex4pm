@@ -66,7 +66,14 @@ test.describe('Live BEAM CLI RPC Cross-Referencing & OCEL v2 Ground Truth Invari
     await page.goto('/dashboard');
     await page.waitForLoadState('networkidle');
     await expect(page.locator('text=🗄️ Ash Entity ETS Live Records')).toBeVisible();
-    await expect(page.locator('text=Events:')).toBeVisible();
+
+    // Strict numerical assertion against DOM data-testid
+    const eventCountEl = page.locator('[data-testid="live-count-events"]');
+    await expect(eventCountEl).toBeVisible();
+    const eventCountText = await eventCountEl.innerText();
+    const domCount = parseInt(eventCountText.trim(), 10);
+    console.log(`DOM event count: ${domCount}, BEAM RPC event count: ${stats.ocel_events}`);
+    expect(domCount).toBe(stats.ocel_events);
   });
 
   test('03. Chicago Coverage Invariant: Verify 100% Proven badge is rendered', async ({ page }) => {
