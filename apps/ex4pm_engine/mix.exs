@@ -32,7 +32,8 @@ defmodule Ex4pmEngine.MixProject do
       {:jason, "~> 1.4.5"},
       {:wasmex, "~> 0.14"},
       {:explorer, "~> 0.12"},
-      {:reactor, "~> 1.0"}
+      {:reactor, "~> 1.0"},
+      {:faker, "~> 0.18", only: :test}
     ]
   end
 
