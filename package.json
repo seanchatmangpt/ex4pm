@@ -1,0 +1,11 @@
+{
+  "name": "ex4pm-playwright-adversarial",
+  "version": "1.0.0",
+  "description": "Adversarial Dr. Wil van der Aalst Playwright test suite for ex4pm",
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1"
+  }
+}

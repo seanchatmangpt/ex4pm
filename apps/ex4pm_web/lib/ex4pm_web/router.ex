@@ -40,8 +40,10 @@ defmodule Ex4pmWeb.Router do
     live("/powl-miner", PowlMinerLive)
   end
 
+  admin_browser_pipeline(:admin_browser)
+
   scope "/" do
-    pipe_through(:browser)
+    pipe_through(:admin_browser)
 
     ash_admin("/admin")
   end

@@ -1,7 +1,12 @@
 defmodule Ex4pm.Domain do
   @moduledoc "Ash semantic/control-plane projection for ex4pm."
 
-  use Ash.Domain
+  use Ash.Domain,
+    extensions: [AshAdmin.Domain]
+
+  admin do
+    show?(true)
+  end
 
   resources do
     resource(Ex4pm.Domain.Agent)

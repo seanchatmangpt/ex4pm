@@ -2,8 +2,12 @@ import Config
 
 config :logger, level: :info
 
-config :ex4pm_domain, ash_domains: [Ex4pm.Domain, Ex4pmDomain]
-config :ash_admin, domains: [Ex4pm.Domain, Ex4pmDomain]
+config :ex4pm_domain, ash_domains: [Ex4pmDomain, Ex4pm.Domain]
+config :ex4pm_web, ash_domains: [Ex4pmDomain, Ex4pm.Domain]
+
+config :ash_admin,
+  domains: [Ex4pmDomain, Ex4pm.Domain],
+  show_apis: :all
 
 config :ex4pm, :pubsub, Ex4pm.PubSub
 

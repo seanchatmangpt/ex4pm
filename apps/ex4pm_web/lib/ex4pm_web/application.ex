@@ -17,6 +17,7 @@ defmodule Ex4pmWeb.Application do
       Ex4pmWeb.Telemetry,
       {Phoenix.PubSub, name: Ex4pmWeb.PubSub},
       {Ex4pm.Engine.OnlineMiner, [name: Ex4pm.Engine.OnlineMiner, subscriber: broadcast_fn]},
+      {Ex4pmEngine.Autonomic.ClosedLoop, [interval_ms: 3000]},
       Ex4pmWeb.Endpoint
     ]
 

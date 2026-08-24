@@ -24,7 +24,8 @@ defmodule Ex4pmWeb.DashboardLive do
   @impl true
   def mount(_params, _session, socket) do
     if connected?(socket) do
-      :timer.send_interval(3000, self(), :refresh_stats)
+      Phoenix.PubSub.subscribe(Ex4pmWeb.PubSub, "autonomic:live")
+      :timer.send_interval(2000, self(), :refresh_stats)
     end
 
     socket =
@@ -35,47 +36,14 @@ defmodule Ex4pmWeb.DashboardLive do
     {:ok, socket}
   end
 
-  defp assign_defaults(socket) do
-    socket
-    |> assign(
-      active_tab: :reactors,
-      last_action_result: nil,
-      cluster_nodes: [Node.self() | Node.list()],
-      conformance: %{
-        fitness: 1.0,
-        precision: 1.0,
-        policy: 1.0,
-        lifecycle: 1.0,
-        causal: 1.0,
-        standing: :alive
-      }
-    )
-  end
-
-  defp refresh_live_data(socket) do
-    receipts =
-      case Store.history(10) do
-        {:ok, list} -> list
-        list when is_list(list) -> list
-        _ -> []
-      end
-
-    nodes = [Node.self() | Node.list()]
-
-    mermaid_reactor = generate_reactor_mermaid()
-    mermaid_cluster = generate_cluster_mermaid(nodes)
-
-    socket
-    |> assign(
-      receipts: receipts,
-      cluster_nodes: nodes,
-      mermaid_reactor: mermaid_reactor,
-      mermaid_cluster: mermaid_cluster,
-      total_receipts_count: length(receipts)
-    )
-  end
-
   @impl true
+  def handle_info({:autonomic_action, action_summary}, socket) do
+    {:noreply,
+     socket
+     |> assign(last_action_result: {:autonomic_mapk, action_summary})
+     |> refresh_live_data()}
+  end
+
   def handle_info(:refresh_stats, socket) do
     {:noreply, refresh_live_data(socket)}
   end
@@ -241,6 +209,46 @@ defmodule Ex4pmWeb.DashboardLive do
     """
   end
 
+  defp assign_defaults(socket) do
+    socket
+    |> assign(
+      active_tab: :reactors,
+      last_action_result: nil,
+      cluster_nodes: [Node.self() | Node.list()],
+      conformance: %{
+        fitness: 1.0,
+        precision: 1.0,
+        policy: 1.0,
+        lifecycle: 1.0,
+        causal: 1.0,
+        standing: :alive
+      }
+    )
+  end
+
+  defp refresh_live_data(socket) do
+    receipts =
+      case Store.history(10) do
+        {:ok, list} -> list
+        list when is_list(list) -> list
+        _ -> []
+      end
+
+    nodes = [Node.self() | Node.list()]
+
+    mermaid_reactor = generate_reactor_mermaid()
+    mermaid_cluster = generate_cluster_mermaid(nodes)
+
+    socket
+    |> assign(
+      receipts: receipts,
+      cluster_nodes: nodes,
+      mermaid_reactor: mermaid_reactor,
+      mermaid_cluster: mermaid_cluster,
+      total_receipts_count: length(receipts)
+    )
+  end
+
   defp generate_cluster_mermaid(nodes) do
     node_defs =
       nodes
@@ -294,22 +302,40 @@ defmodule Ex4pmWeb.DashboardLive do
         </div>
       </div>
 
-      <!-- Action Control Bar -->
-      <div class="max-w-7xl mx-auto mb-8 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-wrap items-center justify-between gap-4">
-        <div class="flex flex-wrap items-center gap-3">
-          <button phx-click="run_book_validation" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-medium text-sm rounded-lg shadow transition flex items-center gap-2">
-            <span>▶</span> Run 12-Stage Book Validation
-          </button>
-          <button phx-click="run_ocpq_adversarial" class="px-4 py-2 bg-sky-600 hover:bg-sky-500 active:bg-sky-700 text-white font-medium text-sm rounded-lg shadow transition flex items-center gap-2">
-            <span>🔍</span> Run OCPQ Multi-Object Query
-          </button>
-          <button phx-click="run_fault_rollback" class="px-4 py-2 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-medium text-sm rounded-lg shadow transition flex items-center gap-2">
-            <span>⚠️</span> Trigger Fault & LIFO Rollback
-          </button>
+      <!-- Autonomic Closed-Loop MAPK Engine Status -->
+      <div class="max-w-7xl mx-auto mb-8 bg-slate-900 border border-emerald-500/30 rounded-xl p-5 shadow-lg shadow-emerald-950/20 flex flex-wrap items-center justify-between gap-6">
+        <div class="flex items-center gap-4">
+          <div class="relative flex h-4 w-4">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-mono uppercase tracking-wider text-emerald-400 font-bold">Autonomic Engine Status:</span>
+              <span class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                ACTIVE AUTOPILOT
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Continuous MAPK Loop (Monitor $\rightarrow$ Analyze $\rightarrow$ Plan $\rightarrow$ Execute) running without human intervention.</p>
+          </div>
         </div>
+
+        <div class="flex items-center gap-2 font-mono text-xs">
+          <div class="px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 flex items-center gap-2">
+            <span class="text-sky-400">1. MONITOR</span>
+            <span class="text-slate-600">→</span>
+            <span class="text-indigo-400">2. ANALYZE</span>
+            <span class="text-slate-600">→</span>
+            <span class="text-amber-400">3. PLAN</span>
+            <span class="text-slate-600">→</span>
+            <span class="text-emerald-400">4. EXECUTE</span>
+          </div>
+        </div>
+
         <%= if @last_action_result do %>
-          <div class="text-xs font-mono bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-emerald-400">
-            Last Exec: <%= elem(@last_action_result, 0) %> (Success)
+          <div class="text-xs font-mono bg-slate-950 border border-emerald-500/40 px-3.5 py-2 rounded-lg text-emerald-300 flex items-center gap-2">
+            <span class="text-emerald-400">⚡ Latest Autonomic Remediation:</span>
+            <span><%= to_string_safe(elem(@last_action_result, 0)) %></span>
           </div>
         <% end %>
       </div>

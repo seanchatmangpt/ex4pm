@@ -9,18 +9,16 @@ defmodule Ex4pmWeb.DashboardLiveTest do
 
   @endpoint Ex4pmWeb.Endpoint
 
-  test "mounts /dashboard successfully with reactive DAGs and Conformance metrics" do
+  test "mounts /dashboard successfully with autonomic autopilot and MAPK loop" do
     conn = build_conn()
-    {:ok, view, html} = live(conn, "/dashboard")
+    {:ok, _view, html} = live(conn, "/dashboard")
 
     assert html =~ "ex4pm Process Intelligence Control Plane"
     assert html =~ "Living Reactor Execution Graph"
     assert html =~ "Distributed Erlang Cluster Mesh"
     assert html =~ "Cryptographic BRCE Receipt Ledger"
-    assert html =~ "Run 12-Stage Book Validation"
-
-    # Test interactive event triggering on the dashboard
-    rendered = render_click(view, "run_book_validation")
-    assert rendered =~ "Last Exec: book_validation"
+    assert html =~ "Autonomic Engine Status:"
+    assert html =~ "ACTIVE AUTOPILOT"
+    assert html =~ "1. MONITOR"
   end
 end

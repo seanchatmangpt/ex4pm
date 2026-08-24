@@ -7,7 +7,12 @@ defmodule Ex4pmDomain do
   and autonomic capability liveness receipts.
   """
 
-  use Ash.Domain
+  use Ash.Domain,
+    extensions: [AshAdmin.Domain]
+
+  admin do
+    show?(true)
+  end
 
   resources do
     resource(Ex4pmDomain.Agent)
