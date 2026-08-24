@@ -34,7 +34,8 @@ defmodule Ex4pmWeb.Router do
   scope "/", Ex4pmWeb do
     pipe_through(:browser)
 
-    get("/", HealthController, :health)
+    live("/", DashboardLive)
+    live("/dashboard", DashboardLive)
     live("/process-intelligence/live", ProcessIntelligenceLive)
     live("/powl-miner", PowlMinerLive)
   end
