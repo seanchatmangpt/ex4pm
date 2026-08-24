@@ -43,5 +43,11 @@ defmodule Ex4pmDomain do
     resource(Ex4pmDomain.ChoreographyContract)
     resource(Ex4pmDomain.ProcessIncident)
     resource(Ex4pmDomain.ChangeOrder)
+
+    # BEAMOps Operational Lifecycle & Infrastructure
+    resource(Ex4pmDomain.BEAMOps.KanbanCard)
+    resource(Ex4pmDomain.BEAMOps.ClusterNode)
+    resource(Ex4pmDomain.BEAMOps.Deployment)
+    resource(Ex4pmDomain.BEAMOps.MetricProbe)
   end
 end

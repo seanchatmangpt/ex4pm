@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2026 ex4pm contributors <https://github.com/seanchatmangpt/ex4pm/graphs/contributors>
+#
+# SPDX-License-Identifier: MIT
+
+@prefix beamops: <https://seanchatman.github.io/ex4pm/ontology/beamops#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+beamops:KanbanCardShape a sh:NodeShape ;
+    sh:targetClass beamops:KanbanCard ;
+    sh:property [
+        sh:path beamops:columnStatus ;
+        sh:datatype xsd:string ;
+        sh:in ("backlog" "in_progress" "review" "done" "archived") ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .
+
+beamops:ClusterNodeShape a sh:NodeShape ;
+    sh:targetClass beamops:ClusterNode ;
+    sh:property [
+        sh:path beamops:nodeHealth ;
+        sh:datatype xsd:string ;
+        sh:in ("joining" "healthy" "degraded" "unreachable" "left") ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .
+
+beamops:DeploymentShape a sh:NodeShape ;
+    sh:targetClass beamops:Deployment ;
+    sh:property [
+        sh:path beamops:deploymentStatus ;
+        sh:datatype xsd:string ;
+        sh:in ("pending" "rolling_out" "healthy" "rolled_back" "failed") ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .

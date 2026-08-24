@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 ex4pm contributors <https://github.com/seanchatmangpt/ex4pm/graphs/contributors>
+#
+# SPDX-License-Identifier: MIT
+
+@prefix beamops: <https://seanchatman.github.io/ex4pm/ontology/beamops#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://seanchatman.github.io/ex4pm/ontology/beamops>
+    a owl:Ontology ;
+    dcterms:title "BEAMOps Engineering & Operations Ontology" ;
+    dcterms:description "Canonical ontology for BEAM process-intelligence engineering, Kanban delivery, cluster orchestration, rolling release deployments, and PromEx telemetry." ;
+    owl:versionInfo "26.8.23" .
+
+# Classes
+beamops:KanbanCard a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Kanban Work Item Card" ;
+    rdfs:comment "A unit of work or process intelligence task moving across columns." .
+
+beamops:ClusterNode a owl:Class ;
+    rdfs:subClassOf prov:Agent ;
+    rdfs:label "Distributed BEAM Cluster Node" ;
+    rdfs:comment "An active BEAM VM participant in the distributed Erlang cluster." .
+
+beamops:Deployment a owl:Class ;
+    rdfs:subClassOf prov:Activity ;
+    rdfs:label "Release Rollout Deployment" ;
+    rdfs:comment "A rolling deployment of an immutable containerized OTP release." .
+
+beamops:MetricProbe a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "PromEx Telemetry Metric Sample" ;
+    rdfs:comment "A structured telemetry metric collected from internal BEAM / Phoenix / Ecto probes." .
+
+beamops:InfraState a owl:Class ;
+    rdfs:subClassOf prov:Entity ;
+    rdfs:label "Declarative Infrastructure State" ;
+    rdfs:comment "A codified Terraform or Docker Swarm infrastructure definition." .
+
+# Status Properties
+beamops:columnStatus a owl:DatatypeProperty ;
+    rdfs:domain beamops:KanbanCard ;
+    rdfs:range xsd:string .
+
+beamops:nodeHealth a owl:DatatypeProperty ;
+    rdfs:domain beamops:ClusterNode ;
+    rdfs:range xsd:string .
+
+beamops:deploymentStatus a owl:DatatypeProperty ;
+    rdfs:domain beamops:Deployment ;
+    rdfs:range xsd:string .
+
+beamops:metricValue a owl:DatatypeProperty ;
+    rdfs:domain beamops:MetricProbe ;
+    rdfs:range xsd:double .
