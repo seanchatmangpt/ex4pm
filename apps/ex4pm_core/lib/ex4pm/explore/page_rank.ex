@@ -1,9 +1,14 @@
 defmodule Ex4pm.Explore.PageRank do
   @moduledoc false
-  def rank(nodes, edges, iterations \\ 20, damping \\ 0.85) do
+  def rank(nodes, edges, iterations \\ 20, damping \\ 0.85) when iterations >= 0 do
     n = max(length(nodes), 1)
     initial = Map.new(nodes, &{&1, 1.0 / n})
-    Enum.reduce(1..max(iterations, 0), initial, fn _, scores -> step(nodes, edges, scores, damping) end)
+    iterate(initial, nodes, edges, iterations, damping)
+  end
+
+  defp iterate(scores, _nodes, _edges, 0, _d), do: scores
+  defp iterate(scores, nodes, edges, remaining, d) do
+    iterate(step(nodes, edges, scores, d), nodes, edges, remaining - 1, d)
   end
 
   defp step(nodes, edges, scores, d) do
