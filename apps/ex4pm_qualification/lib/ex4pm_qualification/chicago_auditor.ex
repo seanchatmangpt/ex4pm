@@ -61,6 +61,22 @@ defmodule Ex4pm.Qualification.ChicagoAuditor do
     Ex4pmEngine.Reactors.AutoFdePlannerReactor
   ]
 
+  # Process-mining discovery/conformance algorithms actually implemented in this
+  # codebase (apps/ex4pm_engine, apps/ex4pm_core), whose real invocation in the test
+  # suite is scanned for below rather than assumed. Short names are matched the same
+  # way @all_resources/@all_reactors are (substring over concatenated test source).
+  # Only algorithms that actually exist as modules are listed here — no aspirational
+  # entries (e.g. no "AlphaMiner"/"HeuristicMiner"/"FootprintConformance": none of
+  # those are implemented, so listing them would make the denominator lie).
+  @all_algorithms [
+    "InductiveMiner",
+    "OCPOWL",
+    "OnlineMiner",
+    "Alignment",
+    "Replay",
+    "Conformance"
+  ]
+
   def audit do
     test_files = Path.wildcard("apps/*/test/**/*.exs")
     test_sources = Enum.map(test_files, &File.read!/1) |> Enum.join("\n")
@@ -81,9 +97,17 @@ defmodule Ex4pm.Qualification.ChicagoAuditor do
     total_resources = length(@all_resources)
     total_reactors = length(@all_reactors)
 
+    algos_tested =
+      Enum.count(@all_algorithms, fn name -> String.contains?(test_sources, name) end)
+
+    total_algorithms = length(@all_algorithms)
+
     resource_utilization = Float.round(resources_tested / max(total_resources, 1) * 100, 1)
     reactor_utilization = Float.round(reactors_tested / max(total_reactors, 1) * 100, 1)
-    overall_utilization = Float.round((resource_utilization + reactor_utilization) / 2, 1)
+    algo_utilization = Float.round(algos_tested / max(total_algorithms, 1) * 100, 1)
+
+    overall_utilization =
+      Float.round((resource_utilization + reactor_utilization + algo_utilization) / 3, 1)
 
     # Real count of test blocks in test files
     chicago_tests_count =
@@ -102,7 +126,9 @@ defmodule Ex4pm.Qualification.ChicagoAuditor do
       total_reactors: total_reactors,
       reactors_tested: reactors_tested,
       reactor_utilization: reactor_utilization,
-      algo_utilization: 100.0,
+      total_algorithms: total_algorithms,
+      algos_tested: algos_tested,
+      algo_utilization: algo_utilization,
       overall_utilization: overall_utilization,
       standing: :alive,
       chicago_tests_count: chicago_tests_count
