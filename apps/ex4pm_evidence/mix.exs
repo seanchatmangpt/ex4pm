@@ -16,7 +16,10 @@ defmodule Ex4pmEvidence.MixProject do
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
-      deps: [{:ex4pm_core, "~> 26.8.22", in_umbrella: true}]
+      deps: [
+        {:ex4pm_core, "~> 26.8.22", in_umbrella: true},
+        {:faker, "~> 0.18", only: :test}
+      ]
     ]
   end
 

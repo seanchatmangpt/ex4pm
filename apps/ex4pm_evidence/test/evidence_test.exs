@@ -99,4 +99,61 @@ defmodule Ex4pm.EvidenceTest do
 
     assert_received :invoked
   end
+
+  test "BRCE refuses a present-but-insufficient authority map (:authority_denied) without invoking DO" do
+    parent = self()
+    subject_hash = Faker.UUID.v4()
+    # A real authority map that admits some other operation, not this one — hits the
+    # admit/2 :authority_denied branch, distinct from the :authority_required fallback that
+    # every other refusal test in this file exercises via a bare `nil` authority.
+    insufficient_authority = %{capabilities: [], allow: [:some_other_operation]}
+
+    assert {:error, %Ex4pm.Refusal{code: :authority_denied}} =
+             BRCE.execute(
+               subject_hash,
+               :ship,
+               insufficient_authority,
+               fn -> send(parent, :invoked) end,
+               store: :evidence_test_store
+             )
+
+    refute_received :invoked
+    assert Store.all(:evidence_test_store) == []
+  end
+
+  test "BRCE admits via the string-keyed capability/allow-list branch of admit/2, not just the atom-keyed one" do
+    subject_hash = Faker.UUID.v4()
+    operation = Faker.Lorem.word()
+    string_keyed_authority = %{"capabilities" => ["do"]}
+
+    assert {:ok, %{result: :done}} =
+             BRCE.execute(subject_hash, operation, string_keyed_authority, fn -> :done end,
+               store: :evidence_test_store
+             )
+
+    string_keyed_allow_authority = %{"capabilities" => [], "allow" => [operation]}
+
+    assert {:ok, %{result: :done}} =
+             BRCE.execute(subject_hash, operation, string_keyed_allow_authority, fn -> :done end,
+               store: :evidence_test_store
+             )
+  end
+
+  test "BRCE produces a :blocked outcome (not a crash) when the DO function itself raises, and both receipt legs independently replay-verify" do
+    subject_hash = Faker.UUID.v4()
+
+    assert {:error, %{error: %RuntimeError{}, pending: pending, receipt: outcome}} =
+             BRCE.execute(
+               subject_hash,
+               :ship,
+               %{capabilities: [:do]},
+               fn -> raise "simulated real DO failure" end,
+               store: :evidence_test_store
+             )
+
+    assert outcome.standing == :blocked
+    assert outcome.parent_hash == pending.hash
+    assert {:ok, %{replay: :match}} = Replay.verify(pending)
+    assert {:ok, %{replay: :match, standing: :blocked}} = Replay.verify(outcome)
+  end
 end
