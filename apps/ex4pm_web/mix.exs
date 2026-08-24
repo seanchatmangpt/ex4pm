@@ -31,6 +31,7 @@ defmodule Ex4pmWeb.MixProject do
       {:ex4pm_engine, in_umbrella: true},
       {:ex4pm_stream, in_umbrella: true},
       {:ex4pm_domain, in_umbrella: true},
+      {:ex4pm_qualification, in_umbrella: true},
       {:ex4pm, in_umbrella: true},
       {:phoenix, "~> 1.7.14"},
       {:phoenix_html, "~> 4.1"},
