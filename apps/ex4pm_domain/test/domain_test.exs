@@ -294,7 +294,9 @@ defmodule Ex4pm.DomainTest do
     # Real content-addressed hash (not a fabricated placeholder string) — subject_hash values
     # below are the actual sha256 digest of real (Faker-generated) content, computed the same
     # way the rest of the codebase computes hashes (see Ex4pm.Core.Digest).
-    real_hash = fn content -> "sha256:" <> Base.encode16(:crypto.hash(:sha256, content), case: :lower) end
+    real_hash = fn content ->
+      "sha256:" <> Base.encode16(:crypto.hash(:sha256, content), case: :lower)
+    end
 
     # 1. Agent
     agent_id = id.()
