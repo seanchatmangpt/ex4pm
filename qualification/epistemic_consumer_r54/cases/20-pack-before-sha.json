@@ -1,0 +1,1 @@
+{"id":"pack-before-sha","set":{"producer_pack":"other-pack","producer_head":"bad"},"expected":"REFUSED[FOREIGN_PACK]"}
