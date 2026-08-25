@@ -1,0 +1,6 @@
+@prefix esf: <https://ggen.dev/ontology/epistemic-sensor-factory#> .
+esf:ex4pmR58Consumer a esf:ConsumerAdmissionCandidate ;
+  esf:candidateRepo <https://github.com/seanchatmangpt/ex4pm> ;
+  esf:candidateHead "e12fccb42a67bc4496cac91c86bff2b856cc463d" ;
+  esf:producerTargetToken "esf:gymactTarget" ;
+  esf:noAmbientDo true .
