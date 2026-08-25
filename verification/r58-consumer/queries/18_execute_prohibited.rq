@@ -1,0 +1,3 @@
+PREFIX esf: <https://ggen.dev/ontology/epistemic-sensor-factory#>
+PREFIX odrl: <http://www.w3.org/ns/odrl/2/>
+ASK { esf:ex4pmR58Consumer odrl:prohibition [ odrl:action odrl:execute ] . }
