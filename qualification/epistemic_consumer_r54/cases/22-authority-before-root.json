@@ -1,0 +1,1 @@
+{"id":"authority-before-root","set":{"authority":"DO","evidence_root":""},"expected":"REFUSED[AUTHORITY_FENCE]"}

@@ -1,0 +1,13 @@
+{
+  "schema": "ggen.epistemic-consumer-subject/1",
+  "consumer_repo": "seanchatmangpt/ex4pm",
+  "consumer_base": "a2795bcb1f0c49cbaaac91749edf7ef7c68d3a23",
+  "producer_repo": "seanchatmangpt/ggen-marketplace",
+  "producer_head": "0f3349afe3fe12a26932974b8e6a47399b1e94ab",
+  "producer_pack": "epistemic-sensor-factory-pack",
+  "producer_target_token": "esf:ex4pmTarget",
+  "authority": "OBSERVE|VERIFY|CONSTRUCT",
+  "consequential_do": false,
+  "evidence_root": "ex4pm-r54-independent-root",
+  "standing": "ADMITTED"
+}
