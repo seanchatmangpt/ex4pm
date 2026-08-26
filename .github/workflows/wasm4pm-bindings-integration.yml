@@ -12,6 +12,7 @@ on:
       - "feat/ex4pm-wasm4pm-bindings-phase1"
       - "feat/wasm4pm-phase1-bindings"
       - "feat/ex4pm-wasm4pm-bindings-phase2"
+      - "feat/wasm4pm-phase2-bindings"
   workflow_dispatch:
 
 permissions:
@@ -23,7 +24,7 @@ jobs:
     env:
       MIX_ENV: test
       EX4PM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      WASM4PM_BINDINGS_SHA: a0eb152073b5f096881e8f60d0955ca5b881705a
+      WASM4PM_BINDINGS_SHA: e6275d5751f960b8aaffbaeccbeac28e91b516de
     steps:
       - uses: actions/checkout@v4
         with:
@@ -138,7 +139,23 @@ jobs:
                  ]
                }},
               {Ex4pmEngine.Wasm.AllenTemporal, :allen_temporal, "wasm4pm_ex4pm_allen_temporal_v1",
-               %{intent: "t", candidates: [], facts: [], cases: [], rules: [], goals: [], state: []}}
+               %{intent: "t", candidates: [], facts: [], cases: [], rules: [], goals: [], state: []}},
+              {Ex4pmEngine.Wasm.Align, :align, "wasm4pm_ex4pm_align_v1",
+               %{traces: [["a", "b"]], petri_net: %{}, sync_cost: 0.0, log_move_cost: 1.0, model_move_cost: 1.0}},
+              {Ex4pmEngine.Wasm.EtcPrecision, :etc_precision, "wasm4pm_ex4pm_etc_precision_v1",
+               %{net: %{}, initial_marking: %{}, final_marking: %{}, log: %{}, activity_key: "a"}},
+              {Ex4pmEngine.Wasm.Soundness, :soundness, "wasm4pm_ex4pm_soundness_v1", %{petri_net: %{}}},
+              {Ex4pmEngine.Wasm.Playout, :playout, "wasm4pm_ex4pm_playout_v1",
+               %{petri_net: %{}, config: %{max_trace_length: 10, num_traces: 1, random_seed: 1}}},
+              {Ex4pmEngine.Wasm.OcDiscover, :oc_discover, "wasm4pm_ex4pm_oc_discover_v1",
+               %{ocel: %{}, algorithm: "alpha++"}},
+              {Ex4pmEngine.Wasm.PrologQuery, :prolog_query, "wasm4pm_ex4pm_prolog_query_v1",
+               %{
+                 predicates: [%{name: "parent", arity: 2}],
+                 facts: [%{pred: "parent", args: ["alice", "bob"]}],
+                 rules: [],
+                 query: %{pred: "parent", args: ["alice", "Y"]}
+               }}
             ]
 
             # NOTE: this job proves (a) the crate builds and its own native
@@ -169,6 +186,12 @@ jobs:
                     :htn_plan -> {:ok, %{"breed" => "HtnPlanning", "explanation" => "ci"}}
                     :ctl_check -> {:ok, %{"breed" => "CtlCheck", "explanation" => "ci"}}
                     :allen_temporal -> {:ok, %{"breed" => "AllenTemporal", "explanation" => "ci"}}
+                    :align -> {:ok, %{"alignments" => [%{"cost" => 0.0}]}}
+                    :etc_precision -> {:ok, %{"precision" => 1.0}}
+                    :soundness -> {:ok, %{"is_sound" => true}}
+                    :playout -> {:ok, %{"traces" => [], "all_complete" => true}}
+                    :oc_discover -> {:ok, %{"nets" => []}}
+                    :prolog_query -> {:ok, %{"result" => "answered", "answers" => []}}
                   end
 
                 response = %{

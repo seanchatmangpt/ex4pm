@@ -204,3 +204,69 @@ builds (2,700,990 bytes, SHA-256
 `76ff026b0ae6dacfb6edadea98d62156bd862a09ff83c98382d2137bfde7fe5f`) with
 all 8 new export symbols confirmed present by scanning the compiled
 binary for their exact `extern "C"` names.
+
+## 8. Phase 3 — unblocking align/etc_precision/soundness/playout/oc_discover/prolog_query
+
+Per user directive ("ultracode finish all phases"): 6 of the 7 algorithms
+deferred at Phase-2 time are now bound (wasm4pm branch
+`feat/ex4pm-wasm4pm-bindings-phase2`, commit
+`e6275d5751f960b8aaffbaeccbeac28e91b516de`). Real investigation — not
+the Phase-2 deferral note's blanket assumption — found that 5 of the 6
+were already plain, JsValue-free `pub fn`s that simply hadn't been
+wired as a dependency yet:
+
+| algorithm_id | wasm4pm source | what was actually needed |
+|---|---|---|
+| `align` | `wasm4pm::alignments::compute_trace_alignment` | one-line visibility change (`fn` → `pub fn`) — was the only genuinely private one |
+| `etc_precision` | `wasm4pm::etconformance_precision::compute_precision` | nothing — already `pub`; the Phase-2 note was wrong about this one |
+| `soundness` | `wasm4pm::soundness::analyze_petri_net` | nothing — already `pub` |
+| `playout` | `wasm4pm::petri_net_playout::play_petri_net` | nothing — already `pub` |
+| `oc_discover` | `wasm4pm::oc_petri_net::discover_oc_petri_net_pure` | nothing — already `pub` |
+| `prolog_query` | `prolog8::kernel::Kernel` | real integration: a Builder converting hand-written request DTOs into `Catalog`/`Rule8`/`QueryAtom8`/`FactBlock8`, re-deriving prolog8's private variable-slot term encoding externally via `TermId`'s public inner `u32` |
+
+In every case the missing piece was the `wasm4pm`/`prolog8` path
+dependency itself (added to `crates/wasm4pm-ex4pm-bindings/Cargo.toml`),
+not an architectural JsValue barrier — that barrier is real for
+`causal_footprint` specifically (see below), but the Phase-2 module doc
+had over-generalized it to five functions that don't actually have it.
+This correction is recorded here rather than silently amended, per
+[[no-overclaiming-conversational]].
+
+Elixir adapters (`Align`, `EtcPrecision`, `Soundness`, `Playout`,
+`OcDiscover`, `PrologQuery`) were generated the same way as Phase 2 — a
+real `ggen sync run` against the pack (now 19 `epm:AlgorithmBinding`
+individuals) produced all 19 adapter files in one pipeline run.
+`Ex4pm.Engine.Registry` ranks the 6 new engines at preference 13-18
+(between the 13 Phase-1/Phase-2 engines and `:beam`, now at 19); `:beam`
+is unmodified. 6 new operation atoms
+(`:align`/`:etc_precision`/`:soundness`/`:playout`/`:oc_discover`/
+`:prolog_query`).
+
+24/24 cargo tests pass in `wasm4pm-ex4pm-bindings` (was 15 after Phase
+2). Real `wasm32-unknown-unknown` release artifact: 8,804,456 bytes,
+SHA-256 `bb7f8b2c3f1e140367c12ca46358142bc0ff705bb862500244e503a5a3f5244a`,
+all 6 new export symbols confirmed present in the compiled binary.
+`ex4pm_engine`: 138 tests, 0 failures (was 132).
+
+**Still deferred, explicitly:**
+
+- `causal_footprint` — `wasm4pm::causal` is not `pub mod`-exported from
+  the crate root at all today, and both `causal_footprint`/
+  `granger_like_test` open by calling the JsValue/object-handle store
+  (`get_or_init_state().with_event_log(...)`) before any pure
+  computation runs. Unblocking this one for real needs an upstream
+  extraction (`causal_footprint_pure(traces, activity_key) -> ...` as a
+  free function out of the handle-coupled body, then `pub mod causal;`)
+  — a genuinely larger, more invasive change than the one-line
+  visibility flips the other five needed. Not attempted in this pass.
+- CPM (critical-path method) — no implementation found anywhere in the
+  wasm4pm workspace at any point across Phase 1/2/3's investigation.
+  `wasm4pm-planner::schedule::max_parallelism` remains the closest
+  partial fit, and `wasm4pm-planner` itself is still excluded (full
+  `tokio` dependency, not wasm32-targetable without a real porting
+  effort).
+- Quantum process modeling, hypergraph modeling, topos-theoretic
+  modeling — not found anywhere in the workspace at any point. These
+  would require genuinely new algorithm work, which contradicts the
+  user's own scoping directive for this effort ("the math should already
+  be implemented") — left open rather than fabricated.

@@ -42,17 +42,23 @@ defmodule Ex4pm.Engine.Registry do
   alias Ex4pm.Engine.{Beam, CmcaWasm, Ex4pmPlan, Nif, Remote, Wasm}
 
   alias Ex4pmEngine.Wasm.{
+    Align,
     AllenTemporal,
     Bayesian,
     Conform,
     CtlCheck,
     Discover,
+    EtcPrecision,
     HtnPlan,
     Markov,
+    OcDiscover,
     OcpqEval,
     Optimize,
+    Playout,
     PowlMine,
+    PrologQuery,
     Simulate,
+    Soundness,
     StripsPlan,
     Survival
   }
@@ -73,6 +79,12 @@ defmodule Ex4pm.Engine.Registry do
     HtnPlan,
     CtlCheck,
     AllenTemporal,
+    Align,
+    EtcPrecision,
+    Soundness,
+    Playout,
+    OcDiscover,
+    PrologQuery,
     Beam,
     Ex4pmPlan,
     CmcaWasm,
@@ -174,12 +186,22 @@ defmodule Ex4pm.Engine.Registry do
   defp preference(:wasm_htn_plan), do: 10
   defp preference(:wasm_ctl_check), do: 11
   defp preference(:wasm_allen_temporal), do: 12
-  defp preference(:beam), do: 13
-  defp preference(:ex4pm_plan), do: 14
-  defp preference(:cmca_wasm), do: 15
-  defp preference(:wasm), do: 16
-  defp preference(:nif), do: 17
-  defp preference(:remote), do: 18
+  # Phase 3: unblocked wrappers over the same wasm4pm-workspace algorithms
+  # deferred at Phase-2 time (align/etc_precision/soundness/playout/
+  # oc_discover already-pub upstream; prolog_query real prolog8 Kernel
+  # integration) — same ranking discipline.
+  defp preference(:wasm_align), do: 13
+  defp preference(:wasm_etc_precision), do: 14
+  defp preference(:wasm_soundness), do: 15
+  defp preference(:wasm_playout), do: 16
+  defp preference(:wasm_oc_discover), do: 17
+  defp preference(:wasm_prolog_query), do: 18
+  defp preference(:beam), do: 19
+  defp preference(:ex4pm_plan), do: 20
+  defp preference(:cmca_wasm), do: 21
+  defp preference(:wasm), do: 22
+  defp preference(:nif), do: 23
+  defp preference(:remote), do: 24
   defp preference(_), do: 99
 
   defp module_for(id), do: Enum.find(@engines, &(&1.id() == id))
