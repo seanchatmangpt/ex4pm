@@ -40,9 +40,22 @@ defmodule Ex4pm.Engine.Registry do
 
   alias Ex4pm.Core.Capability
   alias Ex4pm.Engine.{Beam, CmcaWasm, Ex4pmPlan, Nif, Remote, Wasm}
+  alias Ex4pmEngine.Wasm.{Conform, Discover, Optimize, PowlMine, Simulate}
   alias Ex4pm.Refusal
 
-  @engines [Beam, Ex4pmPlan, CmcaWasm, Wasm, Nif, Remote]
+  @engines [
+    Discover,
+    Conform,
+    Simulate,
+    Optimize,
+    PowlMine,
+    Beam,
+    Ex4pmPlan,
+    CmcaWasm,
+    Wasm,
+    Nif,
+    Remote
+  ]
 
   def engines, do: @engines
 
@@ -118,12 +131,21 @@ defmodule Ex4pm.Engine.Registry do
     end
   end
 
-  defp preference(:beam), do: 0
-  defp preference(:ex4pm_plan), do: 1
-  defp preference(:cmca_wasm), do: 2
-  defp preference(:wasm), do: 3
-  defp preference(:nif), do: 4
-  defp preference(:remote), do: 5
+  # Phase-1 wasm4pm-ex4pm-bindings engines rank above :beam so real WASM
+  # execution is preferred once :alive/:partial_alive; :beam remains the
+  # evidenced fallback (never deleted pre-emptively — see
+  # docs/ARD-v26.9.x.md "Phase-1 wasm4pm bindings").
+  defp preference(:wasm_discover), do: 0
+  defp preference(:wasm_conform), do: 1
+  defp preference(:wasm_simulate), do: 2
+  defp preference(:wasm_optimize), do: 3
+  defp preference(:wasm_powl_mine), do: 4
+  defp preference(:beam), do: 5
+  defp preference(:ex4pm_plan), do: 6
+  defp preference(:cmca_wasm), do: 7
+  defp preference(:wasm), do: 8
+  defp preference(:nif), do: 9
+  defp preference(:remote), do: 10
   defp preference(_), do: 99
 
   defp module_for(id), do: Enum.find(@engines, &(&1.id() == id))

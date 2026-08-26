@@ -62,9 +62,31 @@ defmodule Ex4pm.EngineTest do
 
   test "registry preserves candidates without confusing inspection with execution" do
     candidates = Engine.candidates(:discover)
-    assert Enum.map(candidates, & &1.id) == [:beam, :ex4pm_plan, :cmca_wasm, :wasm, :nif, :remote]
+
+    assert Enum.map(candidates, & &1.id) == [
+             :wasm_discover,
+             :wasm_conform,
+             :wasm_simulate,
+             :wasm_optimize,
+             :wasm_powl_mine,
+             :beam,
+             :ex4pm_plan,
+             :cmca_wasm,
+             :wasm,
+             :nif,
+             :remote
+           ]
+
     assert Enum.find(candidates, &(&1.id == :beam)).standing == :partial_alive
     assert Enum.find(candidates, &(&1.id == :wasm)).standing == :unsupported
+
+    # :wasm_discover supports? :discover unconditionally but has no injected
+    # transport in this test's opts, so it is a real, evidenced :blocked
+    # candidate (never :unsupported) — the same inspection-vs-execution
+    # distinction the rest of this assertion already covers for :beam/:wasm.
+    assert Enum.find(candidates, &(&1.id == :wasm_discover)).standing == :blocked
+    assert Enum.find(candidates, &(&1.id == :wasm_conform)).standing == :unsupported
+
     assert Enum.all?(candidates, fn candidate -> candidate.evidence.executed == false end)
   end
 

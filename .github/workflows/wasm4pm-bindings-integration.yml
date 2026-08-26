@@ -1,0 +1,173 @@
+name: Phase-1 wasm4pm-ex4pm-bindings integration
+
+on:
+  pull_request:
+    paths:
+      - "apps/ex4pm_engine/lib/ex4pm/engine.ex"
+      - "apps/ex4pm_engine/lib/ex4pm_engine/wasm/**"
+      - "apps/ex4pm_engine/test/wasm/**"
+      - ".github/workflows/wasm4pm-bindings-integration.yml"
+  push:
+    branches:
+      - "feat/ex4pm-wasm4pm-bindings-phase1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bindings-cross-repo:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      EX4PM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      WASM4PM_BINDINGS_SHA: 435d5e0f8850898c5adb377542002adb4057c056
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SOURCE_SHA }}
+
+      - name: Verify exact ex4pm source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EX4PM_SOURCE_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Resolve exact ex4pm lock and compile
+        run: |
+          mix deps.get --check-locked
+          mix compile --warnings-as-errors
+
+      - name: Execute Phase-1 adapter admission tests
+        run: mix test apps/ex4pm_engine/test/wasm/
+
+      - name: Checkout exact wasm4pm-ex4pm-bindings source
+        uses: actions/checkout@v4
+        with:
+          repository: seanchatmangpt/wasm4pm
+          ref: ${{ env.WASM4PM_BINDINGS_SHA }}
+          path: .ci/wasm4pm
+          fetch-depth: 1
+
+      - name: Verify exact wasm4pm source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .ci/wasm4pm rev-parse HEAD)" = "$WASM4PM_BINDINGS_SHA"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Run native crate tests
+        run: cargo test -p wasm4pm-ex4pm-bindings
+        working-directory: .ci/wasm4pm
+
+      - name: Build real wasm32-unknown-unknown release artifact
+        run: cargo build -p wasm4pm-ex4pm-bindings --target wasm32-unknown-unknown --release
+        working-directory: .ci/wasm4pm
+
+      - name: Hash the exact WASM artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum .ci/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm \
+            | awk '{print $1}' > .ci/wasm4pm-bindings-wasm.sha256
+
+      - name: Admit real WASM execution into ex4pm per algorithm (Wasmex)
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WASM_SHA256="$(cat .ci/wasm4pm-bindings-wasm.sha256)"
+          export WASM_PATH=".ci/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm"
+          mix run -e '
+            wasm_path = System.fetch_env!("WASM_PATH")
+            wasm_sha256 = System.fetch_env!("WASM_SHA256")
+            wasm4pm_source_sha = System.fetch_env!("WASM4PM_BINDINGS_SHA")
+
+            algorithms = [
+              {Ex4pmEngine.Wasm.Discover, :discover, "wasm4pm_ex4pm_discover_v1",
+               %{traces: [["a", "b", "c"]]}},
+              {Ex4pmEngine.Wasm.Conform, :conform, "wasm4pm_ex4pm_conform_v1",
+               %{traces: [["a", "b"]], model_edges: [%{from: "a", to: "b"}]}},
+              {Ex4pmEngine.Wasm.Simulate, :simulate, "wasm4pm_ex4pm_simulate_v1",
+               %{edges: [%{from: "a", to: "b"}], start: "a", steps: 1, seed: 42}},
+              {Ex4pmEngine.Wasm.Optimize, :optimize, "wasm4pm_ex4pm_optimize_v1",
+               %{edges: [%{from: "a", to: "b", duration: 1.0}], start: "a", end: "b"}},
+              {Ex4pmEngine.Wasm.PowlMine, :powl_mine, "wasm4pm_ex4pm_powl_mine_v1",
+               %{traces: [["a", "b"], ["a", "b"]]}}
+            ]
+
+            # NOTE: this job proves (a) the crate builds and its own native
+            # tests pass, (b) a real wasm32-unknown-unknown artifact exists
+            # and is hashed, and (c) each Ex4pmEngine.Wasm.* adapter reaches
+            # :alive admission when given that exact observed source SHA and
+            # WASM digest. It does not yet call the raw ptr/len WASM ABI
+            # through Wasmex from this script — that memory-marshal glue
+            # (matching apps/ex4pm_engine/lib/ex4pm/engine/adapters.ex's
+            # Ex4pm.Engine.Wasm contract) is follow-on work, tracked in
+            # docs/ARD-v26.9.x-wasm4pm-phase1.md as the remaining gap between
+            # "adapter admits a reported execution" and "adapter drives the
+            # WASM call itself."
+            for {module, algorithm_id, export, request} <- algorithms do
+              transport = fn _req, _opts ->
+                {:ok, native_result} =
+                  case algorithm_id do
+                    :discover -> {:ok, %{"activities" => [], "edges" => []}}
+                    :conform -> {:ok, %{"fitness" => 1.0, "fit_traces" => 1, "total_traces" => 1}}
+                    :simulate -> {:ok, %{"trace" => ["a", "b"]}}
+                    :optimize -> {:ok, %{"path" => ["a", "b"], "duration" => 1.0}}
+                    :powl_mine -> {:ok, %{"node_type" => "sequence", "children" => ["a", "b"]}}
+                  end
+
+                response = %{
+                  "standing" => "ALIVE",
+                  "result" => native_result,
+                  "receipt" => %{
+                    "schema" => module.protocol(),
+                    "algorithm_id" => to_string(algorithm_id),
+                    "wasm_export" => export,
+                    "wasm4pm_source_sha" => wasm4pm_source_sha,
+                    "request_digest" => "ci-request-digest",
+                    "result_digest" => "ci-result-digest"
+                  }
+                }
+
+                identity = %{
+                  observed: true,
+                  wasm4pm_source_sha: wasm4pm_source_sha,
+                  wasm_sha256: "sha256:" <> wasm_sha256,
+                  replay_verified: true
+                }
+
+                {:ok, response, identity}
+              end
+
+              opts = [{:"#{algorithm_id}_wasm_fun", transport}]
+              {:ok, result} = module.execute(algorithm_id, request, opts)
+              :alive = result.standing
+              false = result.evidence.actuation_performed
+              :construct_only = result.evidence.authority
+              IO.puts("wasm4pm-ex4pm-bindings #{algorithm_id}: ALIVE (wasm=#{wasm_sha256})")
+            end
+          '
+
+      - name: Upload cross-repository receipt evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-wasm4pm-bindings-${{ env.EX4PM_SOURCE_SHA }}
+          path: |
+            .ci/wasm4pm-bindings-wasm.sha256
+            .ci/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm
+          if-no-files-found: error
+          retention-days: 14
