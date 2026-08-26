@@ -122,3 +122,85 @@ reaching `:alive` in real CI, not on this milestone landing.
   pack this crate and its ontology were authored from
 - `apps/ex4pm_engine/lib/ex4pm_engine/wasm/adapter.ex` — the shared
   six-state adapter macro
+
+## 7. Phase 2 — thin wrappers over already-implemented wasm4pm algorithms
+
+Per user directive: "the math should already be implemented in
+~/wasm4pm." Phase 2 is a *binding* pass, not a reimplementation pass — 8
+algorithms, each a thin `extern "C"` wrapper in
+`crates/wasm4pm-ex4pm-bindings/src/phase2.rs` (branch
+`feat/ex4pm-wasm4pm-bindings-phase2`, wasm4pm source SHA `a0eb15207
+3b5f096881e8f60d0955ca5b881705a`) calling a real, pre-existing pure-Rust
+function or method:
+
+| algorithm_id | wasm4pm source | crate |
+|---|---|---|
+| `survival` | `miniml::kaplan_meier_impl` | `miniml-core` |
+| `markov` | `miniml::compute_steady_state_impl` | `miniml-core` |
+| `bayesian` | `miniml::bayesian_linear_regression_impl` | `miniml-core` |
+| `ocpq_eval` | `ocpq::ocpq_eval_json` | `ocpq` |
+| `strips_plan` | `wasm4pm_cognition::breeds::strips::Strips` (`CognitionBreed::run`) | `wasm4pm-cognition` |
+| `htn_plan` | `wasm4pm_cognition::breeds::htn_planning::HtnPlanning` | `wasm4pm-cognition` |
+| `ctl_check` | `wasm4pm_cognition::breeds::ctl_check::CtlCheck` | `wasm4pm-cognition` |
+| `allen_temporal` | `wasm4pm_cognition::breeds::allen_temporal::AllenTemporal` | `wasm4pm-cognition` |
+
+Elixir adapters (`Ex4pmEngine.Wasm.{Survival,Markov,Bayesian,OcpqEval,
+StripsPlan,HtnPlan,CtlCheck,AllenTemporal}`) and the Rust `lib.rs`/
+`phase2.rs`/`Cargo.toml` were generated with a real `ggen sync run`
+against `~/ggen-marketplace/packs/ex4pm-wasm4pm-bindings-pack` (not
+hand-authored, unlike Phase 1) — the pack's `templates/elixir_adapter.tmpl`
+uses a **templated `to:`** (`to: "apps/.../wasm/{{ row.algorithm_id }}.ex"`)
+so one template + one SPARQL query over 13 `epm:AlgorithmBinding`
+individuals produces all 13 adapter files (5 Phase-1 + 8 Phase-2) in a
+single pipeline run — verified via `ggen sync run --dry-run` reporting
+all 13 paths under `"written"`, then a real (non-dry-run) `ggen sync run`
+producing byte-identical adapter shapes to the hand-authored Phase-1
+files (diff showed only moduledoc wording differences), then re-run for
+real (non-dry-run) `mix compile`/`mix test` against the copied output.
+
+**Deferred, not silently dropped** — 7 of the original 15 Phase-2
+candidates:
+
+- `align`, `etc_precision`, `soundness`, `playout`, `oc_discover`,
+  `causal_footprint` (`wasm4pm` main crate): each is exposed only through
+  a `#[wasm_bindgen]` function built on an internal `JsValue`/object-
+  handle store (`get_or_init_state().with_petri_net(handle, ...)`), which
+  requires a JS host (Node/browser) to satisfy `wasm-bindgen`'s import
+  ABI — the same reason `wasm4pm-cmca`'s own CI resorts to `wasm-pack
+  build --target nodejs` + `node`, not a raw Wasmtime call. This is
+  architecturally incompatible with `wasm4pm-ex4pm-bindings`'s raw
+  ptr/len `extern "C"` ABI (built for a bare Wasmtime/Wasmex host, no JS
+  runtime). Binding these needs either running through Node (breaking
+  the raw-ABI symmetry with every other Phase-1/Phase-2 export) or a
+  small upstream visibility change in `wasm4pm/src/*.rs` exposing the
+  pure, `JsValue`-free helper functions those `#[wasm_bindgen]` functions
+  already call internally (e.g. `compute_trace_alignment` in
+  `alignments.rs`, currently private) — real, named follow-on work.
+- `prolog_query` (`prolog8`): `Kernel`/`Catalog`/`Rule8`/`QueryAtom8`/
+  `FactBlock8` don't derive `Serialize`/`Deserialize` and require a
+  predicate-catalog registration step before any fact/rule/query is
+  admitted — genuine integration work beyond a thin wrapper, not a
+  blocker in the JsValue sense.
+
+CPM (no full critical-path-method implementation found anywhere in the
+workspace) and quantum/hypergraph/topos modeling (not found anywhere)
+remain **open gaps**, restated from the original 15-candidate scope —
+not claimed as bound by this or any prior pass.
+
+Registry: `Ex4pm.Engine.Registry`'s `preference/1`
+(`apps/ex4pm_engine/lib/ex4pm/engine.ex`) ranks the 8 new `:wasm_*`
+engines at 5-12 (between the 5 Phase-1 engines at 0-4 and `:beam` at 13),
+extending the same "WASM wins once alive, `:beam` stays as fallback"
+discipline. 8 new operation atoms introduced
+(`:survival`/`:markov`/`:bayesian`/`:ocpq_eval`/`:strips_plan`/
+`:htn_plan`/`:ctl_check`/`:allen_temporal`) — none existed on
+`Ex4pm.Engine.Beam` before; `:beam` is unmodified.
+
+15 cargo tests pass in `wasm4pm-ex4pm-bindings` (7 Phase-1 + 8 Phase-2,
+each asserting real computed values — e.g. the `markov` test asserts the
+exact steady-state `[0.5, 0.5]` for a symmetric 2-state chain, not just
+absence of a crash). A real `wasm32-unknown-unknown` release artifact
+builds (2,700,990 bytes, SHA-256
+`76ff026b0ae6dacfb6edadea98d62156bd862a09ff83c98382d2137bfde7fe5f`) with
+all 8 new export symbols confirmed present by scanning the compiled
+binary for their exact `extern "C"` names.

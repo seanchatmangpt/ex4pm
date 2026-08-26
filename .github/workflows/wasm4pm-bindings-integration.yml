@@ -1,4 +1,4 @@
-name: Phase-1 wasm4pm-ex4pm-bindings integration
+name: wasm4pm-ex4pm-bindings integration (Phase 1 + Phase 2)
 
 on:
   pull_request:
@@ -10,6 +10,8 @@ on:
   push:
     branches:
       - "feat/ex4pm-wasm4pm-bindings-phase1"
+      - "feat/wasm4pm-phase1-bindings"
+      - "feat/ex4pm-wasm4pm-bindings-phase2"
   workflow_dispatch:
 
 permissions:
@@ -21,7 +23,7 @@ jobs:
     env:
       MIX_ENV: test
       EX4PM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      WASM4PM_BINDINGS_SHA: 435d5e0f8850898c5adb377542002adb4057c056
+      WASM4PM_BINDINGS_SHA: a0eb152073b5f096881e8f60d0955ca5b881705a
     steps:
       - uses: actions/checkout@v4
         with:
@@ -105,7 +107,38 @@ jobs:
               {Ex4pmEngine.Wasm.Optimize, :optimize, "wasm4pm_ex4pm_optimize_v1",
                %{edges: [%{from: "a", to: "b", duration: 1.0}], start: "a", end: "b"}},
               {Ex4pmEngine.Wasm.PowlMine, :powl_mine, "wasm4pm_ex4pm_powl_mine_v1",
-               %{traces: [["a", "b"], ["a", "b"]]}}
+               %{traces: [["a", "b"], ["a", "b"]]}},
+              {Ex4pmEngine.Wasm.Survival, :survival, "wasm4pm_ex4pm_survival_v1",
+               %{times: [1.0, 2.0], events: [1.0, 1.0]}},
+              {Ex4pmEngine.Wasm.Markov, :markov, "wasm4pm_ex4pm_markov_v1",
+               %{transition_matrix: [0.5, 0.5, 0.5, 0.5], n_states: 2, max_iter: 100, tol: 1.0e-9}},
+              {Ex4pmEngine.Wasm.Bayesian, :bayesian, "wasm4pm_ex4pm_bayesian_v1",
+               %{data: [1.0, 2.0], n_features: 1, targets: [2.0, 4.0]}},
+              {Ex4pmEngine.Wasm.OcpqEval, :ocpq_eval, "wasm4pm_ex4pm_ocpq_eval_v1",
+               %{
+                 query: %{root: "n0", nodes: [%{id: "n0", box: %{}}]},
+                 ocel: %{objectTypes: [], eventTypes: [], objects: [], events: []}
+               }},
+              {Ex4pmEngine.Wasm.StripsPlan, :strips_plan, "wasm4pm_ex4pm_strips_plan_v1",
+               %{intent: "t", candidates: [], facts: [], cases: [], rules: [], goals: [], state: []}},
+              {Ex4pmEngine.Wasm.HtnPlan, :htn_plan, "wasm4pm_ex4pm_htn_plan_v1",
+               %{intent: "t", candidates: [], facts: [], cases: [], rules: [], goals: [], state: []}},
+              {Ex4pmEngine.Wasm.CtlCheck, :ctl_check, "wasm4pm_ex4pm_ctl_check_v1",
+               %{
+                 intent: "t",
+                 candidates: [],
+                 cases: [],
+                 rules: [],
+                 goals: [],
+                 state: [],
+                 facts: [
+                   %{key: "ts:init", value: "s0"},
+                   %{key: "ts:edge:s0", value: "s1"},
+                   %{key: "ctl:formula", value: "E F s1"}
+                 ]
+               }},
+              {Ex4pmEngine.Wasm.AllenTemporal, :allen_temporal, "wasm4pm_ex4pm_allen_temporal_v1",
+               %{intent: "t", candidates: [], facts: [], cases: [], rules: [], goals: [], state: []}}
             ]
 
             # NOTE: this job proves (a) the crate builds and its own native
@@ -128,6 +161,14 @@ jobs:
                     :simulate -> {:ok, %{"trace" => ["a", "b"]}}
                     :optimize -> {:ok, %{"path" => ["a", "b"], "duration" => 1.0}}
                     :powl_mine -> {:ok, %{"node_type" => "sequence", "children" => ["a", "b"]}}
+                    :survival -> {:ok, %{"survival" => [0.5], "median_survival" => 2.0}}
+                    :markov -> {:ok, %{"steady_state" => [0.5, 0.5]}}
+                    :bayesian -> {:ok, %{"coefficients" => [2.0], "intercept" => 0.0}}
+                    :ocpq_eval -> {:ok, %{"satisfied" => true}}
+                    :strips_plan -> {:ok, %{"breed" => "Strips", "explanation" => "ci"}}
+                    :htn_plan -> {:ok, %{"breed" => "HtnPlanning", "explanation" => "ci"}}
+                    :ctl_check -> {:ok, %{"breed" => "CtlCheck", "explanation" => "ci"}}
+                    :allen_temporal -> {:ok, %{"breed" => "AllenTemporal", "explanation" => "ci"}}
                   end
 
                 response = %{

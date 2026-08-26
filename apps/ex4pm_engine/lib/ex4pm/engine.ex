@@ -40,7 +40,23 @@ defmodule Ex4pm.Engine.Registry do
 
   alias Ex4pm.Core.Capability
   alias Ex4pm.Engine.{Beam, CmcaWasm, Ex4pmPlan, Nif, Remote, Wasm}
-  alias Ex4pmEngine.Wasm.{Conform, Discover, Optimize, PowlMine, Simulate}
+
+  alias Ex4pmEngine.Wasm.{
+    AllenTemporal,
+    Bayesian,
+    Conform,
+    CtlCheck,
+    Discover,
+    HtnPlan,
+    Markov,
+    OcpqEval,
+    Optimize,
+    PowlMine,
+    Simulate,
+    StripsPlan,
+    Survival
+  }
+
   alias Ex4pm.Refusal
 
   @engines [
@@ -49,6 +65,14 @@ defmodule Ex4pm.Engine.Registry do
     Simulate,
     Optimize,
     PowlMine,
+    Survival,
+    Markov,
+    Bayesian,
+    OcpqEval,
+    StripsPlan,
+    HtnPlan,
+    CtlCheck,
+    AllenTemporal,
     Beam,
     Ex4pmPlan,
     CmcaWasm,
@@ -140,12 +164,22 @@ defmodule Ex4pm.Engine.Registry do
   defp preference(:wasm_simulate), do: 2
   defp preference(:wasm_optimize), do: 3
   defp preference(:wasm_powl_mine), do: 4
-  defp preference(:beam), do: 5
-  defp preference(:ex4pm_plan), do: 6
-  defp preference(:cmca_wasm), do: 7
-  defp preference(:wasm), do: 8
-  defp preference(:nif), do: 9
-  defp preference(:remote), do: 10
+  # Phase 2: thin wrappers over already-implemented wasm4pm-workspace
+  # algorithms (miniml/ocpq/wasm4pm-cognition) — same ranking discipline.
+  defp preference(:wasm_survival), do: 5
+  defp preference(:wasm_markov), do: 6
+  defp preference(:wasm_bayesian), do: 7
+  defp preference(:wasm_ocpq_eval), do: 8
+  defp preference(:wasm_strips_plan), do: 9
+  defp preference(:wasm_htn_plan), do: 10
+  defp preference(:wasm_ctl_check), do: 11
+  defp preference(:wasm_allen_temporal), do: 12
+  defp preference(:beam), do: 13
+  defp preference(:ex4pm_plan), do: 14
+  defp preference(:cmca_wasm), do: 15
+  defp preference(:wasm), do: 16
+  defp preference(:nif), do: 17
+  defp preference(:remote), do: 18
   defp preference(_), do: 99
 
   defp module_for(id), do: Enum.find(@engines, &(&1.id() == id))
