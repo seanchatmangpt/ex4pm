@@ -1,0 +1,7 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+
+ex4pm:ReceiptContract a ex4pm:PaaSReceiptContract ;
+  ex4pm:binds "repo,ref,sha,input,adapter,authority,consequence,replay,standing" ;
+  ex4pm:pendingBeforeDo true ;
+  ex4pm:outcomeAfterDo true ;
+  ex4pm:terminalForEveryAttempt true .
