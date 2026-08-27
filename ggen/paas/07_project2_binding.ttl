@@ -1,0 +1,7 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+
+ex4pm:DispatchBinding a ex4pm:ProjectBinding ;
+  ex4pm:projectNumber 2 ;
+  ex4pm:requiresDispatchIdentity true ;
+  ex4pm:requiresExactRepo true ;
+  ex4pm:requiresExactBase true .
