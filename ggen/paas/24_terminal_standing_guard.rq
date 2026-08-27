@@ -1,0 +1,5 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?receipt ?standing WHERE {
+  ?receipt a ex4pm:OutcomeReceipt ; ex4pm:standing ?standing .
+  FILTER(?standing NOT IN ("ALIVE","PARTIAL_ALIVE","BLOCKED","BUILD_BROKEN","UNSUPPORTED","REFUSED"))
+}

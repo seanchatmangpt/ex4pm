@@ -1,0 +1,4 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?artifact WHERE {
+  ?artifact a ex4pm:GeneratedArtifact ; ex4pm:editedDirectly true .
+}

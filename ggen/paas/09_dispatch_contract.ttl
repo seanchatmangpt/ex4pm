@@ -1,0 +1,7 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+
+ex4pm:DispatchContract a ex4pm:PaaSDispatchContract ;
+  ex4pm:requiresOperationIdentity true ;
+  ex4pm:requiresCapabilityIdentity true ;
+  ex4pm:requiresIntentIdentity true ;
+  ex4pm:requiresTypedRefusal true .
