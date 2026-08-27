@@ -1,0 +1,5 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?receipt WHERE {
+  ?receipt a ex4pm:OutcomeReceipt .
+  FILTER NOT EXISTS { ?receipt ex4pm:runtimeDigest ?digest }
+}
