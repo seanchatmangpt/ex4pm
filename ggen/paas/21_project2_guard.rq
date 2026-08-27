@@ -1,0 +1,5 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?run WHERE {
+  ?run a ex4pm:PaaSRun .
+  FILTER NOT EXISTS { ?run ex4pm:projectNumber 2 }
+}
