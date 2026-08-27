@@ -1,0 +1,15 @@
+@prefix clc: <https://ggen.dev/ontology/capability-lineage-consumer#> .
+
+clc:ex4pm a clc:Consumer ;
+  clc:repository "seanchatmangpt/ex4pm" ;
+  clc:exactBase "06d326f59d05afdcd39637f42fe277a474095dda" ;
+  clc:sourcePack "capability-lineage-propagation-pack" ;
+  clc:authority "SELECT|CONSTRUCT|VERIFY" ;
+  clc:actuationAllowed false ;
+  clc:actuationPath "Ex4pm.Evidence.BRCE" ;
+  clc:sourceOwnership "canonical-source" ;
+  clc:generatedOwnership "projection-only" ;
+  clc:receiptRequired true ;
+  clc:replayRequired true ;
+  clc:qualificationRequired true ;
+  clc:processIntelligenceOwner "wasm4pm/wasm4pm-compat" .
