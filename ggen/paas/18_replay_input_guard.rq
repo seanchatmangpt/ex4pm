@@ -1,0 +1,5 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?replay WHERE {
+  ?replay a ex4pm:Replay .
+  FILTER NOT EXISTS { ?replay ex4pm:inputDigest ?digest . FILTER(STRLEN(STR(?digest)) > 0) }
+}

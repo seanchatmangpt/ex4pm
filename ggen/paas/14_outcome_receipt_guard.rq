@@ -1,0 +1,5 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?actuation WHERE {
+  ?actuation a ex4pm:Actuation .
+  FILTER NOT EXISTS { ?receipt a ex4pm:OutcomeReceipt ; ex4pm:forActuation ?actuation }
+}

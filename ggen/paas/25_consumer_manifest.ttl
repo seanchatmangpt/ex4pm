@@ -1,0 +1,9 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+
+ex4pm:ConsumerManifest a ex4pm:PaaSConsumerManifest ;
+  ex4pm:projectNumber 2 ;
+  ex4pm:repo "seanchatmangpt/ex4pm" ;
+  ex4pm:ggenPrimitive "governed-paas-consumer" ;
+  ex4pm:piOwner "wasm4pm/wasm4pm-compat" ;
+  ex4pm:doOwner "Ex4pm.Evidence.BRCE" ;
+  ex4pm:ocelPath "ggen/ecosystem/ocel/current" .

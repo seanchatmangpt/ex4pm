@@ -1,0 +1,7 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+
+ex4pm:EvidenceLineage a ex4pm:OCELBinding ;
+  ex4pm:canonicalPath "ggen/ecosystem/ocel/current" ;
+  ex4pm:telemetryOnly true ;
+  ex4pm:ambientExecutionAuthority false ;
+  ex4pm:requiresExactRunIdentity true .

@@ -1,0 +1,5 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?capability WHERE {
+  ?capability a ex4pm:ProcessIntelligenceCapability .
+  FILTER NOT EXISTS { ?capability ex4pm:implementationOwner "wasm4pm/wasm4pm-compat" }
+}

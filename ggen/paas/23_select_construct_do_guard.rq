@@ -1,0 +1,4 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?intent WHERE {
+  ?intent a ex4pm:ConstructedIntent ; ex4pm:ambientDoAuthority true .
+}

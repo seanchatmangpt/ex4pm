@@ -1,0 +1,5 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?dispatch WHERE {
+  ?dispatch a ex4pm:DispatchIntent .
+  FILTER NOT EXISTS { ?dispatch ex4pm:hostCapabilitySet ?caps }
+}

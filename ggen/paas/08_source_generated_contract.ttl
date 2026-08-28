@@ -1,0 +1,7 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+
+ex4pm:SourceGeneratedContract a ex4pm:OwnershipContract ;
+  ex4pm:sourceOwner "ggen/paas" ;
+  ex4pm:generatedArtifactsAreProjections true ;
+  ex4pm:generatedArtifactsEditable false ;
+  ex4pm:requiresSourceRegeneration true .

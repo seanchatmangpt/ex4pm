@@ -1,0 +1,8 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+
+ex4pm:AuthorityContract a ex4pm:PaaSAuthorityContract ;
+  ex4pm:selectAuthority "admission-only" ;
+  ex4pm:constructAuthority "intent-only" ;
+  ex4pm:doAuthority "Ex4pm.Evidence.BRCE" ;
+  ex4pm:requiresPendingReceipt true ;
+  ex4pm:requiresOutcomeReceipt true .
