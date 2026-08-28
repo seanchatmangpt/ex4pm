@@ -138,7 +138,22 @@ defmodule Ex4pmEngine.Wasm.RealTransport do
       %{module: Ex4pmEngine.Wasm.EtcPrecision, algorithm_id: :etc_precision},
       %{module: Ex4pmEngine.Wasm.Soundness, algorithm_id: :soundness},
       %{module: Ex4pmEngine.Wasm.Playout, algorithm_id: :playout},
-      %{module: Ex4pmEngine.Wasm.PrologQuery, algorithm_id: :prolog_query}
+      %{module: Ex4pmEngine.Wasm.PrologQuery, algorithm_id: :prolog_query},
+      # Phase 4 (statistics/ML, ~wasm4pm/crates/wasm4pm-ex4pm-bindings/src/phase4_stats.rs)
+      %{module: Ex4pmEngine.Wasm.KsStatistic, algorithm_id: :ks_statistic},
+      %{module: Ex4pmEngine.Wasm.KsCriticalValue, algorithm_id: :ks_critical_value},
+      %{module: Ex4pmEngine.Wasm.Regression, algorithm_id: :regression},
+      %{module: Ex4pmEngine.Wasm.Forecast, algorithm_id: :forecast},
+      %{module: Ex4pmEngine.Wasm.HoltForecast, algorithm_id: :holt_forecast},
+      %{module: Ex4pmEngine.Wasm.Ewma, algorithm_id: :ewma},
+      %{module: Ex4pmEngine.Wasm.TrendClassify, algorithm_id: :trend_classify},
+      %{module: Ex4pmEngine.Wasm.Mean, algorithm_id: :mean},
+      %{module: Ex4pmEngine.Wasm.DotProduct, algorithm_id: :dot_product},
+      %{module: Ex4pmEngine.Wasm.EuclideanDistance, algorithm_id: :euclidean_distance},
+      %{module: Ex4pmEngine.Wasm.Standardize, algorithm_id: :standardize},
+      %{module: Ex4pmEngine.Wasm.Median, algorithm_id: :median},
+      %{module: Ex4pmEngine.Wasm.Percentile, algorithm_id: :percentile},
+      %{module: Ex4pmEngine.Wasm.StdDeviation, algorithm_id: :std_deviation}
     ]
     |> Enum.map(fn %{module: mod, algorithm_id: id} ->
       %{
@@ -152,7 +167,7 @@ defmodule Ex4pmEngine.Wasm.RealTransport do
 
   @doc """
   Boots ONE real `Wasmex` instance from `artifact_path` (via `start/1`) and
-  builds all 19 `default_transport/2` closures against it in one pass --
+  builds all 33 `default_transport/2` closures against it in one pass --
   the option map every `Ex4pmEngine.Wasm.*` adapter's `execute/3` expects
   under its own `:<algo>_wasm_fun` key, ready to `Keyword.merge` into an
   `execute/3` `opts` list or into a Reactor step's own transport-selection.

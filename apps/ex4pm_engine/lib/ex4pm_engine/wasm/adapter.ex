@@ -19,16 +19,21 @@ defmodule Ex4pmEngine.Wasm.Adapter do
     wasm_replay_export: "wasm4pm_ex4pm_discover_replay_v1"`
   """
 
-  # Updated 2026-08-27: pins wasm4pm commit 36b74c6a3a11689fea8a445c198089ef48ec5dea
-  # ("feat(bindings): add alloc/dealloc exports closing the real host-write
-  # gap"), which added `wasm4pm_ex4pm_bindings_alloc_v1`/`_dealloc_v1` -- the
+  # Updated 2026-08-27: pins wasm4pm commit 5bb39674421a4d37d1e0fbaa34125d7af354415c ("feat(bindings):
+  # Phase-4 -- 14 real statistics/ML capabilities from
+  # wasm4pm::ml/hand_stats/prediction_drift"), which builds on
+  # 36b74c6a3a11689fea8a445c198089ef48ec5dea ("feat(bindings): add
+  # alloc/dealloc exports closing the real host-write gap" -- the
   # allocator export the ptr/len ABI documented in
   # `~/wasm4pm/crates/wasm4pm-ex4pm-bindings/src/lib.rs` needed but never
-  # had, and which `Ex4pmEngine.Wasm.RealTransport` now depends on to write
-  # a real request buffer into the module's own linear memory before
-  # calling any `<algo>_v1` export. A rebuild from the prior, unpinned SHA
-  # has no allocator and cannot serve `RealTransport` at all.
-  @wasm4pm_source_sha "36b74c6a3a11689fea8a445c198089ef48ec5dea"
+  # had, and which `Ex4pmEngine.Wasm.RealTransport` depends on to write a
+  # real request buffer into the module's own linear memory before
+  # calling any `<algo>_v1` export) and adds the 14 Phase-4 exports
+  # (`ks_statistic`, `regression`, `forecast`, `median`, ...) now
+  # registered in `Ex4pmEngine.Wasm.RealTransport.algo_specs/0`. A rebuild
+  # from an earlier SHA has neither the allocator nor the Phase-4 exports
+  # and cannot serve `RealTransport` at all.
+  @wasm4pm_source_sha "5bb39674421a4d37d1e0fbaa34125d7af354415c"
   @protocol "wasm4pm.ex4pm-bindings/v1"
 
   def wasm4pm_source_sha, do: @wasm4pm_source_sha

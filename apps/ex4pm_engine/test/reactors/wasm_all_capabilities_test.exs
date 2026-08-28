@@ -200,7 +200,24 @@ defmodule Ex4pmEngine.Reactors.WasmAllCapabilitiesTest do
       facts: [%{pred: "parent", args: ["alice", "bob"]}],
       rules: [],
       query: %{pred: "parent", args: ["alice", "Y"]}
-    }
+    },
+    # Phase 4 (statistics/ML) -- canonical requests cross-checked against
+    # wasm4pm-ex4pm-bindings' own real Rust unit tests
+    # (crates/wasm4pm-ex4pm-bindings/src/phase4_stats.rs, tests module).
+    ks_statistic: %{sample_a: [1.0, 2.0, 3.0], sample_b: [1.0, 2.0, 3.0]},
+    ks_critical_value: %{n: 10, m: 10, alpha: 0.05},
+    regression: %{x: [1.0, 2.0, 3.0, 4.0], y: [2.0, 4.0, 6.0, 8.0]},
+    forecast: %{data: [1.0, 2.0, 3.0, 4.0, 5.0], alpha: 0.3},
+    holt_forecast: %{series: [1.0, 2.0, 3.0, 4.0, 5.0], alpha: 0.5, beta: 0.5},
+    ewma: %{values: [1.0, 5.0, 10.0], alpha: 1.0},
+    trend_classify: %{smoothed: [1.0, 2.0, 3.0, 4.0, 5.0]},
+    mean: %{data: [1.0, 2.0, 3.0, 4.0]},
+    dot_product: %{a: [1.0, 2.0, 3.0], b: [4.0, 5.0, 6.0]},
+    euclidean_distance: %{a: [0.0, 0.0], b: [3.0, 4.0]},
+    standardize: %{data: [[1.0, 10.0], [2.0, 20.0], [3.0, 30.0]]},
+    median: %{data: [3.0, 1.0, 2.0]},
+    percentile: %{data: [1.0, 2.0, 3.0, 4.0], p: 50.0},
+    std_deviation: %{data: [5.0, 5.0, 5.0]}
   }
 
   setup do
@@ -219,12 +236,33 @@ defmodule Ex4pmEngine.Reactors.WasmAllCapabilitiesTest do
   end
 
   @tag :real_wasm
-  test "all 19 capabilities reach real :alive standing with real replay verification", %{
-    results: results
-  } do
-    for {algo, result} <- results do
+  test "all 19 Phase-1/2/3 capabilities reach real :alive standing with real replay verification",
+       %{results: results} do
+    for algo <- Map.keys(@requests) do
+      result = Map.fetch!(results, algo)
       assert result.standing == :alive, "#{algo} did not reach :alive: #{inspect(result)}"
     end
+  end
+
+  @tag :real_wasm
+  test "the Reactor runs all 33 registered capabilities (19 Phase-1/2/3 + 14 Phase-4)", %{
+    results: results
+  } do
+    assert map_size(results) == 33
+    assert map_size(@requests) == 33
+  end
+
+  @tag :real_wasm
+  test "an algorithm with no matching request is reported :unsupported, never crashed" do
+    assert {:ok, %{results: results}} =
+             Reactor.run(WasmCapabilitiesReactor, %{
+               artifact_path: @artifact_path,
+               requests: %{discover: @requests.discover}
+             })
+
+    assert results.discover.standing == :alive
+    assert results.mean.standing == :unsupported
+    assert results.mean.reason == :no_request_given
   end
 
   @tag :real_wasm
@@ -307,5 +345,87 @@ defmodule Ex4pmEngine.Reactors.WasmAllCapabilitiesTest do
     assert results.prolog_query.value["result"] == "answered"
     [answer | _] = results.prolog_query.value["answers"]
     assert answer["bindings"]["Y"] == "bob"
+  end
+
+  # -- Phase 4 (statistics/ML) -------------------------------------------
+
+  @tag :real_wasm
+  test "ks_statistic is real zero for identical samples", %{results: results} do
+    assert results.ks_statistic.value["ks_statistic"] == 0.0
+  end
+
+  @tag :real_wasm
+  test "ks_critical_value returns a real finite value for real sample sizes", %{
+    results: results
+  } do
+    assert is_number(results.ks_critical_value.value["ks_critical_value"])
+    refute results.ks_critical_value.value["ks_critical_value"] in [nil, :infinity]
+  end
+
+  @tag :real_wasm
+  test "regression recovers the real perfect linear fit y = 2x", %{results: results} do
+    assert_in_delta results.regression.value["slope"], 2.0, 1.0e-9
+    assert_in_delta results.regression.value["r_squared"], 1.0, 1.0e-9
+  end
+
+  @tag :real_wasm
+  test "forecast returns real error metrics and a next_window prediction", %{results: results} do
+    assert is_number(results.forecast.value["next_window"])
+  end
+
+  @tag :real_wasm
+  test "holt_forecast returns real error metrics and a next_window prediction", %{
+    results: results
+  } do
+    assert is_number(results.holt_forecast.value["next_window"])
+  end
+
+  @tag :real_wasm
+  test "ewma with alpha=1.0 reproduces the real input series exactly", %{results: results} do
+    assert results.ewma.value["ewma"] == [1.0, 5.0, 10.0]
+  end
+
+  @tag :real_wasm
+  test "trend_classify detects a real rising series", %{results: results} do
+    assert results.trend_classify.value["trend"] == "rising"
+  end
+
+  @tag :real_wasm
+  test "mean computes the real average 2.5", %{results: results} do
+    assert results.mean.value["mean"] == 2.5
+  end
+
+  @tag :real_wasm
+  test "dot_product computes the real inner product 32.0", %{results: results} do
+    assert results.dot_product.value["dot_product"] == 32.0
+  end
+
+  @tag :real_wasm
+  test "euclidean_distance computes the real 3-4-5 triangle distance", %{results: results} do
+    assert results.euclidean_distance.value["euclidean_distance"] == 5.0
+  end
+
+  @tag :real_wasm
+  test "standardize returns real per-column standardized data", %{results: results} do
+    standardized = results.standardize.value["standardized"]
+    assert length(standardized) == 3
+    # Real zero-mean check: the average of the standardized first column is ~0.
+    col0_mean = standardized |> Enum.map(&hd/1) |> Enum.sum() |> Kernel./(3)
+    assert_in_delta col0_mean, 0.0, 1.0e-9
+  end
+
+  @tag :real_wasm
+  test "median computes the real middle value", %{results: results} do
+    assert results.median.value["median"] == 2.0
+  end
+
+  @tag :real_wasm
+  test "percentile(50) returns a real value close to the median", %{results: results} do
+    assert is_number(results.percentile.value["percentile"])
+  end
+
+  @tag :real_wasm
+  test "std_deviation is real zero for a constant series", %{results: results} do
+    assert results.std_deviation.value["std_deviation"] == 0.0
   end
 end
