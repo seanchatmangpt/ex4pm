@@ -19,7 +19,16 @@ defmodule Ex4pmEngine.Wasm.Adapter do
     wasm_replay_export: "wasm4pm_ex4pm_discover_replay_v1"`
   """
 
-  @wasm4pm_source_sha "435d5e0f8850898c5adb377542002adb4057c056"
+  # Updated 2026-08-27: pins wasm4pm commit 36b74c6a3a11689fea8a445c198089ef48ec5dea
+  # ("feat(bindings): add alloc/dealloc exports closing the real host-write
+  # gap"), which added `wasm4pm_ex4pm_bindings_alloc_v1`/`_dealloc_v1` -- the
+  # allocator export the ptr/len ABI documented in
+  # `~/wasm4pm/crates/wasm4pm-ex4pm-bindings/src/lib.rs` needed but never
+  # had, and which `Ex4pmEngine.Wasm.RealTransport` now depends on to write
+  # a real request buffer into the module's own linear memory before
+  # calling any `<algo>_v1` export. A rebuild from the prior, unpinned SHA
+  # has no allocator and cannot serve `RealTransport` at all.
+  @wasm4pm_source_sha "36b74c6a3a11689fea8a445c198089ef48ec5dea"
   @protocol "wasm4pm.ex4pm-bindings/v1"
 
   def wasm4pm_source_sha, do: @wasm4pm_source_sha
