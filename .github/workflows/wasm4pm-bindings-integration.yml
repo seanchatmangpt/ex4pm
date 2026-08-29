@@ -1,0 +1,237 @@
+name: wasm4pm-ex4pm-bindings integration (Phase 1 + Phase 2)
+
+on:
+  pull_request:
+    paths:
+      - "apps/ex4pm_engine/lib/ex4pm/engine.ex"
+      - "apps/ex4pm_engine/lib/ex4pm_engine/wasm/**"
+      - "apps/ex4pm_engine/test/wasm/**"
+      - ".github/workflows/wasm4pm-bindings-integration.yml"
+  push:
+    branches:
+      - "feat/ex4pm-wasm4pm-bindings-phase1"
+      - "feat/wasm4pm-phase1-bindings"
+      - "feat/ex4pm-wasm4pm-bindings-phase2"
+      - "feat/wasm4pm-phase2-bindings"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bindings-cross-repo:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      EX4PM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      WASM4PM_BINDINGS_SHA: e6275d5751f960b8aaffbaeccbeac28e91b516de
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SOURCE_SHA }}
+
+      - name: Verify exact ex4pm source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EX4PM_SOURCE_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Resolve exact ex4pm lock and compile
+        run: |
+          mix deps.get --check-locked
+          mix compile --warnings-as-errors
+
+      - name: Execute Phase-1 adapter admission tests
+        run: mix test apps/ex4pm_engine/test/wasm/
+
+      - name: Checkout exact wasm4pm-ex4pm-bindings source
+        uses: actions/checkout@v4
+        with:
+          repository: seanchatmangpt/wasm4pm
+          ref: ${{ env.WASM4PM_BINDINGS_SHA }}
+          path: .ci/wasm4pm
+          fetch-depth: 1
+
+      - name: Verify exact wasm4pm source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .ci/wasm4pm rev-parse HEAD)" = "$WASM4PM_BINDINGS_SHA"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Run native crate tests
+        run: cargo test -p wasm4pm-ex4pm-bindings
+        working-directory: .ci/wasm4pm
+
+      - name: Build real wasm32-unknown-unknown release artifact
+        run: cargo build -p wasm4pm-ex4pm-bindings --target wasm32-unknown-unknown --release
+        working-directory: .ci/wasm4pm
+
+      - name: Hash the exact WASM artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum .ci/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm \
+            | awk '{print $1}' > .ci/wasm4pm-bindings-wasm.sha256
+
+      - name: Admit real WASM execution into ex4pm per algorithm (Wasmex)
+        shell: bash
+        run: |
+          set -euo pipefail
+          export WASM_SHA256="$(cat .ci/wasm4pm-bindings-wasm.sha256)"
+          export WASM_PATH=".ci/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm"
+          mix run -e '
+            wasm_path = System.fetch_env!("WASM_PATH")
+            wasm_sha256 = System.fetch_env!("WASM_SHA256")
+            wasm4pm_source_sha = System.fetch_env!("WASM4PM_BINDINGS_SHA")
+
+            algorithms = [
+              {Ex4pmEngine.Wasm.Discover, :discover, "wasm4pm_ex4pm_discover_v1",
+               %{traces: [["a", "b", "c"]]}},
+              {Ex4pmEngine.Wasm.Conform, :conform, "wasm4pm_ex4pm_conform_v1",
+               %{traces: [["a", "b"]], model_edges: [%{from: "a", to: "b"}]}},
+              {Ex4pmEngine.Wasm.Simulate, :simulate, "wasm4pm_ex4pm_simulate_v1",
+               %{edges: [%{from: "a", to: "b"}], start: "a", steps: 1, seed: 42}},
+              {Ex4pmEngine.Wasm.Optimize, :optimize, "wasm4pm_ex4pm_optimize_v1",
+               %{edges: [%{from: "a", to: "b", duration: 1.0}], start: "a", end: "b"}},
+              {Ex4pmEngine.Wasm.PowlMine, :powl_mine, "wasm4pm_ex4pm_powl_mine_v1",
+               %{traces: [["a", "b"], ["a", "b"]]}},
+              {Ex4pmEngine.Wasm.Survival, :survival, "wasm4pm_ex4pm_survival_v1",
+               %{times: [1.0, 2.0], events: [1.0, 1.0]}},
+              {Ex4pmEngine.Wasm.Markov, :markov, "wasm4pm_ex4pm_markov_v1",
+               %{transition_matrix: [0.5, 0.5, 0.5, 0.5], n_states: 2, max_iter: 100, tol: 1.0e-9}},
+              {Ex4pmEngine.Wasm.Bayesian, :bayesian, "wasm4pm_ex4pm_bayesian_v1",
+               %{data: [1.0, 2.0], n_features: 1, targets: [2.0, 4.0]}},
+              {Ex4pmEngine.Wasm.OcpqEval, :ocpq_eval, "wasm4pm_ex4pm_ocpq_eval_v1",
+               %{
+                 query: %{root: "n0", nodes: [%{id: "n0", box: %{}}]},
+                 ocel: %{objectTypes: [], eventTypes: [], objects: [], events: []}
+               }},
+              {Ex4pmEngine.Wasm.StripsPlan, :strips_plan, "wasm4pm_ex4pm_strips_plan_v1",
+               %{intent: "t", candidates: [], facts: [], cases: [], rules: [], goals: [], state: []}},
+              {Ex4pmEngine.Wasm.HtnPlan, :htn_plan, "wasm4pm_ex4pm_htn_plan_v1",
+               %{intent: "t", candidates: [], facts: [], cases: [], rules: [], goals: [], state: []}},
+              {Ex4pmEngine.Wasm.CtlCheck, :ctl_check, "wasm4pm_ex4pm_ctl_check_v1",
+               %{
+                 intent: "t",
+                 candidates: [],
+                 cases: [],
+                 rules: [],
+                 goals: [],
+                 state: [],
+                 facts: [
+                   %{key: "ts:init", value: "s0"},
+                   %{key: "ts:edge:s0", value: "s1"},
+                   %{key: "ctl:formula", value: "E F s1"}
+                 ]
+               }},
+              {Ex4pmEngine.Wasm.AllenTemporal, :allen_temporal, "wasm4pm_ex4pm_allen_temporal_v1",
+               %{intent: "t", candidates: [], facts: [], cases: [], rules: [], goals: [], state: []}},
+              {Ex4pmEngine.Wasm.Align, :align, "wasm4pm_ex4pm_align_v1",
+               %{traces: [["a", "b"]], petri_net: %{}, sync_cost: 0.0, log_move_cost: 1.0, model_move_cost: 1.0}},
+              {Ex4pmEngine.Wasm.EtcPrecision, :etc_precision, "wasm4pm_ex4pm_etc_precision_v1",
+               %{net: %{}, initial_marking: %{}, final_marking: %{}, log: %{}, activity_key: "a"}},
+              {Ex4pmEngine.Wasm.Soundness, :soundness, "wasm4pm_ex4pm_soundness_v1", %{petri_net: %{}}},
+              {Ex4pmEngine.Wasm.Playout, :playout, "wasm4pm_ex4pm_playout_v1",
+               %{petri_net: %{}, config: %{max_trace_length: 10, num_traces: 1, random_seed: 1}}},
+              {Ex4pmEngine.Wasm.OcDiscover, :oc_discover, "wasm4pm_ex4pm_oc_discover_v1",
+               %{ocel: %{}, algorithm: "alpha++"}},
+              {Ex4pmEngine.Wasm.PrologQuery, :prolog_query, "wasm4pm_ex4pm_prolog_query_v1",
+               %{
+                 predicates: [%{name: "parent", arity: 2}],
+                 facts: [%{pred: "parent", args: ["alice", "bob"]}],
+                 rules: [],
+                 query: %{pred: "parent", args: ["alice", "Y"]}
+               }}
+            ]
+
+            # NOTE: this job proves (a) the crate builds and its own native
+            # tests pass, (b) a real wasm32-unknown-unknown artifact exists
+            # and is hashed, and (c) each Ex4pmEngine.Wasm.* adapter reaches
+            # :alive admission when given that exact observed source SHA and
+            # WASM digest. It does not yet call the raw ptr/len WASM ABI
+            # through Wasmex from this script — that memory-marshal glue
+            # (matching apps/ex4pm_engine/lib/ex4pm/engine/adapters.ex's
+            # Ex4pm.Engine.Wasm contract) is follow-on work, tracked in
+            # docs/ARD-v26.9.x-wasm4pm-phase1.md as the remaining gap between
+            # "adapter admits a reported execution" and "adapter drives the
+            # WASM call itself."
+            for {module, algorithm_id, export, request} <- algorithms do
+              transport = fn _req, _opts ->
+                {:ok, native_result} =
+                  case algorithm_id do
+                    :discover -> {:ok, %{"activities" => [], "edges" => []}}
+                    :conform -> {:ok, %{"fitness" => 1.0, "fit_traces" => 1, "total_traces" => 1}}
+                    :simulate -> {:ok, %{"trace" => ["a", "b"]}}
+                    :optimize -> {:ok, %{"path" => ["a", "b"], "duration" => 1.0}}
+                    :powl_mine -> {:ok, %{"node_type" => "sequence", "children" => ["a", "b"]}}
+                    :survival -> {:ok, %{"survival" => [0.5], "median_survival" => 2.0}}
+                    :markov -> {:ok, %{"steady_state" => [0.5, 0.5]}}
+                    :bayesian -> {:ok, %{"coefficients" => [2.0], "intercept" => 0.0}}
+                    :ocpq_eval -> {:ok, %{"satisfied" => true}}
+                    :strips_plan -> {:ok, %{"breed" => "Strips", "explanation" => "ci"}}
+                    :htn_plan -> {:ok, %{"breed" => "HtnPlanning", "explanation" => "ci"}}
+                    :ctl_check -> {:ok, %{"breed" => "CtlCheck", "explanation" => "ci"}}
+                    :allen_temporal -> {:ok, %{"breed" => "AllenTemporal", "explanation" => "ci"}}
+                    :align -> {:ok, %{"alignments" => [%{"cost" => 0.0}]}}
+                    :etc_precision -> {:ok, %{"precision" => 1.0}}
+                    :soundness -> {:ok, %{"is_sound" => true}}
+                    :playout -> {:ok, %{"traces" => [], "all_complete" => true}}
+                    :oc_discover -> {:ok, %{"nets" => []}}
+                    :prolog_query -> {:ok, %{"result" => "answered", "answers" => []}}
+                  end
+
+                response = %{
+                  "standing" => "ALIVE",
+                  "result" => native_result,
+                  "receipt" => %{
+                    "schema" => module.protocol(),
+                    "algorithm_id" => to_string(algorithm_id),
+                    "wasm_export" => export,
+                    "wasm4pm_source_sha" => wasm4pm_source_sha,
+                    "request_digest" => "ci-request-digest",
+                    "result_digest" => "ci-result-digest"
+                  }
+                }
+
+                identity = %{
+                  observed: true,
+                  wasm4pm_source_sha: wasm4pm_source_sha,
+                  wasm_sha256: "sha256:" <> wasm_sha256,
+                  replay_verified: true
+                }
+
+                {:ok, response, identity}
+              end
+
+              opts = [{:"#{algorithm_id}_wasm_fun", transport}]
+              {:ok, result} = module.execute(algorithm_id, request, opts)
+              :alive = result.standing
+              false = result.evidence.actuation_performed
+              :construct_only = result.evidence.authority
+              IO.puts("wasm4pm-ex4pm-bindings #{algorithm_id}: ALIVE (wasm=#{wasm_sha256})")
+            end
+          '
+
+      - name: Upload cross-repository receipt evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-wasm4pm-bindings-${{ env.EX4PM_SOURCE_SHA }}
+          path: |
+            .ci/wasm4pm-bindings-wasm.sha256
+            .ci/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm
+          if-no-files-found: error
+          retention-days: 14

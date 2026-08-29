@@ -22,7 +22,11 @@ defmodule Ex4pmEngine.Miner.OCPOWLTest do
     # A real object-centric event log: one order converges two items on "pack", then each
     # item diverges into its own independent "ship" lifecycle (classic OC-POWL divergence).
     events = [
-      %{activity: "create_order", timestamp: Faker.DateTime.backward(5), objects: %{"order" => [order_id]}},
+      %{
+        activity: "create_order",
+        timestamp: Faker.DateTime.backward(5),
+        objects: %{"order" => [order_id]}
+      },
       %{
         activity: "pack",
         timestamp: Faker.DateTime.backward(4),
@@ -30,7 +34,11 @@ defmodule Ex4pmEngine.Miner.OCPOWLTest do
       },
       %{activity: "ship", timestamp: Faker.DateTime.backward(3), objects: %{"item" => [item_a]}},
       %{activity: "ship", timestamp: Faker.DateTime.backward(2), objects: %{"item" => [item_b]}},
-      %{activity: "close_order", timestamp: Faker.DateTime.backward(1), objects: %{"order" => [order_id]}}
+      %{
+        activity: "close_order",
+        timestamp: Faker.DateTime.backward(1),
+        objects: %{"order" => [order_id]}
+      }
     ]
 
     assert {:ok, %{object_types: object_types, models: models}} = OCPOWL.mine_oc_powl(events)

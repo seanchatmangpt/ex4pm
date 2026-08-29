@@ -41,7 +41,8 @@ defmodule Ex4pmEngine.AutoFdePlannerReactorTest do
       primary = write_script.("primary_ok.sh", "read n\necho \"primary-result-$n\"\nexit 0\n")
       # fallback is never invoked on the happy path, but the reactor still needs a script
       # argument bound — point it at a script that would fail loudly if it were ever run.
-      fallback = write_script.("fallback_unused.sh", "echo unexpected-fallback-invocation\nexit 1\n")
+      fallback =
+        write_script.("fallback_unused.sh", "echo unexpected-fallback-invocation\nexit 1\n")
 
       assert {:ok, result} =
                Reactor.run(
