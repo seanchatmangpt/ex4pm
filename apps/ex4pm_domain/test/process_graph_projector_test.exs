@@ -42,7 +42,8 @@ defmodule Ex4pm.Domain.ProcessGraphProjectorTest do
       record =
         ProcessModel
         |> Ash.Changeset.for_create(:create, %{
-          subject_hash: "sha256:#{:crypto.hash(:sha256, "fixture") |> Base.encode16(case: :lower)}",
+          subject_hash:
+            "sha256:#{:crypto.hash(:sha256, "fixture") |> Base.encode16(case: :lower)}",
           algorithm: :discover,
           engine: :beam,
           model_hash: "sha256:#{:crypto.hash(:sha256, "model") |> Base.encode16(case: :lower)}",

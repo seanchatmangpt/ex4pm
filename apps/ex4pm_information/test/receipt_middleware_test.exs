@@ -64,7 +64,7 @@ defmodule Ex4pm.Information.ReceiptMiddlewareTest do
     assert {:ok, 8} = Reactor.run(SampleReactor, %{value: 4})
 
     assert_received {:telemetry_event, ^ref, [:ex4pm, :reactor, :complete], %{},
-                      %{result: 8, context: context}}
+                     %{result: 8, context: context}}
 
     assert is_map(context)
   end
@@ -75,7 +75,7 @@ defmodule Ex4pm.Information.ReceiptMiddlewareTest do
     assert {:ok, _} = Reactor.run(SampleReactor, %{value: 1})
 
     assert_received {:telemetry_event, ^ref, [:ex4pm, :reactor, :step, :start], %{},
-                      %{step: :double, event: {:run_start, arguments}}}
+                     %{step: :double, event: {:run_start, arguments}}}
 
     assert %{value: 1} = arguments
   end
