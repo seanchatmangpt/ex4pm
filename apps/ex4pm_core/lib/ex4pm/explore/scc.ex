@@ -15,6 +15,7 @@ defmodule Ex4pm.Explore.SCC do
 
   defp reachable(start, edges), do: walk([start], edges, MapSet.new())
   defp walk([], _edges, seen), do: seen
+
   defp walk([n | rest], edges, seen) do
     if MapSet.member?(seen, n) do
       walk(rest, edges, seen)

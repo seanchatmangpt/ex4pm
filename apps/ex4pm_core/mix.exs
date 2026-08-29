@@ -24,6 +24,7 @@ defmodule Ex4pmCore.MixProject do
   def application, do: [extra_applications: [:logger, :crypto, :xmerl]]
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
   defp deps,
     do: [
       {:ash, "~> 3.31"},

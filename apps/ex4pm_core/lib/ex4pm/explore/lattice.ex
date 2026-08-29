@@ -5,6 +5,8 @@ defmodule Ex4pm.Explore.Lattice do
       joined = for a <- set, b <- set, into: MapSet.new(), do: join_fun.(a, b)
       MapSet.union(set, joined)
     end)
-    |> Enum.reduce_while(nil, fn set, prev -> if set == prev, do: {:halt, set}, else: {:cont, set} end)
+    |> Enum.reduce_while(nil, fn set, prev ->
+      if set == prev, do: {:halt, set}, else: {:cont, set}
+    end)
   end
 end

@@ -557,8 +557,7 @@ defmodule Ex4pmEngine.WorkflowNet do
         {next_q, next_visited, next_adj, next_fired} =
           Enum.reduce(enabled, {rest_queue, visited, adj, fired_transitions}, fn {t_id, in_places},
                                                                                  {q_acc, v_acc,
-                                                                                  adj_acc,
-                                                                                  f_acc} ->
+                                                                                  adj_acc, f_acc} ->
             out_places = Map.get(postset, t_id, %{})
 
             # Compute next marking

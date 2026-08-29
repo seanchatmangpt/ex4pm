@@ -20,6 +20,7 @@ defmodule Ex4pm.Explore.TemporalMonitor do
 
   defp scan_until([], _hold, _release, seen_release, :strong), do: seen_release
   defp scan_until([], _hold, _release, _seen_release, :weak), do: true
+
   defp scan_until([event | rest], hold, release, seen_release, mode) do
     cond do
       release.(event) -> true

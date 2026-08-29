@@ -4,5 +4,6 @@ defmodule Ex4pm.Develop.Distributed.ConsistentRing do
     ordered = Enum.sort(nodes)
     Enum.at(ordered, rem(:erlang.phash2(key), length(ordered)))
   end
+
   def owner([], _key), do: {:error, :empty_ring}
 end

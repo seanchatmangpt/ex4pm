@@ -9,6 +9,7 @@ defmodule Ex4pm.Explore.Pareto do
 
   def dominates?(a, b) when map_size(a) == map_size(b) do
     keys = Map.keys(a)
+
     Enum.all?(keys, &(Map.fetch!(a, &1) >= Map.fetch!(b, &1))) and
       Enum.any?(keys, &(Map.fetch!(a, &1) > Map.fetch!(b, &1)))
   end

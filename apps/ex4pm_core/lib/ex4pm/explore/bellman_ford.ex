@@ -7,6 +7,7 @@ defmodule Ex4pm.Explore.BellmanFord do
   end
 
   defp relax_rounds(dist, _edges, 0), do: dist
+
   defp relax_rounds(dist, edges, rounds) do
     next = Enum.reduce(edges, dist, &relax/2)
     relax_rounds(next, edges, rounds - 1)
@@ -14,9 +15,12 @@ defmodule Ex4pm.Explore.BellmanFord do
 
   defp relax({u, v, w}, dist) do
     case Map.fetch!(dist, u) do
-      :infinity -> dist
+      :infinity ->
+        dist
+
       du ->
         alt = du + w
+
         case Map.fetch!(dist, v) do
           :infinity -> Map.put(dist, v, alt)
           dv when alt < dv -> Map.put(dist, v, alt)

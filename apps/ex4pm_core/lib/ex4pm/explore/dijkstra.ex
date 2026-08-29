@@ -11,6 +11,7 @@ defmodule Ex4pm.Explore.Dijkstra do
     else
       u = Enum.min_by(unvisited, fn n -> rank(Map.fetch!(dist, n)) end)
       du = Map.fetch!(dist, u)
+
       dist =
         Enum.reduce(edges, dist, fn
           {^u, v, w}, acc when w >= 0 -> relax(acc, v, du, w)
@@ -22,8 +23,10 @@ defmodule Ex4pm.Explore.Dijkstra do
   end
 
   defp relax(dist, _v, :infinity, _w), do: dist
+
   defp relax(dist, v, du, w) do
     alt = du + w
+
     case Map.fetch!(dist, v) do
       :infinity -> Map.put(dist, v, alt)
       old when alt < old -> Map.put(dist, v, alt)

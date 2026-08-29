@@ -11,7 +11,9 @@ defmodule Ex4pm.Explore.SearchTest do
   end
 
   test "Floyd-Warshall agrees on same shortest path" do
-    dist = Ex4pm.Explore.FloydWarshall.all_pairs([:a, :b, :c], [{:a, :b, 2}, {:b, :c, 3}, {:a, :c, 10}])
+    dist =
+      Ex4pm.Explore.FloydWarshall.all_pairs([:a, :b, :c], [{:a, :b, 2}, {:b, :c, 3}, {:a, :c, 10}])
+
     assert dist[{:a, :c}] == 5
   end
 end
