@@ -89,3 +89,9 @@ yarn-error.log*
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Real k8s Secret manifests are generated locally with real credentials --
+# never commit them. k8s/secret.yaml.example is the real, committed template.
+# (k8s/secret.yaml was previously committed with real values -- see the
+# commit removing it from tracking for the real-credential-rotation note.)
+k8s/secret.yaml
