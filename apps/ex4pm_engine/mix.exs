@@ -33,6 +33,10 @@ defmodule Ex4pmEngine.MixProject do
       {:wasmex, "~> 0.14"},
       {:explorer, "~> 0.12"},
       {:reactor, "~> 1.0"},
+      {:interval, "~> 2.0"},
+      {:postgrex, "~> 0.22.4"},
+      {:decimal, "~> 3.1", override: true},
+      {:igniter, "~> 0.8.3", only: [:dev, :test]},
       {:faker, "~> 0.18", only: :test}
     ]
   end

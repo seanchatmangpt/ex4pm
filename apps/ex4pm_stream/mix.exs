@@ -34,7 +34,8 @@ defmodule Ex4pmStream.MixProject do
       {:broadway, "~> 1.3"},
       {:phoenix_pubsub, "~> 2.1"},
       {:plug, "~> 1.14"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:telemetry_metrics_prometheus_core, "~> 1.2"}
     ]
   end
 

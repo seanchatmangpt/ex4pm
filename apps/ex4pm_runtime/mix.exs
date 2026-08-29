@@ -38,7 +38,8 @@ defmodule Ex4pmRuntime.MixProject do
       {:phoenix_html, "~> 4.1"},
       {:phoenix_pubsub, "~> 2.1"},
       {:bandit, "~> 1.5"},
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:gen_state_machine, "~> 3.0"}
     ]
   end
 

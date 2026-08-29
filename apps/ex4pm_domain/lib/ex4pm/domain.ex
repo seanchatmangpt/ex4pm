@@ -344,16 +344,63 @@ defmodule Ex4pm.Domain.ProcessModel do
 end
 
 defmodule Ex4pm.Domain.Intervention do
+  @moduledoc """
+  An intervention progressing through the real ex4pm lifecycle calculus:
+
+      proposed -> admitted -> actuated -> verified
+                     |
+                     +-> refused (terminal, from :proposed or :admitted)
+
+  The `:status` attribute is the AshStateMachine state attribute -- it is not
+  hand-defined here; `AshStateMachine.Transformers.AddState` generates it with
+  the exact `one_of` constraint matching every declared state, and enforces
+  that every declared transition corresponds to a real update action.
+  """
+
   use Ash.Resource,
     domain: Ex4pm.Domain,
-    data_layer: Ash.DataLayer.Ets
+    data_layer: Ash.DataLayer.Ets,
+    extensions: [AshStateMachine]
+
+  state_machine do
+    initial_states([:proposed])
+    default_initial_state(:proposed)
+    state_attribute(:status)
+
+    transitions do
+      transition(:admit, from: :proposed, to: :admitted)
+      transition(:actuate, from: :admitted, to: :actuated)
+      transition(:verify, from: :actuated, to: :verified)
+      transition(:refuse, from: [:proposed, :admitted], to: :refused)
+    end
+  end
 
   actions do
     defaults([:read])
 
     create :create do
       primary?(true)
-      accept([:subject_hash, :kind, :status, :authority_ref, :receipt_hash, :payload])
+      accept([:subject_hash, :kind, :authority_ref, :receipt_hash, :payload])
+    end
+
+    update :admit do
+      accept([:authority_ref])
+      change(transition_state(:admitted))
+    end
+
+    update :actuate do
+      accept([:receipt_hash])
+      change(transition_state(:actuated))
+    end
+
+    update :verify do
+      accept([:receipt_hash])
+      change(transition_state(:verified))
+    end
+
+    update :refuse do
+      accept([:payload])
+      change(transition_state(:refused))
     end
   end
 
@@ -361,7 +408,6 @@ defmodule Ex4pm.Domain.Intervention do
     uuid_primary_key(:id)
     attribute(:subject_hash, :string, allow_nil?: false, public?: true)
     attribute(:kind, :atom, allow_nil?: false, public?: true)
-    attribute(:status, :atom, allow_nil?: false, public?: true)
     attribute(:authority_ref, :string, public?: true)
     attribute(:receipt_hash, :string, public?: true)
     attribute(:payload, :map, default: %{}, public?: true)

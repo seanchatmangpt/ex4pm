@@ -32,6 +32,7 @@ defmodule Ex4pmDomain.MixProject do
       {:ex4pm_engine, "~> 26.8.22", in_umbrella: true},
       {:ash, "~> 3.31"},
       {:ash_admin, "~> 0.12"},
+      {:ash_state_machine, "~> 0.2.13"},
       {:faker, "~> 0.18", only: :test}
     ]
   end
