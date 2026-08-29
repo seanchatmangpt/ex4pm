@@ -1,0 +1,7 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+
+ex4pm:WasmAdapter a ex4pm:PaaSAdapter ;
+  ex4pm:implementationOwner "wasm4pm/wasm4pm-compat" ;
+  ex4pm:integrationSurface "adapter" ;
+  ex4pm:copiesProcessIntelligence false ;
+  ex4pm:requiresExactAdapterIdentity true .

@@ -1,0 +1,25 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Qualification-only specimen. This is not an execution receipt or actuation record.
+ex4pm:RuntimeGuardWitness a ex4pm:DispatchIntent, ex4pm:QualificationWitness ;
+  ex4pm:qualificationOnly true ;
+  ex4pm:timeoutBudget "PT30S" ;
+  ex4pm:retryPolicy "bounded" ;
+  ex4pm:idempotencyKey "qualification-only" ;
+  ex4pm:compensationPlan "qualification-only" ;
+  ex4pm:wasmModuleDigest "qualification-only" ;
+  ex4pm:wasmExport "qualification-only" ;
+  ex4pm:wasmAbi "qualification-only" ;
+  ex4pm:fuelBudget "1"^^xsd:integer ;
+  ex4pm:memoryLimit "1"^^xsd:integer ;
+  ex4pm:hostCapabilitySet "none" ;
+  ex4pm:runtimeVersion "qualification-only" ;
+  ex4pm:adapterVersion "qualification-only" ;
+  ex4pm:inputSchemaDigest "qualification-only" ;
+  ex4pm:outputSchemaDigest "qualification-only" .
+
+# Qualification-only specimen. A named witness is not an operational receipt.
+ex4pm:RuntimeReceiptGuardWitness a ex4pm:OutcomeReceipt, ex4pm:QualificationWitness ;
+  ex4pm:qualificationOnly true ;
+  ex4pm:runtimeDigest "qualification-only" .

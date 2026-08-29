@@ -1,0 +1,17 @@
+{
+  "schema": "ex4pm-consumer-manufacture-receipt/v1",
+  "capability": "R58 independent R57 consumer adapter",
+  "repository": "seanchatmangpt/ex4pm",
+  "consumer_base": "e12fccb42a67bc4496cac91c86bff2b856cc463d",
+  "producer_repository": "seanchatmangpt/ggen-marketplace",
+  "producer_base": "8bd29043a2818a5fb6a4de65cc403eff8e495b58",
+  "producer_primitive": "epistemic-sensor-factory-pack/R57-consumer-adapter-capital",
+  "target_token": "esf:ex4pmTarget",
+  "consumer_family": "elixir-process-intelligence",
+  "semantic_courts": 20,
+  "authority": ["OBSERVE", "VERIFY", "CONSTRUCT"],
+  "consequential_do": false,
+  "generated_output_edited": false,
+  "handwritten_irreducible_reason": "Bounded RDFLib execution and receipt hashing are runtime verification substrate; reusable admission semantics remain public RDF/SPARQL.",
+  "standing": "REQUALIFYING"
+}

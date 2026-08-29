@@ -1,0 +1,6 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+
+ex4pm:StandingContract a ex4pm:PaaSStandingContract ;
+  ex4pm:allowedStanding "UNKNOWN|PARTIAL_ALIVE|ALIVE|BLOCKED|BUILD_BROKEN|UNSUPPORTED|REFUSED" ;
+  ex4pm:aliveRequiresObservedExecution true ;
+  ex4pm:checkpointIsCrown false .

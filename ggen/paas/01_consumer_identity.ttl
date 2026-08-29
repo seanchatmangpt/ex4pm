@@ -1,0 +1,7 @@
+@prefix ex4pm: <https://seanchatman.github.io/ex4pm/paas#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+ex4pm:Consumer a ex4pm:PaaSConsumer ;
+  dcterms:identifier "seanchatmangpt/ex4pm" ;
+  ex4pm:canonicalSemanticOwner "ex4pm_core" ;
+  ex4pm:adapterRole "projection-only" .

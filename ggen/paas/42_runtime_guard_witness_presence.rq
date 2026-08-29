@@ -1,0 +1,11 @@
+PREFIX ex4pm: <https://seanchatman.github.io/ex4pm/paas#>
+SELECT ?witness ?class WHERE {
+  VALUES (?witness ?class) {
+    (ex4pm:RuntimeGuardWitness ex4pm:DispatchIntent)
+    (ex4pm:RuntimeReceiptGuardWitness ex4pm:OutcomeReceipt)
+  }
+  FILTER NOT EXISTS {
+    ?witness a ?class, ex4pm:QualificationWitness ;
+      ex4pm:qualificationOnly true .
+  }
+}
