@@ -337,6 +337,10 @@ defmodule Ex4pm.Domain.ProcessModel do
     attribute(:model, :map, allow_nil?: false, public?: true)
     attribute(:metadata, :map, default: %{}, public?: true)
   end
+
+  calculations do
+    calculate(:topology, :map, Ex4pm.Domain.ProcessGraphProjector)
+  end
 end
 
 defmodule Ex4pm.Domain.Intervention do
