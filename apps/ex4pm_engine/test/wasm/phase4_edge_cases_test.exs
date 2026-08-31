@@ -25,7 +25,7 @@ defmodule Ex4pmEngine.Wasm.Phase4EdgeCasesTest do
       {:ok, instance} = RealTransport.start(@artifact_path)
       {:ok, instance: instance}
     else
-      :skip
+      {:skip, "wasm artifact not built"}
     end
   end
 

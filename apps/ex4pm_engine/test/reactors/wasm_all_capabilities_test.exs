@@ -224,7 +224,7 @@ defmodule Ex4pmEngine.Reactors.WasmAllCapabilitiesTest do
     if File.regular?(@artifact_path) do
       {:ok, results: run_all!()}
     else
-      :skip
+      {:skip, "wasm artifact not built"}
     end
   end
 
