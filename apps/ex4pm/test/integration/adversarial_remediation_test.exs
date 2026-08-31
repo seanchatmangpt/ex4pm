@@ -8,7 +8,7 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
   2. Stochastic Transition Probability Matrix generation (D3/D7)
   3. Variant Pareto Cumulative Distribution export (D7)
   4. Formalism classification in QuantumProcess & ZkOcpn (D1 disclaimer)
-  5. Global conformance score across full 647k production dataset (D7)
+  5. Global conformance score across the full, live xaas production dataset (D7)
   """
   use ExUnit.Case, async: false
 
@@ -124,9 +124,16 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
                String.contains?(latex_snippet, "tab:generated_variant_pareto"),
              "Expected Pareto cumulative distribution table in LaTeX output"
 
-      # Must still include entropy and benchmark
+      # Must still include entropy and benchmark. ocel_path is a real,
+      # live-growing xaas operational log (was 647_238 events at authoring
+      # time; a hardcoded literal here goes stale every time xaas emits
+      # more events -- cross-check against the SAME real profile the
+      # export path itself computes, so this stays a genuine assertion on
+      # export_latex's real behavior rather than a frozen snapshot).
       assert String.contains?(latex_snippet, "Shannon Log Entropy")
-      assert String.contains?(latex_snippet, "647238")
+      real_profile = Ex4pmEngine.StochasticProfiler.profile(ocel_path)
+      assert real_profile.total_events > 0
+      assert String.contains?(latex_snippet, "#{real_profile.total_events}")
     end
 
     test "OcelToLatex exports valid LaTeX file to disk" do

@@ -9,8 +9,12 @@ defmodule Ex4pmEngine.Autonomic.ClosedLoopTest do
   alias Ex4pm.Evidence.Store
 
   setup do
-    # Start an isolated instance of ClosedLoop for testing
+    # Start an isolated instance of ClosedLoop for testing. Stop it on exit --
+    # without this, the next test's start_link/1 for the same registered name
+    # (:test_closed_loop) raced against this test's still-alive process and
+    # failed with {:error, {:already_started, pid}}.
     {:ok, pid} = ClosedLoop.start_link(name: :test_closed_loop, interval_ms: 10_000)
+    on_exit(fn -> if Process.alive?(pid), do: GenServer.stop(pid) end)
     %{pid: pid}
   end
 
