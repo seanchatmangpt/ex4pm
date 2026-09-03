@@ -1,0 +1,30 @@
+name: explore-planner-courts
+on:
+  pull_request:
+    paths:
+      - 'scripts/explore/planner/**'
+      - '.github/workflows/explore-planner-courts.yml'
+permissions:
+  contents: read
+jobs:
+  planner-courts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+      - name: Verify exact subject and execute planner courts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          count=0
+          for court in scripts/explore/planner/*.exs; do
+            elixir "$court"
+            count=$((count+1))
+          done
+          test "$count" -ge 9
