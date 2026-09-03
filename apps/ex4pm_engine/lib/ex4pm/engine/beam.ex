@@ -152,12 +152,16 @@ defmodule Ex4pm.Engine.Beam do
       total = length(observed_edges)
       fitness = if total == 0, do: 1.0, else: max(0.0, 1.0 - length(deviations) / total)
 
+      case_fitness = case_fitness_scores(traces, model_edges)
+
       report = %{
         type: :dfg_conformance,
         fitness: fitness,
         observed_edge_count: total,
         deviation_count: length(deviations),
-        deviations: Enum.frequencies(deviations)
+        deviations: Enum.frequencies(deviations),
+        case_fitness: case_fitness,
+        mean_case_fitness_score: mean_score(case_fitness)
       }
 
       {:ok,
@@ -175,6 +179,41 @@ defmodule Ex4pm.Engine.Beam do
 
   defp conform(_log, model, _opts) do
     {:error, Refusal.new(:unsupported_model, "conformance requires a DFG model", subject: model)}
+  end
+
+  @doc false
+  # Per-case (per-trace) ARIS-convention fitness score: 0-100, where 100 means
+  # every consecutive activity pair observed in the case is an edge of the
+  # reference directly-follows model, and lower scores indicate more
+  # deviating transitions relative to the case's own transition count. A
+  # single-event (or empty) case that introduces no transitions trivially
+  # complies with the model and scores 100.
+  def case_fitness_scores(traces, model_edges) when is_map(traces) and is_map(model_edges) do
+    Map.new(traces, fn {case_id, events} ->
+      pairs =
+        events
+        |> Enum.chunk_every(2, 1, :discard)
+        |> Enum.map(fn [left, right] -> {left.activity, right.activity} end)
+
+      score =
+        case pairs do
+          [] ->
+            100.0
+
+          _ ->
+            fit = Enum.count(pairs, &Map.has_key?(model_edges, &1))
+            Float.round(fit / length(pairs) * 100.0, 2)
+        end
+
+      {case_id, score}
+    end)
+  end
+
+  defp mean_score(scores) when map_size(scores) == 0, do: 100.0
+
+  defp mean_score(scores) do
+    values = Map.values(scores)
+    Float.round(Enum.sum(values) / length(values), 2)
   end
 
   defp simulate(%{type: :dfg} = model, opts) do
