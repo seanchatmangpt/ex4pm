@@ -2,88 +2,77 @@
 defmodule Engine.Beam4pmTest do
   use ExUnit.Case, async: false
 
-  # Real, no-mock test: starts a REAL local Bandit server hosting a real
-  # Plug.Router that mimics one AshJsonApi-shaped response, and points
-  # Ex4pm.Engine.Beam4pm's real Req-based HTTP call at it. beam4pm itself
-  # does not expose this live yet (see priv/ontology/ex4pm.ttl's ex4pmb:
-  # prefix comment) -- this proves the generated client's own HTTP/parsing
-  # mechanics are real and correct, independent of that separate,
-  # disclosed prerequisite.
+  # Real, no-mock tests. The happy-path/route-table/availability tests run
+  # against test/support/micro_beam4pm.ex -- a REAL Ash resource + real
+  # AshJsonApi.Router (Ash.DataLayer.Ets, no database needed), so this
+  # suite validates Ex4pm.Engine.Beam4pm's request/response contract
+  # against the actual AshJsonApi wire format (real route shape, real
+  # JSON:API response envelope) instead of a hand-guessed fake -- the
+  # same library beam4pm's own future json_api exposure
+  # (docs/BEAM4PM-OPENAPI-GGEN-IGNITER-PLAN.md) will use. A handful of
+  # error-injection scenarios a real Ash resource can't easily be coerced
+  # into producing (a bare 500, a non-JSON-object 2xx body, an
+  # unresponsive server) still use small, purpose-built single-behavior
+  # Plug.Router fakes below -- each real, no mocking library involved.
   #
   # Real, currently admitted routes this generated test suite covers:
   #
-    #   * `GET /conformance_result` (action `read`) -> `:beam4pm_conformance_results`
-  #   * `GET /ocel_event` (action `read`) -> `:beam4pm_ocel_events`
+    #   * `GET /conformance_result` (action `read`, informational only -- not sent over the wire) -> `:beam4pm_conformance_results`
+  #   * `GET /ocel_event` (action `read`, informational only -- not sent over the wire) -> `:beam4pm_ocel_events`
 
   alias Ex4pm.Engine.Beam4pm
 
-  defmodule FakeBeam4pmRouter do
+  defmodule ErrorRouter do
     use Plug.Router
-
     plug(:match)
     plug(:dispatch)
-
-    # Real subject_hash of %{id: "non-object-body-trigger"}, computed once at
-    # compile time -- lets this real router branch a real 2xx-non-object-body
-    # scenario off the real, deterministic subject_hash the client sends,
-    # without inventing any protocol the real client doesn't already speak.
-    @non_object_body_subject_hash Ex4pm.Core.Hash.digest(%{id: "non-object-body-trigger"})
-    @slow_subject_hash Ex4pm.Core.Hash.digest(%{id: "e1", __slow__: true})
-
-    get "/ocel_event" do
-      conn = Plug.Conn.fetch_query_params(conn)
-
-      case {conn.query_params["action"], conn.query_params["subject_hash"]} do
-        {"read", @slow_subject_hash} ->
-          # Sleeps far longer than any client receive_timeout under test --
-          # a real unresponsive server, not a simulated one.
-          Process.sleep(3_000)
-
-          conn
-          |> Plug.Conn.put_resp_content_type("application/json")
-          |> Plug.Conn.send_resp(200, Jason.encode!(%{"data" => []}))
-
-        {"read", @non_object_body_subject_hash} ->
-          # A real 2xx response whose decoded body is a JSON array, not an
-          # object -- exercises the beam4pm_invalid_response refusal branch.
-          conn
-          |> Plug.Conn.put_resp_content_type("application/json")
-          |> Plug.Conn.send_resp(200, Jason.encode!([1, 2, 3]))
-
-        {"read", _} ->
-          body =
-            Jason.encode!(%{
-              "data" => [%{"id" => "e1", "type" => "ocel_event", "attributes" => %{"activity" => "commit_qualified"}}],
-              "meta" => %{"source_sha" => "abc123real", "receipt_verified" => true}
-            })
-
-          conn
-          |> Plug.Conn.put_resp_content_type("application/json")
-          |> Plug.Conn.send_resp(200, body)
-
-        _ ->
-          Plug.Conn.send_resp(conn, 400, Jason.encode!(%{"error" => "unknown action"}))
-      end
-    end
 
     get "/conformance_result" do
       conn
       |> Plug.Conn.put_resp_content_type("application/json")
       |> Plug.Conn.send_resp(500, Jason.encode!(%{"error" => "boom"}))
     end
+  end
 
-    match _ do
+  defmodule InvalidBodyRouter do
+    use Plug.Router
+    plug(:match)
+    plug(:dispatch)
+
+    get "/ocel_event" do
+      # A real 2xx response whose decoded body is a JSON array, not an
+      # object -- exercises the beam4pm_invalid_response refusal branch.
       conn
       |> Plug.Conn.put_resp_content_type("application/json")
-      |> Plug.Conn.send_resp(404, Jason.encode!(%{"error" => "not_found"}))
+      |> Plug.Conn.send_resp(200, Jason.encode!([1, 2, 3]))
     end
   end
 
-  setup do
+  defmodule SlowRouter do
+    use Plug.Router
+    plug(:match)
+    plug(:dispatch)
+
+    get "/ocel_event" do
+      # Sleeps far longer than any client receive_timeout under test -- a
+      # real unresponsive server, not a simulated one.
+      Process.sleep(3_000)
+
+      conn
+      |> Plug.Conn.put_resp_content_type("application/json")
+      |> Plug.Conn.send_resp(200, Jason.encode!(%{"data" => []}))
+    end
+  end
+
+  defp start_router!(plug) do
     port = Enum.random(20_000..29_999)
-    {:ok, pid} = Bandit.start_link(plug: FakeBeam4pmRouter, port: port, ip: {127, 0, 0, 1})
+    {:ok, pid} = Bandit.start_link(plug: plug, port: port, ip: {127, 0, 0, 1})
     on_exit(fn -> Process.exit(pid, :normal) end)
-    {:ok, base_url: "http://127.0.0.1:#{port}"}
+    "http://127.0.0.1:#{port}"
+  end
+
+  setup do
+    {:ok, base_url: start_router!(MicroBeam4pm.Router)}
   end
 
   test "id/0 and the ontology-admitted route table (one assertion per admitted operation, generated)" do
@@ -98,15 +87,30 @@ defmodule Engine.Beam4pmTest do
     assert Beam4pm.available?(beam4pm_base_url: "http://127.0.0.1:1")
   end
 
-  test "a real successful request against a real local JSON:API-shaped server reaches :alive standing", %{
-    base_url: base_url
-  } do
-    {:ok, result} = Beam4pm.execute(:beam4pm_ocel_events, %{id: "e1"}, beam4pm_base_url: base_url)
+  test "a real successful request against a real AshJsonApi server reaches :alive standing", %{base_url: base_url} do
+    # Real JSON:API spec requirement, confirmed the hard way: a write
+    # request needs the `application/vnd.api+json` media type, not plain
+    # `application/json`, or AshJsonApi refuses it as 415 Unsupported
+    # Media Type.
+    seed_response =
+      Req.post!(base_url <> "/ocel_event",
+        headers: [{"content-type", "application/vnd.api+json"}],
+        json: %{"data" => %{"type" => "ocel_event", "attributes" => %{"activity" => "commit_qualified"}}}
+      )
+
+    %{"data" => %{"id" => id}} = seed_response.body
+
+    {:ok, result} = Beam4pm.execute(:beam4pm_ocel_events, %{id: id}, beam4pm_base_url: base_url)
 
     assert result.engine == :beam4pm
-    assert result.standing == :alive
-    assert [%{"id" => "e1"}] = result.value
-    assert result.evidence.beam4pm_identity == %{source_sha: "abc123real", receipt_verified: true}
+    assert [%{"id" => ^id}] = result.value
+    # A real AshJsonApi response has no top-level "meta.source_sha"/
+    # "receipt_verified" -- beam4pm doesn't emit those fields (this
+    # engine's identity/receipt evidence is a forward-declared beam4pm
+    # capability, not something AshJsonApi provides natively), so standing
+    # correctly stays :partial_alive rather than a falsely-claimed :alive.
+    assert result.standing == :partial_alive
+    assert result.evidence.beam4pm_identity == nil
   end
 
   test "an unadmitted operation is refused, never silently attempted", %{base_url: base_url} do
@@ -119,7 +123,9 @@ defmodule Engine.Beam4pmTest do
     assert refusal.code == :beam4pm_unavailable
   end
 
-  test "a real non-2xx response from a real server is refused with the real status", %{base_url: base_url} do
+  test "a real non-2xx response from a real server is refused with the real status" do
+    base_url = start_router!(ErrorRouter)
+
     assert {:error, refusal} =
              Beam4pm.execute(:beam4pm_conformance_results, %{id: "c1"}, beam4pm_base_url: base_url)
 
@@ -134,8 +140,9 @@ defmodule Engine.Beam4pmTest do
     assert refusal.code == :beam4pm_unavailable
   end
 
-  test "a real 2xx response whose decoded body is a JSON array (not an object) is refused as invalid, not treated as data",
-       %{base_url: base_url} do
+  test "a real 2xx response whose decoded body is a JSON array (not an object) is refused as invalid, not treated as data" do
+    base_url = start_router!(InvalidBodyRouter)
+
     assert {:error, refusal} =
              Beam4pm.execute(:beam4pm_ocel_events, %{id: "non-object-body-trigger"}, beam4pm_base_url: base_url)
 
@@ -158,12 +165,16 @@ defmodule Engine.Beam4pmTest do
     on_exit(fn -> Application.delete_env(:ex4pm, :beam4pm_base_url) end)
 
     assert {:ok, result} = Beam4pm.execute(:beam4pm_ocel_events, %{id: "e1"}, [])
-    assert result.standing == :alive
+    # Not asserting emptiness: Ash.DataLayer.Ets is a real, process-shared
+    # in-memory table with no automatic reset between tests in this suite
+    # (async: false, but ETS persists across test cases in the same run)
+    # -- a genuinely correct assertion here is "this really is a JSON:API
+    # index response," not "it's empty," since another test may have
+    # already created a real record.
+    assert is_list(result.value)
   end
 
-  test "a real slow/unresponsive server is refused as a bounded timeout, not left to hang forever", %{
-    base_url: base_url
-  } do
+  test "a real slow/unresponsive server is refused as a bounded timeout, not left to hang forever" do
     # Real regression coverage for a real bug found by adversarial audit:
     # earlier, `request/6` never passed `receive_timeout` to Req, so this
     # exact scenario (a real server that never responds) hung the caller
@@ -172,11 +183,11 @@ defmodule Engine.Beam4pmTest do
     # client timeout, so this test would itself time out and fail (not
     # hang the suite forever, ExUnit still bounds the test) if the bug
     # ever regressed.
-    slow_subject = %{id: "e1", __slow__: true}
+    base_url = start_router!(SlowRouter)
 
     {elapsed_us, result} =
       :timer.tc(fn ->
-        Beam4pm.execute(:beam4pm_ocel_events, slow_subject,
+        Beam4pm.execute(:beam4pm_ocel_events, %{id: "e1"},
           beam4pm_base_url: base_url,
           beam4pm_receive_timeout: 200
         )

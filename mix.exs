@@ -143,6 +143,22 @@ defmodule Ex4pm.MixProject do
       # test/demo_web (Phoenix/LiveView demo harness) only
       {:bandit, "~> 1.5", only: :test},
       {:telemetry_poller, "~> 1.0", only: :test},
+
+      # Real AshJsonApi-backed local "micro beam4pm" (test/support/micro_beam4pm.ex)
+      # for Ex4pm.Engine.Beam4pm's Chicago-style tests -- exercises the REAL
+      # AshJsonApi wire format (route shape, index/get conventions, JSON:API
+      # response envelope) instead of a hand-guessed fake, since beam4pm's own
+      # future json_api exposure (docs/BEAM4PM-OPENAPI-GGEN-IGNITER-PLAN.md)
+      # will use this exact library. Test-only: production never mounts this.
+      {:ash_json_api, "~> 1.7", only: :test},
+      # Real finding, confirmed empirically this session: ash_json_api's
+      # own OpenAPI emission (`AshJsonApi.Router`'s `open_api:` option)
+      # silently 404s without this -- `open_api_spex` is declared optional
+      # in ash_json_api's own mix.exs and is NOT pulled in transitively
+      # just by depending on ash_json_api. Confirms/sharpens the
+      # "UNVERIFIED" flag in docs/BEAM4PM-OPENAPI-GGEN-IGNITER-PLAN.md:
+      # beam4pm's own future mix.exs will need this dep explicitly too.
+      {:open_api_spex, "~> 3.16", only: :test},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:floki, ">= 0.30.0", only: :test}
     ]

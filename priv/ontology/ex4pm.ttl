@@ -106,6 +106,21 @@ ex4pmsc:alive_ws3_fortune5_runtime_value_50 a ex4pmsc:AdmittedStandingCode ;
 # should be built; the correct fix for potential drift is ensuring
 # beam4pm's generation step reads this file (or the exact ex4pmb: graph
 # within it), not a runtime check against what it happens to have read.
+#
+# CONTRACT SHAPE CORRECTED, 2026-09-09, against a REAL local AshJsonApi
+# instance (test/support/micro_beam4pm.ex -- a real Ash.Resource + real
+# AshJsonApi.Router, not a hand-guessed fake), per the user's own request
+# to test contracts with real ggen_igniter/Ash machinery before beam4pm
+# builds against them. Real AshJsonApi routes are METHOD + PATH only
+# (`index :read` + `base "/ocel_event"` => a plain `GET /ocel_event`) --
+# there is NO query-string `action` parameter in the real wire protocol,
+# because the route itself already implies the action, the same way any
+# REST verb does. ex4pmb:actionName stays in this graph as informational/
+# evidence metadata only (which Ash action a route maps to, useful for
+# beam4pm's own generation step and for logging) -- it is no longer sent
+# over the wire by Ex4pm.Engine.Beam4pm's real request/6. This is exactly
+# the kind of wrong assumption a real local contract test was meant to
+# catch before beam4pm built against it.
 # =============================================================================
 @prefix ex4pmb: <https://chatman.ai/ex4pm/beam4pm-services#> .
 

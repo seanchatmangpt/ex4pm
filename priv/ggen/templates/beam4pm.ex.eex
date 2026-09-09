@@ -128,16 +128,26 @@ defmodule Ex4pm.Engine.Beam4pm do
   # reachable in practice, not just in a unit test that sets it explicitly.
   @default_receive_timeout_ms 15_000
 
-  defp request(base, type, action, method, subject, opts) do
+  # Real request shape, corrected 2026-09-09 against a real AshJsonApi
+  # resource + AshJsonApi.Router (test/support/micro_beam4pm.ex), not
+  # assumed: AshJsonApi routes are METHOD + PATH, e.g. `index :read` with
+  # `base "/ocel_event"` produces a plain `GET /ocel_event` with NO
+  # `action` query parameter -- the route itself already implies the
+  # action, the same way `get`/`post` HTTP verbs already imply CRUD intent
+  # in any REST API. The earlier `action`/`subject_hash` query params were
+  # an unverified assumption about the wire shape; both are dropped now
+  # that a real AshJsonApi instance proved they were never part of the
+  # real contract. `action` is still threaded through for evidence/logging
+  # only, not sent over the wire.
+  defp request(base, type, _action, method, _subject, opts) do
     http_module = Keyword.get(opts, :beam4pm_http_module, Req)
     url = Path.join(base, "/#{type}")
-    query = %{"action" => action, "subject_hash" => Ex4pm.Core.Hash.digest(subject)}
     receive_timeout = Keyword.get(opts, :beam4pm_receive_timeout, @default_receive_timeout_ms)
 
     result =
       case method do
-        :get -> http_module.get(url, params: query, retry: false, receive_timeout: receive_timeout)
-        :post -> http_module.post(url, json: query, retry: false, receive_timeout: receive_timeout)
+        :get -> http_module.get(url, retry: false, receive_timeout: receive_timeout)
+        :post -> http_module.post(url, json: %{}, retry: false, receive_timeout: receive_timeout)
       end
 
     case result do
