@@ -44,8 +44,15 @@ jobs:
       - name: Compile with warnings as errors
         run: mix compile --warnings-as-errors
 
-      - name: Run umbrella tests
+      - name: Run tests
         run: mix test
+
+      - name: Run integration/stress tests
+        # :integration and :stress are excluded from plain `mix test` for a fast
+        # default inner loop (see test/test_helper.exs) -- CI must still
+        # cover them so this doesn't silently shrink from what "mix test"
+        # used to run here before that exclusion existed.
+        run: mix test --include integration --include stress
 
       - name: Check formatting
         id: format

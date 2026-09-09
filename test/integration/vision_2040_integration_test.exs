@@ -67,6 +67,7 @@ defmodule Ex4pm.Integration.Vision2040IntegrationTest do
       assert result.terminal_reachable? == true
     end
 
+    @tag :integration
     test "exports IEEE OCEL 2.0 Production Benchmark to LaTeX Tables" do
       ocel_path = "/Users/sac/xaas/priv/ocel/ash-actions.ndjson"
       output_path = "docs/thesis/chapters/generated_ocel_benchmark_tables.tex"

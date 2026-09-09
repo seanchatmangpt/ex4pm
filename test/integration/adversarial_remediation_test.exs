@@ -108,6 +108,7 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
       assert profile.shannon_entropy_bits == 4.7764
     end
 
+    @tag :integration
     test "OcelToLatex emits Transition Matrix table and Pareto table in LaTeX output" do
       ocel_path = "/Users/sac/xaas/priv/ocel/ash-actions.ndjson"
       output_path = "docs/thesis/chapters/generated_ocel_benchmark_tables.tex"
@@ -136,6 +137,7 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
       assert String.contains?(latex_snippet, "#{real_profile.total_events}")
     end
 
+    @tag :integration
     test "OcelToLatex exports valid LaTeX file to disk" do
       ocel_path = "/Users/sac/xaas/priv/ocel/ash-actions.ndjson"
       output_path = "docs/thesis/chapters/generated_ocel_benchmark_tables.tex"

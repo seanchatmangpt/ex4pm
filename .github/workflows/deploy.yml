@@ -29,7 +29,10 @@ jobs:
         run: mix deps.get
 
       - name: Run verification
-        run: mix test
+        # Pre-deploy gate -- :integration/:stress are excluded from plain `mix
+        # test` for a fast default inner loop (see test/test_helper.exs);
+        # a deploy gate should still cover them.
+        run: mix test --include integration --include stress
 
   deploy:
     name: Deploy to Fly.io

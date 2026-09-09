@@ -34,6 +34,7 @@ defmodule Ex4pm.MixProject do
       preferred_cli_env: [
         verify: :test,
         "test.stress": :test,
+        "test.integration": :test,
         chicago: :test,
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
@@ -60,6 +61,7 @@ defmodule Ex4pm.MixProject do
       preferred_envs: [
         verify: :test,
         "test.stress": :test,
+        "test.integration": :test,
         chicago: :test,
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
@@ -169,12 +171,19 @@ defmodule Ex4pm.MixProject do
         "format --check-formatted",
         "compile --warnings-as-errors",
         "ex4pm.lint.truth",
-        "test",
+        # verify is the full gate -- :integration/:stress are excluded from plain
+        # `mix test` for a fast default inner loop (see test/test_helper.exs),
+        # but must still run here so verify's own coverage doesn't silently
+        # shrink.
+        "test --include integration --include stress",
         "ex4pm.powl.court",
         "ex4pm.sabotage.court"
       ],
       "test.stress": [
         "test test/benchmarks/stress_benchmark_test.exs test/benchmarks/wasm_engine_benchmark_test.exs --include stress"
+      ],
+      "test.integration": [
+        "test --include integration"
       ],
       chicago: ["test --only chicago --seed 0"]
     ]
