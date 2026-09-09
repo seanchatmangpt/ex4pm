@@ -1,0 +1,266 @@
+;; finish-ex4pm-v26.9.10.domain.hddl
+;;
+;; HDDL 2.1 domain encoding the real, PRD-grounded work to finish ex4pm
+;; v26.9.10 (see docs/PRD-v26.9.10.md, itself derived from real beam4pm
+;; WS-lane scheduled-task receipts, not speculation). Four requirements
+;; (R1-R4), confirmed independent of each other by the PRD's own scoping
+;; (no requirement's design depends on another's implementation), each
+;; closed by the same real design->build->test->document->close shape,
+;; followed by one sequential release-close phase once all four are closed.
+;;
+;; Hand-verified against HDDL 2.1 grammar (Hoeller et al., "HDDL: An
+;; Extension to PDDL for Expressing Hierarchical Planning Problems"). No
+;; HDDL/HTN parser is available in this repo's toolchain -- syntax is
+;; hand-verified, NOT parser-verified. Per this repo's own no-overclaiming
+;; discipline (docs/ARCHITECTURE.md), this is a real planning artifact, not
+;; an executed one; do not cite it as ALIVE, only as a real, checked plan.
+
+(define (domain finish-ex4pm-v26-9-10)
+  (:requirements :hierarchy :typing :negative-preconditions)
+
+  (:types
+    requirement - object
+    module - object
+    doc - object
+    release - object
+  )
+
+  (:constants
+    r1-standing-coded - requirement
+    r2-evidence-batch - requirement
+    r3-git-containment - requirement
+    r4-mining-example - requirement
+    v26-9-10 - release
+  )
+
+  (:predicates
+    (prd-scoped ?r - requirement)
+    (existing-code-checked ?r - requirement)
+    (module-designed ?r - requirement)
+    (module-built ?r - requirement ?m - module)
+    (tests-written ?r - requirement)
+    (tests-passing ?r - requirement)
+    (doc-updated ?r - requirement ?d - doc)
+    (requirement-closed ?r - requirement)
+    (all-requirements-closed)
+    (verify-gate-passed)
+    (calver-bumped ?rel - release)
+    (changelog-written ?rel - release)
+    (published-to-hex ?rel - release)
+    (release-closed ?rel - release)
+  )
+
+  ;; ==========================================================================
+  ;; Top-level task: close all four PRD requirements (mutually independent,
+  ;; per the PRD's own "Explicitly out of scope" section -- none creates a
+  ;; dependency on ex4pm from beam4pm, none touches the same module as
+  ;; another), then close the release once every requirement is real,
+  ;; tested, and documented.
+  ;; ==========================================================================
+
+  (:task FINISH-EX4PM
+    :parameters (?rel - release)
+  )
+
+  (:method m-finish-ex4pm
+    :parameters (?rel - release)
+    :task (FINISH-EX4PM ?rel)
+    :ordered-subtasks (and
+      (t1 (CLOSE-ALL-REQUIREMENTS))
+      (t2 (confirm-all-closed))
+      (t3 (RELEASE ?rel))
+    )
+  )
+
+  (:task CLOSE-ALL-REQUIREMENTS
+    :parameters ()
+  )
+
+  ;; R1-R4 are independent -- unordered-subtasks, not artificially
+  ;; sequenced. A real executor may interleave or parallelize them (matches
+  ;; this session's own worktree/parallel-agent manufacturing discipline).
+  (:method m-close-all-requirements
+    :task (CLOSE-ALL-REQUIREMENTS)
+    :unordered-subtasks (and
+      (u1 (CLOSE-REQUIREMENT r1-standing-coded))
+      (u2 (CLOSE-REQUIREMENT r2-evidence-batch))
+      (u3 (CLOSE-REQUIREMENT r3-git-containment))
+      (u4 (CLOSE-REQUIREMENT r4-mining-example))
+    )
+  )
+
+  (:task CLOSE-REQUIREMENT
+    :parameters (?r - requirement)
+  )
+
+  (:method m-close-requirement
+    :parameters (?r - requirement ?m - module ?d - doc)
+    :task (CLOSE-REQUIREMENT ?r)
+    :ordered-subtasks (and
+      (t1 (check-existing-code ?r))
+      (t2 (design-module ?r ?m))
+      (t3 (build-module ?r ?m))
+      (t4 (write-tests ?r ?m))
+      (t5 (verify-tests ?r))
+      (t6 (update-docs ?r ?d))
+      (t7 (close-requirement ?r ?d))
+    )
+  )
+
+  (:action check-existing-code
+    :parameters (?r - requirement)
+    :precondition (prd-scoped ?r)
+    :effect (existing-code-checked ?r)
+    ;; real: re-read the actual current lib/ex4pm/{core,evidence}.ex before
+    ;; writing a line -- the PRD itself was written this way (grep-verified
+    ;; Ex4pm.Standing has no reason-code field, Ex4pm.Evidence has no batch
+    ;; ledger, before proposing R1/R2). Do not re-derive from the PRD prose
+    ;; alone; re-check the live source, which may have moved.
+  )
+
+  (:action design-module
+    :parameters (?r - requirement ?m - module)
+    :precondition (existing-code-checked ?r)
+    :effect (module-designed ?r)
+    ;; real: R1 = Ex4pm.Standing.Coded (does not replace bare-atom
+    ;; Ex4pm.Standing); R2 = Ex4pm.Evidence.Batch (data shape + transition
+    ;; logic only, no new storage subsystem -- persistence stays the
+    ;; caller's job, matching Ex4pm.Evidence.Store's own precedent); R3 =
+    ;; Ex4pm.Evidence.GitContainment (real subprocess git calls, Chicago
+    ;; discipline, no libgit2 binding); R4 has no new module -- it is a
+    ;; docs/consumer/*.md example composed entirely from R1-R3 plus
+    ;; already-existing Ex4pm.ingest/2, discover/2, conform/2.
+  )
+
+  (:action build-module
+    :parameters (?r - requirement ?m - module)
+    :precondition (module-designed ?r)
+    :effect (module-built ?r ?m)
+    ;; real: for R1, to_string/1 must round-trip the exact literal standing
+    ;; strings quoted in docs/PRD-v26.9.10.md's source evidence section
+    ;; (ALIVE[WS3_CHICAGO_MERGE_50] etc.), not invented examples. For R3,
+    ;; every git call is a real subprocess against a real repo -- no mocked
+    ;; git output.
+  )
+
+  (:action write-tests
+    :parameters (?r - requirement ?m - module)
+    :precondition (and (module-designed ?r) (module-built ?r ?m))
+    :effect (tests-written ?r)
+    ;; real: R2's Ex4pm.Evidence.Batch tests assert the exact RCA-specified
+    ;; transition rules (resume-first, never-start-second-batch-while-
+    ;; active, quota-gated close) one test per rule -- not a generic
+    ;; "batch works" smoke test. R3's tests use a real, disposable git repo
+    ;; fixture created and torn down per test.
+  )
+
+  (:action verify-tests
+    :parameters (?r - requirement)
+    :precondition (tests-written ?r)
+    :effect (tests-passing ?r)
+    ;; real: mix test output pasted/confirmed, not described. Failing tests
+    ;; get fixed here, not deferred.
+  )
+
+  (:action update-docs
+    :parameters (?r - requirement ?d - doc)
+    :precondition (tests-passing ?r)
+    :effect (doc-updated ?r ?d)
+    ;; real: R1-R3 get real @moduledoc/@doc coverage (this repo publishes
+    ;; real HexDocs, per the ex_doc wiring already shipped); R4's own
+    ;; deliverable IS the doc (docs/consumer/how-to-guides.md addition),
+    ;; with a runnable snippet, not prose describing a snippet.
+  )
+
+  (:action close-requirement
+    :parameters (?r - requirement ?d - doc)
+    :precondition (doc-updated ?r ?d)
+    :effect (requirement-closed ?r)
+  )
+
+  (:action confirm-all-closed
+    :parameters ()
+    :precondition (and
+      (requirement-closed r1-standing-coded)
+      (requirement-closed r2-evidence-batch)
+      (requirement-closed r3-git-containment)
+      (requirement-closed r4-mining-example)
+    )
+    :effect (all-requirements-closed)
+    ;; real check, not a formality: this is the one place the plan actually
+    ;; verifies R1-R4 are ALL closed (not just "most") before a release is
+    ;; permitted to start -- the exact discipline the source PRD's evidence
+    ;; (WS4: 50 constructed, 0 contained) shows is missing when skipped.
+  )
+
+  ;; ==========================================================================
+  ;; Release close: only reachable once all four requirements are real,
+  ;; tested, and documented -- matches this session's own verify-before-
+  ;; publish discipline (mix format / mix compile --warnings-as-errors /
+  ;; mix test / mix ex4pm.lint.truth / mix ex4pm.powl.court /
+  ;; mix ex4pm.sabotage.court, then mix hex.publish, as already exercised
+  ;; for v26.9.9 this session).
+  ;; ==========================================================================
+
+  (:task RELEASE
+    :parameters (?rel - release)
+  )
+
+  (:method m-release
+    :parameters (?rel - release)
+    :task (RELEASE ?rel)
+    :precondition (all-requirements-closed)
+    :ordered-subtasks (and
+      (t1 (run-verify-gate))
+      (t2 (bump-calver ?rel))
+      (t3 (write-changelog ?rel))
+      (t4 (publish-hex ?rel))
+      (t5 (close-release ?rel))
+    )
+  )
+
+  (:action run-verify-gate
+    :parameters ()
+    :precondition (all-requirements-closed)
+    :effect (verify-gate-passed)
+    ;; real: mix verify (format --check-formatted, compile
+    ;; --warnings-as-errors, ex4pm.lint.truth, test, ex4pm.powl.court,
+    ;; ex4pm.sabotage.court) -- the actual gate this repo already has, not a
+    ;; new one invented for this release.
+  )
+
+  (:action bump-calver
+    :parameters (?rel - release)
+    :precondition (verify-gate-passed)
+    :effect (calver-bumped ?rel)
+    ;; real: mix.exs @version "26.9.10", consistent across the single flat
+    ;; app (no per-app umbrella versions to sync -- that problem no longer
+    ;; exists post-flatten).
+  )
+
+  (:action write-changelog
+    :parameters (?rel - release)
+    :precondition (calver-bumped ?rel)
+    :effect (changelog-written ?rel)
+    ;; real: commit message(s) citing exactly which of R1-R4 landed, same
+    ;; discipline as every commit this session (git commit -F, never inline
+    ;; -m with multi-line prose).
+  )
+
+  (:action publish-hex
+    :parameters (?rel - release)
+    :precondition (changelog-written ?rel)
+    :effect (published-to-hex ?rel)
+    ;; real: mix hex.publish package (dry-run first if not yet explicitly
+    ;; authorized for this specific release -- publishing to hex.pm is a
+    ;; real, outward-facing action requiring its own explicit go-ahead, per
+    ;; this session's own operating rules, not implied by this HDDL plan
+    ;; existing).
+  )
+
+  (:action close-release
+    :parameters (?rel - release)
+    :precondition (published-to-hex ?rel)
+    :effect (release-closed ?rel)
+  )
+)

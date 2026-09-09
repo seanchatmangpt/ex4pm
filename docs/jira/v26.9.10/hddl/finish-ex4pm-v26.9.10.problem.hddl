@@ -1,0 +1,64 @@
+;; finish-ex4pm-v26.9.10.problem.hddl
+;; HDDL 2.1 problem file for the finish-ex4pm-v26-9-10 domain.
+;; Hand-verified against HDDL 2.1 grammar, NOT parser-verified (no HDDL/HTN
+;; reader available in this repo's toolchain -- see domain file header).
+;;
+;; :init reflects the real state confirmed this session: docs/PRD-v26.9.10.md
+;; is written and grep-verified against the real lib/ex4pm/{core,evidence}.ex
+;; (prd-scoped and existing-code-checked hold for all four requirements
+;; already); nothing past that has been designed, built, tested, or
+;; documented yet. No requirement is closed; no release work has started.
+
+(define (problem finish-ex4pm-v26-9-10-2026-09-09)
+  (:domain finish-ex4pm-v26-9-10)
+
+  (:objects
+    ex4pm-standing-coded - module
+    ex4pm-evidence-batch - module
+    ex4pm-git-containment - module
+    ex4pm-consumer-mining-doc - module
+    ex4pm-hexdocs - doc
+    ex4pm-consumer-how-to-guides - doc
+  )
+
+  (:htn
+    :parameters ()
+    :subtasks (and
+      (t0 (FINISH-EX4PM v26-9-10))
+    )
+  )
+
+  (:init
+    ;; All four requirements are real and PRD-scoped (docs/PRD-v26.9.10.md),
+    ;; and the existing-code check that motivated each one is already done
+    ;; (grep-verified against real source, cited by file:line in the PRD) --
+    ;; both facts hold for every requirement before any design work starts.
+    (prd-scoped r1-standing-coded)
+    (existing-code-checked r1-standing-coded)
+
+    (prd-scoped r2-evidence-batch)
+    (existing-code-checked r2-evidence-batch)
+
+    (prd-scoped r3-git-containment)
+    (existing-code-checked r3-git-containment)
+
+    (prd-scoped r4-mining-example)
+    (existing-code-checked r4-mining-example)
+
+    ;; Nothing designed, built, tested, documented, or closed yet -- all
+    ;; four requirements start at the same real starting line. Absent from
+    ;; :init (per HDDL closed-world convention, matching the autofde-lab
+    ;; precedent's "intentionally absent" style): module-designed,
+    ;; module-built, tests-written, tests-passing, doc-updated,
+    ;; requirement-closed, all-requirements-closed, verify-gate-passed,
+    ;; calver-bumped, changelog-written, published-to-hex, release-closed.
+  )
+
+  (:goal (and
+    (requirement-closed r1-standing-coded)
+    (requirement-closed r2-evidence-batch)
+    (requirement-closed r3-git-containment)
+    (requirement-closed r4-mining-example)
+    (release-closed v26-9-10)
+  ))
+)
