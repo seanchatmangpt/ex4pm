@@ -1,0 +1,13 @@
+{
+  "units": [
+    {
+      "name": "standing_coded",
+      "ontology": "priv/ggen/units/standing_coded/ontology.ttl",
+      "queries": {
+        "standings": "priv/ggen/units/standing_coded/standings.rq"
+      },
+      "template": "priv/ggen/templates/standing_coded.ex.eex",
+      "out": "lib/ex4pm/standing/coded.ex"
+    }
+  ]
+}

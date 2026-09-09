@@ -1,0 +1,4 @@
+PREFIX ex4pm: <https://ex4pm.dev/ontology#>
+SELECT ?standing WHERE {
+  ex4pm:StandingCoded ex4pm:hasStanding ?standing .
+}

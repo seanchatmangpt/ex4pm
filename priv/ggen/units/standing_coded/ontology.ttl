@@ -1,0 +1,8 @@
+@prefix ex4pm: <https://ex4pm.dev/ontology#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ex4pm:StandingCoded a ex4pm:GeneratedModule ;
+  rdfs:label "Ex4pm.Standing.Coded" ;
+  ex4pm:hasStanding ex4pm:UNKNOWN, ex4pm:PARTIAL_ALIVE, ex4pm:ALIVE,
+    ex4pm:BLOCKED, ex4pm:BUILD_BROKEN, ex4pm:UNSUPPORTED, ex4pm:REFUSED ;
+  ex4pm:generatedFrom "priv/ggen/units/standing_coded/ontology.ttl" .
