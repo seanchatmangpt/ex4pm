@@ -2,8 +2,7 @@ import Config
 
 config :logger, level: :info
 
-config :ex4pm_domain, ash_domains: [Ex4pmDomain, Ex4pm.Domain]
-config :ex4pm_web, ash_domains: [Ex4pmDomain, Ex4pm.Domain]
+config :ex4pm, ash_domains: [Ex4pmDomain, Ex4pm.Domain]
 
 config :ash_admin,
   domains: [Ex4pmDomain, Ex4pm.Domain],
@@ -11,7 +10,7 @@ config :ash_admin,
 
 config :ex4pm, :pubsub, Ex4pm.PubSub
 
-config :ex4pm_web, Ex4pmWeb.Endpoint,
+config :ex4pm, Ex4pmWeb.Endpoint,
   url: [host: "localhost"],
   adapter: Bandit.PhoenixAdapter,
   render_errors: [formats: [html: Ex4pmWeb.ErrorHTML, json: Ex4pmWeb.ErrorJSON], layout: false],
@@ -23,11 +22,11 @@ config :ex4pm_web, Ex4pmWeb.Endpoint,
 if Mix.env() == :test do
   config :logger, level: :warning
 
-  config :ex4pm_runtime, Ex4pmRuntime.Endpoint,
+  config :ex4pm, Ex4pmRuntime.Endpoint,
     http: [ip: {127, 0, 0, 1}, port: 4002],
     server: false
 
-  config :ex4pm_web, Ex4pmWeb.Endpoint,
+  config :ex4pm, Ex4pmWeb.Endpoint,
     http: [ip: {127, 0, 0, 1}, port: 4003],
     server: false
 end
