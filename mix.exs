@@ -176,6 +176,12 @@ defmodule Ex4pm.MixProject do
         "format --check-formatted",
         "compile --warnings-as-errors",
         "ex4pm.lint.truth",
+        # Real, automated determinism proof for every ggen_igniter-generated
+        # file in priv/ggen/manifest.json (delete/regenerate/byte-diff) --
+        # no-ops cleanly if the manifest doesn't exist yet, per the task's
+        # own moduledoc. Closes the gap PRD-v26.9.10.md named: this claim
+        # used to be proven manually, once, and never re-checked.
+        "ex4pm.ggen.verify_determinism --all",
         # verify is the full gate -- :integration/:stress are excluded from plain
         # `mix test` for a fast default inner loop (see test/test_helper.exs),
         # but must still run here so verify's own coverage doesn't silently

@@ -1,0 +1,22 @@
+[
+  {
+    "name": "standing_coded",
+    "ontology": "priv/ontology/ex4pm.ttl",
+    "query_bindings": {
+      "admitted": "priv/ggen/queries/admitted_standing_codes.rq"
+    },
+    "template": "priv/ggen/templates/standing_coded.ex.eex",
+    "out": "lib/ex4pm/standing_coded.ex",
+    "test_path": null
+  },
+  {
+    "name": "standing_coded_test",
+    "ontology": "priv/ontology/ex4pm.ttl",
+    "query_bindings": {
+      "admitted": "priv/ggen/queries/admitted_standing_codes.rq"
+    },
+    "template": "priv/ggen/templates/standing_coded_test.exs.eex",
+    "out": "test/standing_coded_test.exs",
+    "test_path": "test/standing_coded_test.exs"
+  }
+]
