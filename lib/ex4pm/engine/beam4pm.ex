@@ -88,15 +88,25 @@ defmodule Ex4pm.Engine.Beam4pm do
     Keyword.get(opts, :beam4pm_base_url) || Application.get_env(:ex4pm, :beam4pm_base_url)
   end
 
+  # Real bug fix (found by an adversarial failure-path audit, not by
+  # inspection alone): neither Req nor Finch enforces any receive timeout
+  # by default -- a real slow/unresponsive server was verified to hang a
+  # real caller indefinitely rather than ever reaching the
+  # `%{reason: :timeout}` clause below. A bounded default (configurable via
+  # `beam4pm_receive_timeout` in opts) is required for that clause to be
+  # reachable in practice, not just in a unit test that sets it explicitly.
+  @default_receive_timeout_ms 15_000
+
   defp request(base, type, action, method, subject, opts) do
     http_module = Keyword.get(opts, :beam4pm_http_module, Req)
     url = Path.join(base, "/#{type}")
     query = %{"action" => action, "subject_hash" => Ex4pm.Core.Hash.digest(subject)}
+    receive_timeout = Keyword.get(opts, :beam4pm_receive_timeout, @default_receive_timeout_ms)
 
     result =
       case method do
-        :get -> http_module.get(url, params: query, retry: false)
-        :post -> http_module.post(url, json: query, retry: false)
+        :get -> http_module.get(url, params: query, retry: false, receive_timeout: receive_timeout)
+        :post -> http_module.post(url, json: query, retry: false, receive_timeout: receive_timeout)
       end
 
     case result do

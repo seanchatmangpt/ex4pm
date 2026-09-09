@@ -23,11 +23,34 @@ defmodule Engine.Beam4pmTest do
     plug(:match)
     plug(:dispatch)
 
+    # Real subject_hash of %{id: "non-object-body-trigger"}, computed once at
+    # compile time -- lets this real router branch a real 2xx-non-object-body
+    # scenario off the real, deterministic subject_hash the client sends,
+    # without inventing any protocol the real client doesn't already speak.
+    @non_object_body_subject_hash Ex4pm.Core.Hash.digest(%{id: "non-object-body-trigger"})
+    @slow_subject_hash Ex4pm.Core.Hash.digest(%{id: "e1", __slow__: true})
+
     get "/ocel_event" do
       conn = Plug.Conn.fetch_query_params(conn)
 
-      case conn.query_params["action"] do
-        "read" ->
+      case {conn.query_params["action"], conn.query_params["subject_hash"]} do
+        {"read", @slow_subject_hash} ->
+          # Sleeps far longer than any client receive_timeout under test --
+          # a real unresponsive server, not a simulated one.
+          Process.sleep(3_000)
+
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.send_resp(200, Jason.encode!(%{"data" => []}))
+
+        {"read", @non_object_body_subject_hash} ->
+          # A real 2xx response whose decoded body is a JSON array, not an
+          # object -- exercises the beam4pm_invalid_response refusal branch.
+          conn
+          |> Plug.Conn.put_resp_content_type("application/json")
+          |> Plug.Conn.send_resp(200, Jason.encode!([1, 2, 3]))
+
+        {"read", _} ->
           body =
             Jason.encode!(%{
               "data" => [%{"id" => "e1", "type" => "ocel_event", "attributes" => %{"activity" => "commit_qualified"}}],
@@ -109,5 +132,60 @@ defmodule Engine.Beam4pmTest do
              Beam4pm.execute(:beam4pm_ocel_events, %{id: "e1"}, beam4pm_base_url: "http://127.0.0.1:1")
 
     assert refusal.code == :beam4pm_unavailable
+  end
+
+  test "a real 2xx response whose decoded body is a JSON array (not an object) is refused as invalid, not treated as data",
+       %{base_url: base_url} do
+    assert {:error, refusal} =
+             Beam4pm.execute(:beam4pm_ocel_events, %{id: "non-object-body-trigger"}, beam4pm_base_url: base_url)
+
+    assert refusal.code == :beam4pm_invalid_response
+    assert refusal.details.status == 200
+  end
+
+  test "available?/1 also honors a base_url configured via Application.get_env, not just opts" do
+    refute Beam4pm.available?([])
+
+    Application.put_env(:ex4pm, :beam4pm_base_url, "http://127.0.0.1:1")
+
+    on_exit(fn -> Application.delete_env(:ex4pm, :beam4pm_base_url) end)
+
+    assert Beam4pm.available?([])
+  end
+
+  test "execute/3 also resolves base_url from Application.get_env when opts omit it", %{base_url: base_url} do
+    Application.put_env(:ex4pm, :beam4pm_base_url, base_url)
+    on_exit(fn -> Application.delete_env(:ex4pm, :beam4pm_base_url) end)
+
+    assert {:ok, result} = Beam4pm.execute(:beam4pm_ocel_events, %{id: "e1"}, [])
+    assert result.standing == :alive
+  end
+
+  test "a real slow/unresponsive server is refused as a bounded timeout, not left to hang forever", %{
+    base_url: base_url
+  } do
+    # Real regression coverage for a real bug found by adversarial audit:
+    # earlier, `request/6` never passed `receive_timeout` to Req, so this
+    # exact scenario (a real server that never responds) hung the caller
+    # indefinitely instead of ever reaching the `:beam4pm_timeout` refusal
+    # branch. The slow endpoint here sleeps far longer than the configured
+    # client timeout, so this test would itself time out and fail (not
+    # hang the suite forever, ExUnit still bounds the test) if the bug
+    # ever regressed.
+    slow_subject = %{id: "e1", __slow__: true}
+
+    {elapsed_us, result} =
+      :timer.tc(fn ->
+        Beam4pm.execute(:beam4pm_ocel_events, slow_subject,
+          beam4pm_base_url: base_url,
+          beam4pm_receive_timeout: 200
+        )
+      end)
+
+    assert {:error, refusal} = result
+    assert refusal.code == :beam4pm_timeout
+    # Real bound: must resolve near the configured 200ms timeout, never
+    # anywhere near the fake server's multi-second sleep.
+    assert elapsed_us < 2_000_000
   end
 end
