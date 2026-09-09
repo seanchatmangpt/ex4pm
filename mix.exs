@@ -66,7 +66,9 @@ defmodule Ex4pm.Umbrella.MixProject do
         "ex4pm.powl.court",
         "ex4pm.sabotage.court"
       ],
-      "test.stress": ["test apps/ex4pm_engine/test/benchmarks/stress_benchmark_test.exs"],
+      "test.stress": [
+        "test apps/ex4pm_engine/test/benchmarks/stress_benchmark_test.exs apps/ex4pm_engine/test/benchmarks/wasm_engine_benchmark_test.exs --include stress"
+      ],
       chicago: ["do --app ex4pm test --only chicago --seed 0"]
     ]
   end
