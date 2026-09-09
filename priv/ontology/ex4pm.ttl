@@ -35,3 +35,32 @@ ex4pm:ALIVE a ex4pm:Capability .
 ex4pm:BLOCKED a ex4pm:Capability .
 ex4pm:BUILD_BROKEN a ex4pm:Capability .
 ex4pm:UNSUPPORTED a ex4pm:Capability .
+
+# =============================================================================
+# ggen_igniter admission graph: Ex4pm.Standing.Coded (docs/PRD-v26.9.10.md R1).
+# Real production reason-coded standings observed in beam4pm's own
+# scheduled-task receipts (STANDING[REASON_CODE] shape, e.g.
+# ALIVE[WS3_CHICAGO_MERGE_50]) -- ex4pm's own bare-atom Ex4pm.Standing has
+# no reason-code payload, so beam4pm invented its own bracket convention
+# outside ex4pm's vocabulary. This admits the vocabulary itself into
+# ex4pm's own ontology, same pattern as beam4pm's bpma:AdmittedActuation/
+# bpmi:AdmittedIngestRoute admission graphs.
+# =============================================================================
+@prefix ex4pmsc: <https://chatman.ai/ex4pm/standing-coded#> .
+
+ex4pmsc:alive_ws3_chicago_merge_50 a ex4pmsc:AdmittedStandingCode ;
+    ex4pmsc:standing "alive" ;
+    ex4pmsc:code "WS3_CHICAGO_MERGE_50" .
+
+ex4pmsc:partial_alive_merged_local_capsule_namespace_unavailable
+    a ex4pmsc:AdmittedStandingCode ;
+    ex4pmsc:standing "partial_alive" ;
+    ex4pmsc:code "MERGED_LOCAL_CAPSULE_NAMESPACE_UNAVAILABLE" .
+
+ex4pmsc:build_broken_takt_shortfall a ex4pmsc:AdmittedStandingCode ;
+    ex4pmsc:standing "build_broken" ;
+    ex4pmsc:code "TAKT_SHORTFALL" .
+
+ex4pmsc:alive_ws3_fortune5_runtime_value_50 a ex4pmsc:AdmittedStandingCode ;
+    ex4pmsc:standing "alive" ;
+    ex4pmsc:code "WS3_FORTUNE5_RUNTIME_VALUE_50" .

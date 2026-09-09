@@ -95,3 +95,8 @@ Thumbs.db
 # (k8s/secret.yaml was previously committed with real values -- see the
 # commit removing it from tracking for the real-credential-rotation note.)
 k8s/secret.yaml
+
+# ggen_igniter reconciliation manifest + probe output (manufacturing-time
+# state) -- matches beam4pm's own .gitignore convention exactly.
+.ggen_igniter/
+.ggen_igniter_tmp/

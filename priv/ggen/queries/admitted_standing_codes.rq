@@ -1,0 +1,6 @@
+PREFIX ex4pmsc: <https://chatman.ai/ex4pm/standing-coded#>
+SELECT ?standing ?code WHERE {
+  ?s a ex4pmsc:AdmittedStandingCode ;
+     ex4pmsc:standing ?standing ;
+     ex4pmsc:code ?code .
+} ORDER BY ?standing ?code

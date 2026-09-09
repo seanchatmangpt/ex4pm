@@ -121,6 +121,11 @@ defmodule Ex4pm.MixProject do
       {:igniter, "~> 0.8.3", only: [:dev, :test]},
       {:faker, "~> 0.18", only: :test},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      # Manufacturing-time tool only (`mix ggen_igniter.sync`) -- never a
+      # runtime dependency of generated code, matching beam4pm's own
+      # dependency line exactly (mix.exs there: {:ggen_igniter, "~> 26.8",
+      # only: [:dev, :test], runtime: false}). R0 of docs/PRD-v26.9.10.md.
+      {:ggen_igniter, "~> 26.9", only: [:dev, :test], runtime: false},
 
       # ash_admin's own LiveView UI needs Phoenix/LiveView to compile even
       # though nothing outside ash_admin uses them directly.
