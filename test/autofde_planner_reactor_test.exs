@@ -1,5 +1,5 @@
 defmodule Ex4pmEngine.AutoFdePlannerReactorTest do
-  use ExUnit.Case, async: false
+  use ExUnit.Case, async: true
 
   alias Ex4pmEngine.Reactors.AutoFdePlannerReactor
   alias Ex4pmCore.ProcessIR.Extractor.Reactor, as: ReactorExtractor
