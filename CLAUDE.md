@@ -117,3 +117,31 @@ anything under `ex4pm_qualification` or distribution/replay code.
 - `Ex4pm.Engine.Wasm` only executes a configured export/parameter contract against an admitted
   WASM artifact — it does not assume a generic OCEL string ABI, and does not claim historical
   wasm4pm bundles already implement the WIT component world.
+
+## External integration: xaas wants to depend on ex4pm (real, active)
+
+`~/xaas` (a real sibling Elixir/Phoenix/Ash app) wants `ex4pm_core`/`ex4pm_contracts`
+as a real library dependency and to push OCEL v2 events to this app's real
+`POST /api/v1/ocel/events` endpoint (`ex4pm_web/lib/ex4pm_web/{router,controllers/
+ocel_controller}.ex`). Full requirements: `docs/ROADMAP-xaas-integration.md` (mirrored
+from `~/xaas/docs/ROADMAP.md`).
+
+**Role split, explicit user decision:** ex4pm is the downstream library layer other
+Elixir apps import (`ex4pm_core` already has a real hex-publishable shape — `package()`,
+`@version`, `description` in its `mix.exs`); beam4pm is a separate runtime reached only
+over the network, never as a compile-time dependency of anything outside its own repo.
+
+**What that roadmap asks of this repo specifically**, if you're the one picking this
+up:
+1. Confirm `ex4pm_core` stays a stable, `path:`-dependable package — no accidental
+   umbrella-only coupling that would break a sibling app depending on it directly.
+2. Confirm `Ex4pm.OCEL.validate_envelope/1` (or the real, current envelope builder) is
+   a genuinely public, documented function xaas can call after adding the dependency —
+   not an internal implementation detail that happens to be public today.
+3. `ex4pm_contracts`'s real ontology (`priv/ontology/ex4pm.ttl`) and SHACL shapes
+   (`priv/shacl/ex4pm-shapes.ttl`) are meant to be ggen'd by xaas's `ggen_igniter`
+   pipeline to generate xaas-side OCEL envelope code — this repo doesn't need to do
+   anything for that except keep those contract files real and versioned (which
+   `ex4pm_contracts`'s own moduledoc says it already does via hash manifests).
+
+beam4pm-specific items in that roadmap are explicitly out of scope for this repo.
