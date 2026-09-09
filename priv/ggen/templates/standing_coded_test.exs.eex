@@ -8,32 +8,19 @@
 # directly from ontology facts -- grows automatically when a new
 # ex4pmsc:AdmittedStandingCode individual is admitted, no hand-written
 # test needed.
-norm = fn
-  nil ->
-    nil
-
-  v when is_binary(v) ->
-    cond do
-      String.starts_with?(v, "<") and String.ends_with?(v, ">") ->
-        String.slice(v, 1..-2//1)
-
-      String.starts_with?(v, "\"") ->
-        case Regex.run(~r/\A"(.*)"(?:\^\^<[^>]*>|@[A-Za-z0-9\-]+)?\z/s, v) do
-          [_, lex] -> lex
-          nil -> v
-        end
-
-      true ->
-        v
-    end
-
-  v ->
-    to_string(v)
-end
-
+#
+# No term normalization here: as of ggen_igniter v26.8.27, `--engine
+# oxigraph` (the default, and the only engine this repo's sync scripts
+# use) returns plain unwrapped values by default -- the fix landed at the
+# source, in the Rust NIF itself (native/ggen_graph_nif/src/
+# oxigraph_engine.rs's normalize_term/1; see GgenIgniter.Query.Oxigraph's
+# moduledoc in the pinned ~> 26.9 dependency). A hand-rolled norm/1 here
+# would be defensive code against a bug that no longer exists at this
+# repo's pinned version -- see docs/PRD-v26.9.10.md and
+# docs/upstream-reports/ for the fuller cross-repo finding.
 admitted_rows =
   admitted
-  |> Enum.map(fn a -> %{standing: norm.(a["standing"]), code: norm.(a["code"])} end)
+  |> Enum.map(fn a -> %{standing: a["standing"], code: a["code"]} end)
   |> Enum.sort_by(&{&1.standing, &1.code})
 
 test_cases =
