@@ -85,6 +85,31 @@ Separately, `lib/wasm4pm_compat/ash_types.ex` (209 LOC, `Wasm4pmCompat.AshTypes.
 
 ---
 
+## 3a. Network-backed candidate already carries live drift verification
+
+`Ex4pm.Engine.Beam4pm` (`lib/ex4pm/engine/beam4pm.ex`, `priv/ggen/templates/beam4pm.ex.eex`) — the
+network-backed engine candidate this document's §3 "New in ex4pm" describes — is not purely
+speculative target-state anymore. As of this session it has grown an opt-in
+`verify_contract` capability: when enabled, it fetches beam4pm's live `/openapi.json` document
+and confirms the admitted `ex4pmb:AdmittedBeam4pmService` route table (the ontology-driven
+`@route_table` this module already dispatches from, per its moduledoc) actually matches what
+beam4pm's real OpenAPI spec declares, refusing with a typed `:beam4pm_contract_drift` atom on
+mismatch rather than silently trusting a stale admitted route.
+
+This is exactly the "admit + verify against live reality" discipline the rest of this
+document's migration phases assume but do not yet enforce mechanically: Phase 1's differential
+verification (§6) compares in-process vs. network-backed *execution results*; this new
+capability instead compares the network-backed candidate's *admitted contract* against
+beam4pm's *live declared contract*, closing part of the gap named in `docs/VISION-2030-LOOP.md`
+§2.2 ("ex4pm -> beam4pm has never executed against a live beam4pm instance" / drift requires
+manual re-verification). It does not change this document's phase plan or its beam4pm-side
+prerequisites (§4) — beam4pm still needs a live, network-exposed execution/route surface for
+`Ex4pm.Engine.Beam4pm` to verify against in the first place — but it means the ex4pm-side
+consumer of that future surface already carries its own typed refusal for contract drift, not
+just for unavailability.
+
+---
+
 ## 4. What beam4pm needs to build first (real prerequisite, not glossed over)
 
 Per `beam4pm-wasm-capability` research (`pwd` confirmed `/Users/sac/beam4pm`), the honest state is mixed — **not** "zero real WASM hosting," but also **not** "ready to serve ex4pm over the network today."
