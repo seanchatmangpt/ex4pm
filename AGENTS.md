@@ -18,7 +18,7 @@ Use `UNKNOWN | PARTIAL_ALIVE | ALIVE | BLOCKED | BUILD_BROKEN | UNSUPPORTED` and
 
 ## Editing surfaces
 
-Canonical semantic objects live in `lib/ex4pm_core/` (`Ex4pm.Core`, `Ex4pm.OCEL`, `Ex4pm.POWL`, etc.). Engine, runtime, stream, domain, CLI, and the `test/demo_web/` demo web app are projections/adapters. Never make an adapter's incidental representation canonical without an admitted equivalence proof.
+Canonical semantic objects live in `lib/ex4pm/` (`Ex4pm.Core`, `Ex4pm.OCEL`, `Ex4pm.POWL`, etc. — `core.ex`, `ocel.ex`, `powl.ex`). `lib/ex4pm_core/` holds the unrelated `Ex4pmCore.ProcessIR` namespace, not these canonical objects. Engine, runtime, stream, domain, CLI, and the `test/demo_web/` demo web app are projections/adapters. Never make an adapter's incidental representation canonical without an admitted equivalence proof.
 
 ## Verification
 

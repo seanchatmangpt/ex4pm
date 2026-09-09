@@ -17,8 +17,10 @@
 >
 > This is the CONSUMER-side
 > spec: xaas is a real sibling Elixir/Phoenix/Ash app that wants to depend on
-> ex4pm_core/ex4pm_contracts as a real library and push OCEL v2 events to
-> ex4pm_web's real /api/v1/ocel/events endpoint. Work items below marked
+> ex4pm_core/ex4pm_contracts as a real library and push OCEL v2 events to an
+> ex4pm ingest endpoint. As of this addendum's re-verification, no such endpoint
+> ships under this repo's lib/ — see item #3 under "What xaas needs from ex4pm"
+> below for the confirmed gap. Work items below marked
 > "unblocked / actionable now" are for THIS repo (ex4pm) to make true from its
 > own side -- e.g. confirming ex4pm_core stays a stable, path-dependable
 > package, and that ggen manufacturing of xaas's OCEL envelope code from
@@ -148,12 +150,19 @@ re-researching from zero.
    builder/validator; keep the hand-written version only until the generated one is
    proven to pass the same real test (`test/xaas/telemetry/ocel_forwarder_test.exs`),
    then retire the hand-written one.
-3. **`ex4pm_web`'s real ingest endpoint stays the network seam**, unchanged by 1-2:
-   `POST /api/v1/ocel/events` → `Ex4pmWeb.OcelController.ingest/2` (confirmed by direct
-   read of `ex4pm_web/lib/ex4pm_web/{router,controllers/ocel_controller}.ex`). Adding
-   `ex4pm_core` as a compile-time dependency does not change this — xaas still reaches
-   ex4pm over HTTP at runtime, per the role split above; the dependency is for shared
-   *types and validation*, not for calling ex4pm's runtime functions in-process.
+3. **No real production HTTP ingest endpoint exists yet — this is a gap, not a
+   confirmed seam.** In the current flattened-library tree there is no `Ex4pmWeb`,
+   `router.ex`, or `OcelController` anywhere under `lib/`. A `POST /api/v1/ocel/events`
+   → `OcelController.ingest/2` route exists only under `test/demo_web/` (a Phoenix
+   demo/test harness used for e2e testing, not shipped library code) —
+   `test/demo_web/lib/ex4pm_web/router.ex` and
+   `test/demo_web/lib/ex4pm_web/controllers/ocel_controller.ex`. Before xaas can push
+   events to ex4pm over HTTP, either a real `ex4pm_web`-equivalent app needs to ship
+   under `lib/` in this repo, or xaas needs a different network seam (a Phoenix
+   endpoint xaas hosts itself that calls `Ex4pm.OCEL.validate_envelope/1` in-process via
+   the path dependency from item 1, rather than POSTing to ex4pm). Item 1's path
+   dependency does not depend on this gap closing — it only requires `Ex4pm.Core`/
+   `Ex4pm.OCEL` functions, which are real and callable today.
 
 ## Sequencing (HDDL-shaped — see `docs/hddl/`)
 

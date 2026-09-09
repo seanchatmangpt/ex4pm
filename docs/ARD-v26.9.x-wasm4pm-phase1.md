@@ -21,7 +21,7 @@ POWL base-case mining (`powl_mine`, new operation atom):
 | `powl_mine` | `wasm_powl_mine` | `wasm4pm_ex4pm_powl_mine_v1` | `Ex4pmEngine.Wasm.PowlMine` |
 
 **Explicit non-goal:** the remaining ~65 modules under
-`apps/ex4pm_engine/lib/ex4pm_engine/` (alignment, ETC precision, LTLf,
+`lib/ex4pm_engine/` (alignment, ETC precision, LTLf,
 soundness proving, Petri-net/OCPN simulation variants, planning/cognition,
 causal/Bayesian inference, survival analysis, etc.) are **not** covered by
 this milestone. Extending coverage is adding one `epm:AlgorithmBinding`
@@ -103,8 +103,8 @@ not silently claimed done.
 
 ## 6. Registry wiring
 
-`Ex4pm.Engine.Registry`'s `@engines`/`preference/1` (`apps/ex4pm_engine/
-lib/ex4pm/engine.ex`) ranks `wasm_discover(0) < wasm_conform(1) <
+`Ex4pm.Engine.Registry`'s `@engines`/`preference/1` (`lib/ex4pm/engine.ex`)
+ranks `wasm_discover(0) < wasm_conform(1) <
 wasm_simulate(2) < wasm_optimize(3) < wasm_powl_mine(4) < beam(5) < ...` —
 each Phase-1 WASM engine is preferred over `:beam` once `:alive`/
 `:partial_alive`; `:beam` remains registered and unmodified as the
@@ -117,11 +117,10 @@ reaching `:alive` in real CI, not on this milestone landing.
 ## See also
 
 - `docs/ARD-v26.8.22.md` — the CMCA precedent this extends
-- `docs/PRD-v26.8.22.md` — CMCA product requirements (unmodified)
+- `docs/archive/PRD-v26.8.22.md` — CMCA product requirements (archived, unmodified)
 - `~/ggen-marketplace/packs/ex4pm-wasm4pm-bindings-pack/` — the generative
   pack this crate and its ontology were authored from
-- `apps/ex4pm_engine/lib/ex4pm_engine/wasm/adapter.ex` — the shared
-  six-state adapter macro
+- `lib/ex4pm_engine/wasm/adapter.ex` — the shared six-state adapter macro
 
 ## 7. Phase 2 — thin wrappers over already-implemented wasm4pm algorithms
 
@@ -188,7 +187,7 @@ remain **open gaps**, restated from the original 15-candidate scope —
 not claimed as bound by this or any prior pass.
 
 Registry: `Ex4pm.Engine.Registry`'s `preference/1`
-(`apps/ex4pm_engine/lib/ex4pm/engine.ex`) ranks the 8 new `:wasm_*`
+(`lib/ex4pm/engine.ex`) ranks the 8 new `:wasm_*`
 engines at 5-12 (between the 5 Phase-1 engines at 0-4 and `:beam` at 13),
 extending the same "WASM wins once alive, `:beam` stays as fallback"
 discipline. 8 new operation atoms introduced

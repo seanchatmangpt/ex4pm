@@ -1,3 +1,5 @@
+> ARCHIVED 2026-09-09: superseded by the flat-library refactor (see CLAUDE.md / docs/ARCHITECTURE.md for current structure). Kept as a dated historical record.
+
 # ex4pm v26.8.22 — Product Requirements Document
 
 ## 1. Release identity and product boundary

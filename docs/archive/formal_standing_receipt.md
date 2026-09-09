@@ -4,6 +4,8 @@ SPDX-FileCopyrightText: 2026 ex4pm contributors <https://github.com/seanchatmang
 SPDX-License-Identifier: MIT
 -->
 
+> ARCHIVED 2026-09-09: superseded by the flat-library refactor (see CLAUDE.md / docs/ARCHITECTURE.md for current structure). Kept as a dated historical record.
+
 # Formal Standing Receipt (FSR) — `ex4pm`
 
 **Receipt Identifier**: `RECEIPT-EX4PM-FSR-2026.08.21-V6-VISION-2040-AND-OCEL-LATEX`  

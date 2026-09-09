@@ -74,18 +74,22 @@ xml = File.read!("test/fixtures/sepsis.xes")
 (If no fixture exists at that path, use `find test -iname "*.xes"` from `bash` to locate one,
 or supply any well-formed XES document you have on disk.)
 
-### 2b. Ingest via the CLI escript
-
-```bash
-mix escript.build
-./ex4pm doctor
-./ex4pm discover path/to/ocel-v2.json order
-```
+### 2b. Ingest via the CLI
 
 `Ex4pm.CLI.main/1` (`lib/ex4pm/cli.ex`) dispatches `doctor` (engine
 capabilities + contract standing), `contracts` (full verified contract JSON), `discover
 <file> [object-type]`, and `discover-xes <file> [case-object-type]` — each prints
 `run.standing` and `run.receipt.hash`.
+
+`mix escript.build` currently fails with `Could not generate escript, please set
+:main_module in your project configuration` — `mix.exs` has no `escript:` project key
+pointing at `Ex4pm.CLI`, so no `./ex4pm` binary exists yet. Until that's added, invoke the
+CLI module directly instead:
+
+```bash
+mix run -e 'Ex4pm.CLI.main(["doctor"])'
+mix run -e 'Ex4pm.CLI.main(["discover", "path/to/ocel-v2.json", "order"])'
+```
 
 ## 3. Discover: mine a process model from the EventLog
 

@@ -357,7 +357,7 @@ Ex4pm.OCEL2.attribute_history(log, object_id, attribute_name)
 Ex4pm.OCEL2.object_relationships_for(log, object_id)
 ```
 
-`lib/ex4pm/core`. `object_trace/2` returns the full time-ordered event sequence
+`lib/ex4pm/ocel2.ex`. `object_trace/2` returns the full time-ordered event sequence
 for one object; `attribute_history/3` reconstructs chronological value-change
 history as `%Ex4pm.AttributeChange{}` records; `object_relationships_for/2`
 returns qualifier-typed O2O relationships in either direction.
@@ -410,19 +410,24 @@ reads an IEEE OCEL 2.0 NDJSON log and calls
 tables (default output
 `docs/thesis/chapters/generated_ocel_benchmark_tables.tex`).
 
-## How to drive ex4pm from the CLI (escript)
+## How to drive ex4pm from the CLI
+
+`mix.exs` has no `escript:` config block, so there is no `./ex4pm` binary to
+build or run. Invoke `Ex4pm.CLI.main/1` (`lib/ex4pm/cli.ex`) directly via
+`mix run`:
 
 ```bash
-./ex4pm doctor              # engine capabilities + contract standing/hash
-./ex4pm contracts           # full verified contract JSON
-./ex4pm discover <ocel-v2.json> [object-type]
-./ex4pm discover-xes <log.xes> [case-object-type]
+mix run -e 'Ex4pm.CLI.main(["doctor"])'                                # engine capabilities + contract standing/hash
+mix run -e 'Ex4pm.CLI.main(["contracts"])'                             # full verified contract JSON
+mix run -e 'Ex4pm.CLI.main(["discover", "<ocel-v2.json>", "<object-type>"])'
+mix run -e 'Ex4pm.CLI.main(["discover-xes", "<log.xes>", "<case-object-type>"])'
 ```
 
-`Ex4pm.CLI.main/1` (`lib/ex4pm/cli.ex`) is the escript entrypoint
-(`mix.exs` sets `main_module: Ex4pm.CLI`). All discover paths print
-`run.standing` and `run.receipt.hash`, surfacing BRCE/evidence standing at the
-CLI boundary — this is a read/CONSTRUCT-side projection, never a DO path.
+All discover paths print `run.standing` and `run.receipt.hash`, surfacing
+BRCE/evidence standing at the CLI boundary — this is a read/CONSTRUCT-side
+projection, never a DO path. To get a standalone `./ex4pm` binary, add an
+`escript: [main_module: Ex4pm.CLI]` block to `project/0` in `mix.exs` and run
+`mix escript.build` — neither is configured today.
 
 ## How to send a request through the information plane
 

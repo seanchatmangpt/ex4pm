@@ -138,40 +138,38 @@ This representation round-trips through `process.simulate`, `process.conform`, a
 
 ## CLI
 
-Build the existing escript and inspect the direct graph:
+There is no `manifest|list|describe|run|stdio` escript today — `mix.exs` has no
+`escript`/`main_module` config, and `Ex4pm.CLI` (`lib/ex4pm/cli.ex`) only implements
+`doctor|contracts|discover|discover-xes|help`. The information plane itself is reached
+in-process, from `iex -S mix` or a `mix run -e` script, by running the Reactor flow directly:
 
-```bash
-mix escript.build
-./ex4pm manifest
-./ex4pm list
-./ex4pm describe process.discover
+```elixir
+request = %{
+  "protocol" => "ex4pm.information/1",
+  "version" => "26.8.22",
+  "capability" => "process.discover",
+  "input" => %{"subject" => %{"objects" => %{}, "events" => %{}}, "object_type" => "Order"}
+}
+
+{:ok, response} = Reactor.run(Ex4pm.Information.Flow, %{request: request})
 ```
 
-Execute an admitted capability:
-
-```bash
-./ex4pm run engine.candidates \
-  '{"input":{"operation":"discover"}}'
-```
-
-Run the process-oriented JSONL server:
-
-```bash
-./ex4pm stdio
-```
-
-Each non-empty input line is one request and each output line is one JSON response.
+`manifest`/`list`/`describe` (the closed capability registry, `Ex4pm.Information.Registry`)
+and a JSONL stdio server are DfCM candidate edges this document's architecture accounts for
+(see "DfCM" above), not yet-built commands — treat any future escript/CLI/stdio surface as
+`UNKNOWN` until it exists on disk, per this repo's evidence-forcing standing vocabulary.
 
 ## wasm4pm and pm4py interop
 
-Both runtimes can use the same process boundary:
+Both runtimes are meant to share the same process boundary once a stdio transport exists:
 
 ```text
 client -> stdin JSONL -> ex4pm Reactor -> admitted capability -> receipt envelope -> stdout JSONL
 ```
 
-No language-specific callback authority crosses this boundary. A future native client may replace
-stdio with WIT, NIF, port, or network transport without changing the capability or receipt model.
+No language-specific callback authority crosses this boundary. A future native client may
+replace stdio with WIT, NIF, port, or network transport without changing the capability or
+receipt model. As above, the stdio server itself is a designed-for candidate, not a built one.
 
 ## Bounds
 

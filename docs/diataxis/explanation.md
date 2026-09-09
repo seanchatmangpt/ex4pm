@@ -34,7 +34,7 @@ observation -> parse -> route -> admit | refuse -> construct -> BRCE -> DO -> re
   `Ex4pm.plan/2`, `Ex4pm.cmca/2` (all in `lib/ex4pm.ex`). Construct produces
   evidence — it does not mutate durable state or execute side-effecting callbacks.
 - **BRCE** — the sole boundary allowed to invoke a state-changing callback.
-  `Ex4pm.Evidence.BRCE.execute/5` (`Ex4pm.Evidence`, `lib/ex4pm/evidence/`) admits authority, writes a
+  `Ex4pm.Evidence.BRCE.execute/5` (`Ex4pm.Evidence`, `lib/ex4pm/evidence.ex`) admits authority, writes a
   `:pending` receipt, invokes the callback, and writes a terminating `:outcome` receipt
   (`:alive` on success, `:blocked` on exception/throw) — no invocation can escape
   without a receipt on both ends.
@@ -162,12 +162,14 @@ bottom-to-top by what each layer is allowed to assume exists below it:
   to depend on independently of Phoenix/Ash/Broadway/Reactor; those remain optional
   runtime dependencies xaas simply doesn't have to start (the demo web app that uses
   Phoenix lives outside the published library, under `test/demo_web/`).
-- **`Ex4pm.Evidence`** (`lib/ex4pm/evidence/`) — receipts, the BRCE boundary, replay
+- **`Ex4pm.Evidence`** (`lib/ex4pm/evidence.ex`, plus `lib/ex4pm/evidence/` for
+  `DetsStore` and `ReplayChain`) — receipts, the BRCE boundary, replay
   verification, and standards-format evidence generation (EARL, SOSA, PROV-O, DCAT,
   SPDX). Kept as its own namespace, separate from `Ex4pm.Core`, because evidence/receipt
   machinery is a distinct concern from the IR itself — a receipt references a subject
   hash, it does not need to know how to parse XES.
-- **`Ex4pm.Engine`** (`lib/ex4pm/engine/`) — the DfCM engine registry and all 25
+- **`Ex4pm.Engine`** (`lib/ex4pm/engine.ex`, plus `lib/ex4pm/engine/` for the individual
+  engine implementations) — the DfCM engine registry and all 25
   candidate engine implementations. Kept as its own namespace, separate from
   `Ex4pm.Core`/`Ex4pm.Evidence`, because engines are swappable execution strategies over
   the same IR — this namespace can grow new engine wrappers without ever touching the
@@ -190,10 +192,14 @@ bottom-to-top by what each layer is allowed to assume exists below it:
   ingestion. Kept as its own namespace because ingestion has its own operational
   concerns (backpressure, idempotency by sequence number, Prometheus telemetry) that are
   orthogonal to analytical operations.
-- **`Ex4pm.Qualification`** (`lib/ex4pm/qualification/`) — the anti-cheat/qualification
-  suite. Deliberately outside the observation -> ... -> standing runtime path — it
-  audits and independently re-verifies the claims that path produces, and must not be a
-  dependency of anything it audits, or it could not be trusted as an independent check.
+- **`Ex4pm.Qualification`** (`lib/ex4pm/qualification/` for the crown, rails, verifier,
+  reference-NIF, and POWL-court pieces; `lib/ex4pm_qualification/` — a separate
+  top-level directory, not under `lib/ex4pm/` — for `Ex4pm.Qualification.LieFinder`,
+  `Ex4pm.Qualification.ChicagoAuditor`, and `Ex4pm.Qualification.Scanners.BrceEnforcer`)
+  — the anti-cheat/qualification suite. Deliberately outside the observation -> ... ->
+  standing runtime path — it audits and independently re-verifies the claims that path
+  produces, and must not be a dependency of anything it audits, or it could not be
+  trusted as an independent check.
 - **`Ex4pm`** (`lib/ex4pm.ex`) — the public orchestration API (`Ex4pm.ingest/2`,
   `.discover/2`, `.conform/3`, `.simulate/2`, `.optimize/3`, `.plan/2`, `.cmca/2`,
   `.operate/3`, `.stream/2`, `.capabilities/2`, `.differential/5`, `.replay/2`). This is
@@ -221,7 +227,7 @@ enforced at compile time, now enforced by directory/module convention instead.
 
 ## The DfCM engine candidate model
 
-`Ex4pm.Engine.Registry.engines/0` (`Ex4pm.Engine`, `lib/ex4pm/engine/`) holds a fixed ordered list of 25
+`Ex4pm.Engine.Registry.engines/0` (`Ex4pm.Engine`, `lib/ex4pm/engine.ex`) holds a fixed ordered list of 25
 candidate engine modules implementing the `Ex4pm.Engine` behaviour
 (`id/0`, `supports?/2`, `available?/2`, `execute/3`):
 

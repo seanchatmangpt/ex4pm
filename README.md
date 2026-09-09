@@ -71,7 +71,7 @@ The Phoenix/LiveView demo web app lives outside the published library, under
 
 ## ex4pm-plan bridge
 
-The maintained planning worker is [seanchatmangpt/ex4pm-plan](https://github.com/seanchatmangpt/ex4pm-plan), an 80/20 downstream distribution of Airbus scikit-decide. The ex4pm adapter is pinned to exact worker source `e5da34c8b42089f1ebb1fd2306d95f0c4986f8c3` and protocol `ex4pm-plan/v1`.
+The maintained planning worker is [seanchatmangpt/ex4pm-plan](https://github.com/seanchatmangpt/ex4pm-plan), an 80/20 downstream distribution of Airbus scikit-decide. The ex4pm adapter is pinned to exact worker source `99816fb389670174be44ddaaf3b42f00496e6f21` and protocol `ex4pm-plan/v1`.
 
 The injected `ex4pm_plan_fun` is the cloud-placement boundary. It may launch an OCI worker through Kubernetes, AWS, Azure, GCP, Fly.io, or another scheduler, but provider credentials and launch authority remain outside the planner adapter. The callback returns the worker response and, when available, an observed capsule identity:
 
