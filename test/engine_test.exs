@@ -88,7 +88,15 @@ defmodule Ex4pm.EngineTest do
              :cmca_wasm,
              :wasm,
              :nif,
-             :remote
+             :remote,
+             # Ex4pm.Engine.Beam4pm -- additional candidate only
+             # (docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md Phase 1); listed
+             # here for the same "inspection lists every registered
+             # candidate" reason as every other engine, not because it
+             # claims :discover -- Beam4pm.supports?/2 returns false for
+             # :discover (see test/engine_beam4pm_test.exs for its real
+             # admitted operations).
+             :beam4pm
            ]
 
     assert Enum.find(candidates, &(&1.id == :beam)).standing == :partial_alive

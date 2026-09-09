@@ -64,3 +64,44 @@ ex4pmsc:build_broken_takt_shortfall a ex4pmsc:AdmittedStandingCode ;
 ex4pmsc:alive_ws3_fortune5_runtime_value_50 a ex4pmsc:AdmittedStandingCode ;
     ex4pmsc:standing "alive" ;
     ex4pmsc:code "WS3_FORTUNE5_RUNTIME_VALUE_50" .
+
+# =============================================================================
+# ggen_igniter admission graph: Ex4pm.Engine.Beam4pm's admitted JSON:API
+# service contract (docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md, "zero
+# config" redesign). Per the user's explicit direction: beam4pm is an Ash
+# app; ex4pm connects to it as a generic AshJsonApi client, and the
+# CONTRACT (which operations map to which beam4pm JSON:API resource
+# type/action) is admitted ontology data, generated via `mix
+# ex4pm.ggen.sync` -- not hand-wired per-service Elixir code. A new
+# admitted service needs a new ex4pmb:AdmittedBeam4pmService individual +
+# a re-sync, never a new function.
+#
+# HONEST STATUS, verified 2026-09-09 against the real ~/beam4pm checkout:
+# `ash_json_api` IS present in beam4pm's mix.lock (pulled transitively,
+# non-optionally, via `ash_ai`'s own spec), and the resources named below
+# (BeamPM.Ash.Resources.OcelEvent, BeamPM.Ash.Resources.ConformanceResult)
+# ARE real, already-defined Ash resources under
+# ~/beam4pm/lib/beam4pm_ash/resources/. But zero resources currently
+# declare a `json_api do ... end` block and no AshJsonApi.Router is
+# mounted anywhere in beam4pm's Application/router -- so these routes are
+# NOT live today. This is a forward-declared contract (the Phase 0
+# beam4pm-side prerequisite from EX4PM-THINNING-BEAM4PM-ENRICHMENT.md
+# section 4), admitted here so the ex4pm-side generated client exists and
+# is tested against a real local JSON:API-shaped server now, ready to
+# point at beam4pm's real endpoint the moment that Phase 0 work lands.
+# =============================================================================
+@prefix ex4pmb: <https://chatman.ai/ex4pm/beam4pm-services#> .
+
+ex4pmb:ocel_event_query a ex4pmb:AdmittedBeam4pmService ;
+    ex4pmb:operation "beam4pm_ocel_events" ;
+    ex4pmb:jsonApiType "ocel_event" ;
+    ex4pmb:actionName "read" ;
+    ex4pmb:httpMethod "GET" ;
+    rdfs:comment "Targets BeamPM.Ash.Resources.OcelEvent's default :read action once beam4pm mounts AshJsonApi. NOT live yet -- see ex4pmb: prefix comment above." .
+
+ex4pmb:conformance_result_query a ex4pmb:AdmittedBeam4pmService ;
+    ex4pmb:operation "beam4pm_conformance_results" ;
+    ex4pmb:jsonApiType "conformance_result" ;
+    ex4pmb:actionName "read" ;
+    ex4pmb:httpMethod "GET" ;
+    rdfs:comment "Targets BeamPM.Ash.Resources.ConformanceResult's default :read action once beam4pm mounts AshJsonApi. NOT live yet -- see ex4pmb: prefix comment above." .

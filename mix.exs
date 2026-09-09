@@ -99,6 +99,12 @@ defmodule Ex4pm.MixProject do
 
       # DfCM engine
       {:wasmex, "~> 0.14"},
+      # Zero-config Ash JSON:API client transport for Ex4pm.Engine.Beam4pm
+      # (docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md) -- deliberately Req,
+      # not wasmex/rustler: pure-Elixir HTTP stack (finch/mint), no native
+      # toolchain, consistent with the "ex4pm thinning" goal this engine
+      # candidate itself exists to serve.
+      {:req, "~> 0.5"},
       {:explorer, "~> 0.12"},
       {:reactor, "~> 1.0"},
       {:postgrex, "~> 0.22.4"},

@@ -39,7 +39,7 @@ defmodule Ex4pm.Engine.Registry do
   @moduledoc "Preserves the lawful engine graph and performs explicit/evidence-ranked selection."
 
   alias Ex4pm.Core.Capability
-  alias Ex4pm.Engine.{Beam, CmcaWasm, Ex4pmPlan, Nif, Remote, Wasm}
+  alias Ex4pm.Engine.{Beam, Beam4pm, CmcaWasm, Ex4pmPlan, Nif, Remote, Wasm}
 
   alias Ex4pmEngine.Wasm.{
     Align,
@@ -90,7 +90,13 @@ defmodule Ex4pm.Engine.Registry do
     CmcaWasm,
     Wasm,
     Nif,
-    Remote
+    Remote,
+    # Additional candidate only (Phase 1 of
+    # docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md) -- does not change the
+    # implicit/default selection order for any existing operation; only
+    # reachable via an explicit `engine: :beam4pm` opt or its own admitted
+    # operations, none of which any existing candidate above also claims.
+    Beam4pm
   ]
 
   def engines, do: @engines
