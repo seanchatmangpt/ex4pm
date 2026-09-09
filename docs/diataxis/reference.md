@@ -1,18 +1,19 @@
 # ex4pm Reference
 
-Information-oriented, exhaustive capability index of the ex4pm umbrella (12 apps). Each H2
-covers one app's public functions and Mix tasks, taken verbatim from a freshly-gathered
-per-app capability inventory. Use this to grep for a capability by module/function name.
+Information-oriented, exhaustive capability index of the ex4pm library (one flat Mix app,
+`:ex4pm`). Each H2 covers one logical module namespace's public functions and Mix tasks,
+taken verbatim from a freshly-gathered per-namespace capability inventory. Use this to grep
+for a capability by module/function name.
 See `~/ex4pm/CLAUDE.md` for the governing calculus
 (`observation -> parse -> route -> admit | refuse -> construct -> BRCE -> DO -> receipt ->
 replay -> bounded standing`) that these capabilities implement.
 
-## apps/ex4pm (public orchestration API, package `:ex4pm`)
+## lib/ex4pm.ex (public orchestration API, package `:ex4pm`)
 
 | Function | Purpose |
 | --- | --- |
 | `Ex4pm.Run` (struct) | Public evidence envelope for an analytical operation: operation, subject_hash, standing, value, receipt, pending, engine_result, projections |
-| `Ex4pm.contracts/0` | Delegates to `Ex4pm.Contracts.verify/0`; returns the umbrella's combined contract hash/verification |
+| `Ex4pm.contracts/0` | Delegates to `Ex4pm.Contracts.verify/0`; returns the library's combined contract hash/verification |
 | `Ex4pm.ingest/2` (raw, opts \\ []) | Normalizes raw OCEL input via `OCEL.normalize/1`, optionally projects the dataset, returns `{:ok, EventLog}` |
 | `Ex4pm.ingest_xes/2` (xml, opts \\ []) | Parses XES XML via `XES.parse/2`, optionally projects dataset, returns `{:ok, EventLog}` |
 | `Ex4pm.discover/2` (subject, opts \\ []) | Resolves subject to an EventLog, runs `Engine.execute(:discover, log, opts)`, wraps in a receipted Run |
@@ -29,14 +30,14 @@ replay -> bounded standing`) that these capabilities implement.
 | `Ex4pm.Qualification.environment/0` | Builds a self-hashed observation of the current BEAM runtime/node/distribution posture |
 | `Ex4pm.Qualification.execution_semantics/1` (%{subject_hash:, layers:}) | Reduces a layered execution trace to per-layer `:result`, self-hashed to a semantic_hash |
 
-### Mix tasks — apps/ex4pm
+### Mix tasks — lib/ex4pm.ex
 
 | Task | Purpose |
 | --- | --- |
 | `mix ex4pm.ocel_to_latex [path_to_ocel_ndjson] [--output path]` | `Mix.Tasks.Ex4pm.OcelToLatex`: reads an IEEE OCEL 2.0 NDJSON log, calls `Ex4pmEngine.OcelToLatex.export_latex/2` to emit LaTeX benchmark tables |
 | `mix ex4pm.validate_self --path <ocel_ndjson> --limit <n>` | `Mix.Tasks.Ex4pm.ValidateSelf`: runs `Reactor.run(Ex4pmEngine.Reactors.SelfConformanceReactor, ...)` against a real OCEL log; prints discovery, 5D conformance vector, EARL Turtle proof, final receipted STANDING; exits 1 on error |
 
-## apps/ex4pm_cli
+## lib/ex4pm/cli.ex
 
 | Function | Purpose |
 | --- | --- |
@@ -44,14 +45,14 @@ replay -> bounded standing`) that these capabilities implement.
 | `Mix.Tasks.Ex4pm.Gen.Blueprint.run/1` | `@impl Mix.Task` entrypoint for `mix ex4pm.gen.blueprint ResourceName action1 action2 ...`; validates args, calls `generate_blueprint/2` |
 | `Mix.Tasks.Ex4pm.Gen.Blueprint.generate_blueprint/2` | Builds an `Ash.Resource` module source string modeling a 1-safe Workflow Net (states/actions -> Ash actions + `to_workflow_net/0`); prints a "Generated" message but returns the string — no `File.write` call found in this function |
 
-### Mix tasks — apps/ex4pm_cli
+### Mix tasks — lib/ex4pm/cli.ex
 
 | Task | Purpose |
 | --- | --- |
 | `mix ex4pm.gen.blueprint ResourceName action1 action2 action3 ...` | `Mix.Tasks.Ex4pm.Gen.Blueprint` (`@shortdoc "Generates an Ash process resource blueprint"`) |
 
 CLI verbs exposed via `Ex4pm.CLI.main/1` (not separate public functions, but the operational
-surface of this app):
+surface of this module):
 
 | Verb | Purpose |
 | --- | --- |
@@ -60,7 +61,7 @@ surface of this app):
 | `discover <ocel-v2.json> [object-type]` | Reads a JSON OCEL file, calls `Ex4pm.discover/2`, prints standing/receipt hash/model |
 | `discover-xes <log.xes> [case-object-type]` | Ingests XES via `Ex4pm.ingest_xes/2`, then discovers |
 
-## apps/ex4pm_contracts
+## lib/ex4pm/contracts.ex
 
 | Function | Purpose |
 | --- | --- |
@@ -70,9 +71,9 @@ surface of this app):
 | `Ex4pm.Contracts.verify/0` | Runs manifest + required-terms check; returns `{:ok, %{version, artifacts, contract_hash, standing: :alive}}` or `{:error, Refusal}` |
 | `Ex4pm.Contracts.read/1` | Reads raw bytes of one contract artifact by atom id; `{:error, Refusal.new(:unknown_contract_artifact, ...)}` or `{:error, Refusal.new(:contract_artifact_missing, ...)}` |
 
-No Mix tasks defined in this app.
+No Mix tasks defined in this namespace.
 
-## apps/ex4pm_core
+## lib/ex4pm/core
 
 | Function | Purpose |
 | --- | --- |
@@ -103,9 +104,9 @@ No Mix tasks defined in this app.
 | `Ex4pmCore.ProcessIR.to_canonical_map/1` (ir) | Converts the ProcessIR struct tree into a plain serializable map |
 | `Ex4pm.Core.ProcessIR` | Thin `defdelegate` alias module forwarding `new/1`, `validate/1`, all `add_*/2`, `digest/1`, `to_canonical_map/1` to `Ex4pmCore.ProcessIR` |
 
-No Mix tasks defined in this app.
+No Mix tasks defined in this namespace.
 
-## apps/ex4pm_domain
+## lib/ex4pm/domain
 
 | Function | Purpose |
 | --- | --- |
@@ -139,9 +140,9 @@ No Mix tasks defined in this app.
 | `Ex4pm.Domain.Projector.project_log/1` | Bulk-projects an entire EventLog (dataset, all objects, all events + E2O relations, all O2O relations) in one call |
 | `Ex4pm.Domain.ProcessGraphProjector.topology/1` | Takes a process-model map (nodes/edges), builds a real temporary `:digraph`, returns `%{topsort: [...] | nil, components: [[...]]}` (topsort nil on a real cycle); also implements `Ash.Resource.Calculation` for ProcessModel's `:topology` |
 
-No Mix tasks defined in this app (grep for `defmodule Mix.Tasks` returned zero matches).
+No Mix tasks defined in this namespace (grep for `defmodule Mix.Tasks` returned zero matches).
 
-## apps/ex4pm_engine (module prefix `Ex4pm.Engine` / `Ex4pmEngine`, version 26.8.22)
+## lib/ex4pm/engine (module prefix `Ex4pm.Engine` / `Ex4pmEngine`, version 26.8.22)
 
 | Function | Purpose |
 | --- | --- |
@@ -163,13 +164,13 @@ No Mix tasks defined in this app (grep for `defmodule Mix.Tasks` returned zero m
 | `Ex4pm.Engine.Differential.dataframe/1` | Builds an Explorer DataFrame from an `Ex4pm.EventLog` |
 | `Ex4pm.Engine.OnlineMiner` (GenServer): `start_link/1`, `ingest/2`, `get_summary/1`, `get_dfg/1`, `get_fleet_status/1`, `get_variants/1`, `get_conformance/1`, `reset/1` | Streaming/online process-mining server incrementally building a DFG, variants, conformance summary from ingested events |
 
-### Mix tasks — apps/ex4pm_engine
+### Mix tasks — lib/ex4pm/engine
 
 | Task | Purpose |
 | --- | --- |
 | `mix ex4pm.engine.gen.adapter <algorithm_id> [--export NAME]` | `Mix.Tasks.Ex4pm.Engine.Gen.Adapter`: Igniter-based codegen scaffolding a new `Ex4pmEngine.Wasm.<AlgorithmId>` thin adapter delegating to `Ex4pm.Engine.Wasm.execute/3`, generates `lib/ex4pm_engine/wasm/<algorithm_id>.ex` with `algorithm_id/0`, `export/0`, `execute/2` |
 
-## apps/ex4pm_evidence
+## lib/ex4pm/evidence
 
 | Function | Purpose |
 | --- | --- |
@@ -197,9 +198,9 @@ No Mix tasks defined in this app (grep for `defmodule Mix.Tasks` returned zero m
 | `Ex4pmEvidence.Conformance.evaluate/3` (event_log, model_or_ir, opts \\ []) | Computes a 5-axis conformance Vector (fitness, precision, policy/lifecycle/causal conformance, overall_score) with Violation records |
 | `Ex4pm.Evidence.Conformance.evaluate/3` | Alias/`defdelegate` to `Ex4pmEvidence.Conformance.evaluate/3` |
 
-No Mix tasks defined in this app (confirmed by grep — zero matches).
+No Mix tasks defined in this namespace (confirmed by grep — zero matches).
 
-## apps/ex4pm_information
+## lib/ex4pm/information
 
 | Function | Purpose |
 | --- | --- |
@@ -238,16 +239,16 @@ No Mix tasks defined in this app (confirmed by grep — zero matches).
 | `Ex4pm.Information.MermaidExport.to_mermaid!/2` | Renders a Reactor module (e.g. `Ex4pm.Information.Flow`) as a Mermaid flowchart binary via vendored `Reactor.Mermaid` |
 | `Ex4pm.Information.ReceiptMiddleware` | `Reactor.Middleware` (`init/1`, `complete/2`, `error/2`, `event/3`) emitting `:telemetry` events for every Reactor run/step lifecycle transition; never writes a receipt itself |
 
-No Mix tasks defined in this app.
+No Mix tasks defined in this namespace.
 
-## apps/ex4pm_qualification
+## lib/ex4pm/qualification
 
 | Function | Purpose |
 | --- | --- |
-| `Ex4pm.Qualification.LieFinder.scan/1` (root_dir \\ ".") | AST-scans `apps/*/lib/**/*.ex` for hardcoded metric numbers, direct `Ash.create(Receipt)` BRCE bypasses, bare-string `standing` assignments |
+| `Ex4pm.Qualification.LieFinder.scan/1` (root_dir \\ ".") | AST-scans `lib/**/*.ex` for hardcoded metric numbers, direct `Ash.create(Receipt)` BRCE bypasses, bare-string `standing` assignments |
 | `Ex4pm.Qualification.LieFinder.scan_file/1` | Same AST checks against a single file path |
 | `Ex4pm.Qualification.LieFinder.inspect_ast/2` | Prewalks a parsed AST + file path applying the three lie-detection rules |
-| `Ex4pm.Qualification.ChicagoAuditor.audit/0` | Scans `apps/*/test/**/*.exs` source text against hardcoded lists of 34 Ash resources, 10 Reactor sagas, 6 mining algorithms plus test count; returns utilization-percentage map and `:alive` standing |
+| `Ex4pm.Qualification.ChicagoAuditor.audit/0` | Scans `test/**/*.exs` source text against hardcoded lists of 34 Ash resources, 10 Reactor sagas, 6 mining algorithms plus test count; returns utilization-percentage map and `:alive` standing |
 | `Ex4pm.Qualification.Scanners.MetricLinter.scan/1` (root_dir \\ ".") | Tier-1 AST scan for hardcoded numeric literals assigned to fitness/precision/p_production_success/prob_success |
 | `Ex4pm.Qualification.Scanners.MetricLinter.scan_file/1` | Single-file variant |
 | `Ex4pm.Qualification.Scanners.ProductionPurger.scan/1` (root_dir \\ ".") | Tier-2 AST scan for defmodule names containing Mock/Fake/Stub outside test code |
@@ -273,7 +274,7 @@ No Mix tasks defined in this app.
 | `Ex4pm.Qualification.Powl.Certificate.new/4` (bound, oracle, compiled, fragments) | Constructs the correspondence-court result certificate struct/map |
 | `Ex4pm.Qualification.ReferenceNif.load_nif/0`, `.qualification_probe/2`, `.panic_probe/0` | NIF loader and stub entry points (`@moduledoc false`; `erlang.nif_error` until native lib loaded), the reference `:nif` rail fixture for `Rails.verify/1` |
 
-### Mix tasks — apps/ex4pm_qualification
+### Mix tasks — lib/ex4pm/qualification
 
 | Task | Purpose |
 | --- | --- |
@@ -284,7 +285,7 @@ No Mix tasks defined in this app.
 | `mix ex4pm.sabotage.court` | Builds a fixed loop/sequence POWL model, asserts all 6 sabotage mutations are `:detected`; raises listing survivors if any go undetected |
 | `mix ex4pm.crown <input> [output]` | Reads crown evidence JSON (arg or `EX4PM_CROWN_INPUT` env var), calls `Crown.finalize_file/2`, writes verified/stamped crown (default `artifacts/qualification/ex4pm-final-crown-v1.json`); raises "crown refused" on failure |
 
-## apps/ex4pm_runtime
+## lib/ex4pm/runtime
 
 | Function | Purpose |
 | --- | --- |
@@ -312,10 +313,10 @@ No Mix tasks defined in this app.
 | `Ex4pm.Runtime.PowlExecutor.marking/2` | Returns the executor's current token marking |
 | `Ex4pm.Runtime.ReactorStep.run/3` | Canonical Reactor step callback executing one admitted POWL task within the ex4pm runtime_context (delegates to task_runner/BRCE path); an internal `@moduledoc false` collector-step submodule has a second `run/3` returning `{:ok, :complete}` |
 
-No Mix tasks defined in this app; the OTP supervision tree (`Ex4pm.Runtime.Application`) is
+No Mix tasks defined in this namespace; the OTP supervision tree (`Ex4pm.Runtime.Application`) is
 currently empty (one_for_one supervisor with no children registered).
 
-## apps/ex4pm_stream
+## lib/ex4pm/stream
 
 | Function | Purpose |
 | --- | --- |
@@ -334,9 +335,9 @@ currently empty (one_for_one supervisor with no children registered).
 | `Ex4pm.Stream.SensorSink.sample_all/2` | Folds a list of raw readings through `sample/2`, returning final state and ordered list of abstracted events |
 | `Ex4pm.Stream.SensorSink.handle_message/2` | Broadway sink-compatible message handler; unwraps `%Broadway.Message{data: reading}`, abstracts via `sample/2`, forwards emitted event to `context.forward/1` |
 
-No Mix tasks defined in this app.
+No Mix tasks defined in this namespace.
 
-## apps/ex4pm_web
+## test/demo_web/lib/ex4pm_web
 
 | Function | Purpose |
 | --- | --- |
@@ -348,7 +349,7 @@ No Mix tasks defined in this app.
 | `Ex4pmWeb.Application.start/2` | OTP application start: supervises `Ex4pmWeb.Telemetry`, `Phoenix.PubSub` (`Ex4pmWeb.PubSub`), `Ex4pm.Engine.OnlineMiner` (with PubSub-broadcasting subscriber), `Ex4pmEngine.Autonomic.ClosedLoop` (3000ms interval), `Ex4pmWeb.Endpoint` |
 | `Ex4pmWeb.Application.config_change/3` | Phoenix endpoint hot-config-reload callback |
 
-### HTTP/LiveView routes — apps/ex4pm_web
+### HTTP/LiveView routes — test/demo_web/lib/ex4pm_web
 
 | Route | Purpose |
 | --- | --- |
@@ -361,12 +362,12 @@ No Mix tasks defined in this app.
 | `/powl-miner` | `PowlMinerLive` |
 | `/admin` | AshAdmin UI for the domain projection |
 
-No Mix tasks defined in this app (grep for `defmodule Mix.Tasks` under `apps/ex4pm_web/lib`
+No Mix tasks defined in this namespace (grep for `defmodule Mix.Tasks` under `test/demo_web/lib`
 returned no matches).
 
 ## See Also
 
-- `/Users/sac/ex4pm/CLAUDE.md` — umbrella architecture, evidence/BRCE calculus, commands
+- `/Users/sac/ex4pm/CLAUDE.md` — flat library architecture, evidence/BRCE calculus, commands
 - `docs/ARCHITECTURE.md` — full architectural contract (per CLAUDE.md)
 - `docs/CHICAGO.md` — Chicago-style distribution qualification (`mix chicago`)
 - `docs/ROADMAP-xaas-integration.md` — external xaas integration requirements

@@ -6,8 +6,8 @@ replay -> bounded standing`. Every command below is real and copy-pasteable agai
 repo (`/Users/sac/ex4pm`). Audience: an AI agent or engineer meeting the codebase for the
 first time who needs to discover every real capability, not just the happy path.
 
-Grounded in the public API of `apps/ex4pm` (`Ex4pm`), `apps/ex4pm_core`, `apps/ex4pm_engine`,
-`apps/ex4pm_evidence`, and `apps/ex4pm_runtime`. See `../ROADMAP-xaas-integration.md` and the
+Grounded in the public API of `lib/ex4pm.ex` (`Ex4pm`), `lib/ex4pm/core`, `lib/ex4pm/engine`,
+`lib/ex4pm/evidence`, and `lib/ex4pm/runtime`. See `../ROADMAP-xaas-integration.md` and the
 root `CLAUDE.md` for architectural context.
 
 ## 1. Setup
@@ -17,7 +17,7 @@ cd /Users/sac/ex4pm
 mix deps.get
 ```
 
-Start an interactive session with every umbrella app loaded:
+Start an interactive session with the whole library loaded:
 
 ```bash
 iex -S mix
@@ -28,7 +28,7 @@ Everything from here runs inside that `iex` shell unless marked `bash`.
 ## 2. Ingest: turn raw observations into a canonical EventLog
 
 `Ex4pm.ingest/2` normalizes a raw OCEL-v2-shaped map via `Ex4pm.OCEL.normalize/1` into the
-canonical `%Ex4pm.EventLog{}` IR (`apps/ex4pm_core`).
+canonical `%Ex4pm.EventLog{}` IR (`lib/ex4pm/core`).
 
 ```elixir
 raw = %{
@@ -67,11 +67,11 @@ To project the ingested dataset into the Ash domain layer at the same time:
 through the same `Ex4pm.OCEL.normalize/1` path, tagging `source_format: :xes`.
 
 ```elixir
-xml = File.read!("apps/ex4pm_core/test/fixtures/sample.xes")
+xml = File.read!("test/fixtures/sepsis.xes")
 {:ok, xes_log} = Ex4pm.ingest_xes(xml)
 ```
 
-(If no fixture exists at that path, use `find apps -iname "*.xes"` from `bash` to locate one,
+(If no fixture exists at that path, use `find test -iname "*.xes"` from `bash` to locate one,
 or supply any well-formed XES document you have on disk.)
 
 ### 2b. Ingest via the CLI escript
@@ -82,7 +82,7 @@ mix escript.build
 ./ex4pm discover path/to/ocel-v2.json order
 ```
 
-`Ex4pm.CLI.main/1` (`apps/ex4pm_cli/lib/ex4pm/cli.ex`) dispatches `doctor` (engine
+`Ex4pm.CLI.main/1` (`lib/ex4pm/cli.ex`) dispatches `doctor` (engine
 capabilities + contract standing), `contracts` (full verified contract JSON), `discover
 <file> [object-type]`, and `discover-xes <file> [case-object-type]` — each prints
 `run.standing` and `run.receipt.hash`.
@@ -90,7 +90,7 @@ capabilities + contract standing), `contracts` (full verified contract JSON), `d
 ## 3. Discover: mine a process model from the EventLog
 
 `Ex4pm.discover/2` resolves the subject to an `EventLog`, runs `Engine.execute(:discover, log,
-opts)` through the evidence-ranked candidate engines (`apps/ex4pm_engine`), and wraps the
+opts)` through the evidence-ranked candidate engines (`lib/ex4pm/engine`), and wraps the
 result in a receipted `%Ex4pm.Run{}` — a pending and an outcome receipt are written to the
 configured `Ex4pm.Evidence.Store` before the call returns.
 
@@ -174,7 +174,7 @@ plan_run.standing
 
 If the `:ex4pm_plan` bridge is not configured/available in your environment, expect
 `:partial_alive` or a typed refusal rather than a crash — this is the intended evidence
-behavior, not a bug: see `Ex4pm.Engine.Ex4pmPlan` (`apps/ex4pm_engine`).
+behavior, not a bug: see `Ex4pm.Engine.Ex4pmPlan` (`lib/ex4pm/engine`).
 
 ## 8. Operate: the sole DO-authority path (BRCE-gated)
 
@@ -245,7 +245,7 @@ Ex4pm.contracts()
 # => {:ok, %{version: "0.1.0", artifacts: ..., contract_hash: "sha256:...", standing: :alive}}
 ```
 
-This delegates to `Ex4pm.Contracts.verify/0` (`apps/ex4pm_contracts`), which re-reads all four
+This delegates to `Ex4pm.Contracts.verify/0` (`lib/ex4pm/contracts.ex`), which re-reads all four
 canonical artifacts from disk, hashes them, and checks each for required terms (e.g. the WIT
 world must contain `discover:`, `conform:`, `simulate:`).
 
@@ -267,7 +267,7 @@ A complete session that touches every phase of the calculus produces, in order:
 
 If any step instead returns `{:error, %Ex4pm.Refusal{}}`, that is not a failure of the
 tutorial — refusals are typed, first-class evidence outcomes in this codebase (see
-`Ex4pm.Refusal.new/3`, `apps/ex4pm_core`). Read the `.code` and `.message` fields; they name
+`Ex4pm.Refusal.new/3`, `lib/ex4pm/core`). Read the `.code` and `.message` fields; they name
 exactly which admission check failed (e.g. `:invalid_planning_problem`,
 `:invalid_operable_subject`, `:authority_denied`, `:receipt_not_found`).
 
@@ -279,6 +279,6 @@ exactly which admission check failed (e.g. `:invalid_planning_problem`,
 - `docs/ARCHITECTURE.md` (repo root) — architectural detail behind this tutorial
 - `docs/CHICAGO.md` (repo root) — the Chicago-school testing discipline enforced by
   `mix chicago` and `ex4pm.audit.chicago`, relevant when writing tests against the flows above
-- `apps/ex4pm_qualification` — `mix ex4pm.lint.truth`, `mix ex4pm.powl.court`,
+- `lib/ex4pm/qualification` — `mix ex4pm.lint.truth`, `mix ex4pm.powl.court`,
   `mix ex4pm.sabotage.court`, `mix ex4pm.crown` — the anti-overclaiming qualification suite
   that independently re-verifies claims like the ones this tutorial walks through

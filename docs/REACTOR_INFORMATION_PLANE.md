@@ -141,23 +141,23 @@ This representation round-trips through `process.simulate`, `process.conform`, a
 Build the existing escript and inspect the direct graph:
 
 ```bash
-mix escript.build -C apps/ex4pm_cli
-./apps/ex4pm_cli/ex4pm manifest
-./apps/ex4pm_cli/ex4pm list
-./apps/ex4pm_cli/ex4pm describe process.discover
+mix escript.build
+./ex4pm manifest
+./ex4pm list
+./ex4pm describe process.discover
 ```
 
 Execute an admitted capability:
 
 ```bash
-./apps/ex4pm_cli/ex4pm run engine.candidates \
+./ex4pm run engine.candidates \
   '{"input":{"operation":"discover"}}'
 ```
 
 Run the process-oriented JSONL server:
 
 ```bash
-./apps/ex4pm_cli/ex4pm stdio
+./ex4pm stdio
 ```
 
 Each non-empty input line is one request and each output line is one JSON response.

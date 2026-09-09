@@ -55,4 +55,4 @@ The crown fails if any of the following occurs:
 - Broadway drops, duplicates, or fails to acknowledge admitted observations;
 - the real Wasmtime path fails;
 - plain distribution is promoted to global-production `ALIVE`;
-- locked dependencies, warnings-as-errors, formatting, umbrella tests, or the dedicated Chicago command fail.
+- locked dependencies, warnings-as-errors, formatting, the full test suite, or the dedicated Chicago command fail.

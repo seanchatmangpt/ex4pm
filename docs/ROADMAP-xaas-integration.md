@@ -18,14 +18,15 @@
 **ex4pm = downstream Elixir library layer. beam4pm = the runtime.** This governs every
 integration decision below:
 
-- **ex4pm** is something xaas *imports*. `ex4pm_core` is a real, hex-packaged library
-  (`mix.exs` has `package()`, `@version`, `description` — confirmed, not umbrella-
-  internal-only) providing the canonical OCEL/XES/POWL data structs and validation
-  xaas's own code should depend on directly rather than re-implementing from read
-  documentation. `ex4pm_contracts`'s real ontology (`priv/ontology/ex4pm.ttl`) and
-  SHACL shapes (`priv/shacl/ex4pm-shapes.ttl`) are what `ggen_igniter` should generate
-  xaas's OCEL envelope code from. **Rule: `ex4pm_core`/`ex4pm_contracts` may appear as
-  a real `path:`/hex dependency in xaas's `mix.exs`. beam4pm never does.**
+- **ex4pm** is something xaas *imports*. `ex4pm` is a real, hex-packaged library
+  (`mix.exs` has `package()`, `@version`, `description` — confirmed; ex4pm is now a
+  single flat library, not an umbrella, so there is no umbrella-internal-only coupling
+  to worry about) providing the canonical OCEL/XES/POWL data structs and validation
+  (`Ex4pm.Core.*`) xaas's own code should depend on directly rather than re-implementing
+  from read documentation. `Ex4pm.Contracts`'s real ontology (`priv/ontology/ex4pm.ttl`)
+  and SHACL shapes (`priv/shacl/ex4pm-shapes.ttl`) are what `ggen_igniter` should
+  generate xaas's OCEL envelope code from. **Rule: `ex4pm` may appear as a real
+  `path:`/hex dependency in xaas's `mix.exs`. beam4pm never does.**
 - **beam4pm** is something xaas's events flow *into* at runtime — the actual execution
   substrate (the Rust rf1-rf4 oracles, whatever receipt/actuation machinery survives
   its current merge) — reached over the network (HTTP/PubSub), never imported as a
@@ -115,14 +116,14 @@ re-researching from zero.
 
 1. **Real path dependency, not read-and-copy.** `Xaas.Telemetry.OcelForwarder`
    (`lib/xaas/telemetry/ocel_forwarder.ex`, built this session) currently hand-builds
-   and hand-documents the envelope shape by reading `ex4pm_core`'s source — a
+   and hand-documents the envelope shape by reading `Ex4pm.Core`'s source — a
    duplicated, driftable understanding of a real dependency. Fix: add
-   `{:ex4pm_core, path: "../ex4pm/apps/ex4pm_core"}` to `mix.exs`, call
+   `{:ex4pm, path: "../ex4pm"}` to `mix.exs`, call
    `Ex4pm.OCEL.validate_envelope/1` (or its real builder function) directly before
    POSTing, so a future ex4pm contract change fails xaas's own compile/test instead of
    silently drifting apart.
-2. **ggen_igniter against `ex4pm_contracts`'s real ontology, not LLM handwriting.**
-   `ex4pm_contracts` holds a real, hashed, versioned RDF ontology
+2. **ggen_igniter against `Ex4pm.Contracts`'s real ontology, not LLM handwriting.**
+   `Ex4pm.Contracts` holds a real, hashed, versioned RDF ontology
    (`priv/ontology/ex4pm.ttl`) and SHACL shapes (`priv/shacl/ex4pm-shapes.ttl`) —
    exactly the input shape `xaas_library_pack`'s own ggen pipeline already consumes for
    `Xaas.Library`. `OcelForwarder` should have been generated from this ontology, not

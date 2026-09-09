@@ -33,17 +33,23 @@ The engine registry preserves these candidates simultaneously:
 
 Selection is capability- and evidence-driven. An unavailable edge yields a typed standing/refusal instead of silently disappearing.
 
-## Umbrella applications
+## Library layout
 
-- `ex4pm_contracts` - canonical ontology, SHACL, WIT component contract, and receipt schema;
-- `ex4pm_core` - canonical observation IR, OCEL/XES normalization, POWL, capabilities, hashing;
-- `ex4pm_evidence` - receipts, replay, receipt store, BRCE;
-- `ex4pm_engine` - engine calculus, BEAM discovery/conformance/simulation, ex4pm-plan, WASM/NIF/remote adapters, differential verification;
-- `ex4pm_runtime` - POWL planning and receipted OTP execution;
-- `ex4pm_stream` - Broadway ingestion with backpressure and acknowledgement;
-- `ex4pm_domain` - Ash/ETS semantic-control-plane projection;
-- `ex4pm` - public orchestration API;
-- `ex4pm_cli` - command-line projection.
+ex4pm is a single flat, hex-publishable Mix library (app `:ex4pm`) — no separate OTP apps.
+`lib/ex4pm/` is organized into namespaced module directories:
+
+- `lib/ex4pm/contracts.ex` - canonical ontology, SHACL, WIT component contract, and receipt schema;
+- `lib/ex4pm/core/` - canonical observation IR, OCEL/XES normalization, POWL, capabilities, hashing;
+- `lib/ex4pm/evidence/` - receipts, replay, receipt store, BRCE;
+- `lib/ex4pm/engine/` - engine calculus, BEAM discovery/conformance/simulation, ex4pm-plan, WASM/NIF/remote adapters, differential verification;
+- `lib/ex4pm/runtime/` - POWL planning and receipted OTP execution;
+- `lib/ex4pm/stream/` - Broadway ingestion with backpressure and acknowledgement;
+- `lib/ex4pm/domain/` - Ash/ETS semantic-control-plane projection;
+- `lib/ex4pm.ex` - public orchestration API;
+- `lib/ex4pm/cli.ex` - command-line projection.
+
+The Phoenix/LiveView demo web app lives outside the published library, under
+`test/demo_web/`, compiled only in the `:test` environment.
 
 ## Public API
 
@@ -84,7 +90,7 @@ A response without observed capsule identity remains `PARTIAL_ALIVE`; a mismatch
 
 ## Canonical contracts
 
-The `ex4pm_contracts` application carries four executable identity surfaces:
+`Ex4pm.Contracts` (`lib/ex4pm/contracts.ex`) carries four executable identity surfaces:
 
 - RDF/Turtle ontology for observations, models, engines, authority, actuation, and receipts;
 - SHACL shapes for event/model/receipt closure;
@@ -118,7 +124,7 @@ mix deps.get
 mix verify
 ```
 
-The CI workflow runs formatting, warnings-as-errors compilation, umbrella tests, and uploads `mix.lock` as a reproducibility artifact.
+The CI workflow runs formatting, warnings-as-errors compilation, the full test suite, and uploads `mix.lock` as a reproducibility artifact.
 
 ## Standing
 

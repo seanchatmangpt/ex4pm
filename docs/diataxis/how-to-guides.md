@@ -10,8 +10,8 @@ BRCE -> DO -> receipt -> replay -> bounded standing`).
 ## How to ingest OCEL v2 events over HTTP
 
 POST an OCEL 2.0 event envelope to `Ex4pmWeb.OcelController.ingest/2`
-(`apps/ex4pm_web/lib/ex4pm_web/controllers/ocel_controller.ex`), routed at
-`POST /api/v1/ocel/events` (`apps/ex4pm_web/lib/ex4pm_web/router.ex`).
+(`test/demo_web/lib/ex4pm_web/controllers/ocel_controller.ex`), routed at
+`POST /api/v1/ocel/events` (`test/demo_web/lib/ex4pm_web/router.ex`).
 
 ```bash
 curl -X POST http://127.0.0.1:30080/api/v1/ocel/events \
@@ -21,7 +21,7 @@ curl -X POST http://127.0.0.1:30080/api/v1/ocel/events \
 
 What happens on the server, in order:
 
-1. `Ex4pm.Stream.Ingest.ingest_envelope/2` (`apps/ex4pm_stream`) validates the
+1. `Ex4pm.Stream.Ingest.ingest_envelope/2` (`lib/ex4pm/stream`) validates the
    envelope via `Ex4pm.OCEL.validate_envelope/1`, checks idempotency (non-negative
    `sequence`), normalizes into a canonical `%Ex4pm.EventLog{}`, forwards events to
    `Ex4pm.Engine.OnlineMiner`, and records pending+outcome ingestion receipts via
@@ -52,7 +52,7 @@ Use the public orchestration API directly instead of the HTTP boundary:
 ```
 
 `Ex4pm.ingest/2` normalizes via `Ex4pm.OCEL.normalize/1`; `Ex4pm.ingest_xes/2` parses
-via `Ex4pm.XES.parse/2` (DTD disabled) then normalizes. Both live in `apps/ex4pm`.
+via `Ex4pm.XES.parse/2` (DTD disabled) then normalizes. Both live in `lib/ex4pm.ex`.
 
 ## How to run the full verification gate (`mix verify`)
 
@@ -87,16 +87,16 @@ surface these tests actually exercise.
 mix test.stress
 ```
 
-Runs the benchmark suite under `apps/ex4pm_engine/test/benchmarks`.
+Runs the benchmark suite under `test/benchmarks`.
 
 ## How to run each `ex4pm_qualification` Mix task
 
-All tasks are defined under `apps/ex4pm_qualification/lib/mix/tasks/`.
+All tasks are defined under `lib/mix/tasks/`.
 
 ### `mix ex4pm.lint.truth [root]`
 
 Runs `Ex4pm.Qualification.LieFinder.scan/1` over the codebase (or a given root).
-AST-scans `apps/*/lib/**/*.ex` for hardcoded metric numbers, direct
+AST-scans `lib/**/*.ex` for hardcoded metric numbers, direct
 `Ash.create(Receipt, ...)` calls that bypass BRCE, and bare-string `standing`
 assignments. Raises on any finding; otherwise prints a truthful-codebase
 confirmation. Part of `mix verify`.
@@ -108,7 +108,7 @@ mix ex4pm.lint.truth
 ### `mix ex4pm.audit.bullshit`
 
 Runs `MetricLinter.scan/0`, `ProductionPurger.scan/0`, `BrceEnforcer.scan/0`, and
-`LieFinder.scan/0` together across all umbrella apps. Prints a per-tier violation
+`LieFinder.scan/0` together across the whole codebase. Prints a per-tier violation
 count; raises if any tier found violations.
 
 ```bash
@@ -118,7 +118,7 @@ mix ex4pm.audit.bullshit
 ### `mix ex4pm.audit.chicago`
 
 Runs `Ex4pm.Qualification.ChicagoAuditor.audit/0`. Cross-references
-`apps/*/test/**/*.exs` against hardcoded lists of 34 Ash resources, 10 Reactor
+`test/**/*.exs` against hardcoded lists of 34 Ash resources, 10 Reactor
 sagas, and 6 mining algorithms, printing a per-category utilization-percentage
 map. Warns (does not raise) if utilization is below 100%.
 
@@ -175,7 +175,7 @@ mix ex4pm.crown path/to/crown-input.json artifacts/qualification/ex4pm-final-cro
 
 ## How to add a new DfCM engine candidate
 
-The engine graph lives in `apps/ex4pm_engine`. There are two paths depending on
+The engine graph lives in `lib/ex4pm/engine`. There are two paths depending on
 what kind of engine you're adding.
 
 ### Scaffold a new WASM adapter (thin wrapper pattern)
@@ -185,7 +185,7 @@ mix ex4pm.engine.gen.adapter <algorithm_id> [--export NAME]
 ```
 
 `Mix.Tasks.Ex4pm.Engine.Gen.Adapter`
-(`apps/ex4pm_engine/lib/mix/tasks/ex4pm.engine.gen.adapter.ex`) is an
+(`lib/mix/tasks/ex4pm.engine.gen.adapter.ex`) is an
 Igniter-based codegen task that scaffolds
 `lib/ex4pm_engine/wasm/<algorithm_id>.ex` defining
 `Ex4pmEngine.Wasm.<CamelizedId>` with `algorithm_id/0`, `export/0`, `execute/2`
@@ -222,7 +222,7 @@ Ex4pm.capabilities(:discover)   # delegates to Ex4pm.Engine.candidates/2
 
 ## How to call `Ex4pm.operate/3` with an explicit authority map
 
-`Ex4pm.operate/3` (`apps/ex4pm/lib/ex4pm.ex`) is the sole DO-authority path in the
+`Ex4pm.operate/3` (`lib/ex4pm.ex`) is the sole DO-authority path in the
 public API — it is the only public entrypoint that crosses the BRCE boundary.
 
 ```elixir
@@ -268,12 +268,12 @@ specific BEAM nodes and real transport-encryption reporting
 {:ok, verification} = Ex4pm.replay(receipt_hash)
 ```
 
-`Ex4pm.replay/2` (`apps/ex4pm/lib/ex4pm.ex`) looks up the receipt by hash in the
+`Ex4pm.replay/2` (`lib/ex4pm.ex`) looks up the receipt by hash in the
 configured `Ex4pm.Evidence.Store`, then verifies it via
 `Ex4pm.Evidence.Replay.Chain.verify/2`. Returns
 `{:error, Refusal.new(:receipt_not_found, ...)}` if the hash is absent.
 
-`Replay.Chain.verify/2` (`apps/ex4pm_evidence`):
+`Replay.Chain.verify/2` (`lib/ex4pm/evidence`):
 
 1. Verifies the outcome receipt's own hash by independently recomputing it from
    its payload fields (`Ex4pm.Evidence.Replay.verify/1`).
@@ -290,17 +290,17 @@ Ex4pm.Evidence.Store.get_by_parent(pending_hash, store)   # chained outcome rece
 Ex4pm.Evidence.Store.history(50, store)                    # most recent N receipts
 ```
 
-## How to add `ex4pm_core` as a path dependency from a sibling app (xaas)
+## How to add `ex4pm` as a path dependency from a sibling app (xaas)
 
-`ex4pm_core` is the app meant to be depended on directly by sibling Elixir apps
-(`apps/ex4pm_core`, no umbrella-only coupling). `ex4pm_contracts` is the canonical
-ontology/SHACL/WIT/schema surface `ggen_igniter` on the xaas side is meant to
-consume.
+`ex4pm` is now a single flat library (no separate `ex4pm_core`/`ex4pm_contracts` umbrella
+apps) — the whole package is meant to be depended on directly by sibling Elixir apps for
+its `Ex4pm.Core.*` canonical types and `Ex4pm.Contracts` ontology/SHACL/WIT/schema surface,
+which `ggen_igniter` on the xaas side is meant to consume.
 
 1. In `~/xaas/mix.exs`, add a `path:` dependency:
 
    ```elixir
-   {:ex4pm_core, path: "../ex4pm/apps/ex4pm_core"}
+   {:ex4pm, path: "../ex4pm"}
    ```
 
 2. Confirm the contract surface is intact before trusting downstream generation:
@@ -309,14 +309,13 @@ consume.
    {:ok, %{version:, artifacts:, contract_hash:, standing: :alive}} = Ex4pm.Contracts.verify()
    ```
 
-   `Ex4pm.Contracts.verify/0` (`apps/ex4pm_contracts`) re-reads all four canonical
+   `Ex4pm.Contracts.verify/0` (`lib/ex4pm/contracts.ex`) re-reads all four canonical
    artifacts from disk (`priv/ontology/ex4pm.ttl`, `priv/shacl/ex4pm-shapes.ttl`,
    `priv/wit/ex4pm.wit`, `priv/schema/receipt.schema.json`), computes a combined
    `contract_hash`, and checks each artifact's bytes for required terms — a
-   drift/tamper check. `Ex4pm.contracts/0` in the top-level `ex4pm` app delegates
-   to this.
+   drift/tamper check. `Ex4pm.contracts/0` (`lib/ex4pm.ex`) delegates to this.
 
-3. Use `Ex4pm.OCEL.validate_envelope/1` (`apps/ex4pm_core`) as the public,
+3. Use `Ex4pm.OCEL.validate_envelope/1` (`lib/ex4pm/core`) as the public,
    documented envelope-validation function for xaas-side OCEL envelope
    construction — it validates a batch-ingestion envelope map (schema, producer,
    sequence, events, previous_digest) and returns a normalized envelope or a
@@ -348,7 +347,7 @@ Ex4pm.Core.OLAP.roll_up(log, :activity, fn events -> length(events) end)
 Ex4pm.Core.OLAP.drill_down(log, :month, :day)
 ```
 
-All four are in `apps/ex4pm_core`, operating over a canonical `%Ex4pm.EventLog{}`.
+All four are in `lib/ex4pm/core`, operating over a canonical `%Ex4pm.EventLog{}`.
 
 ## How to inspect OCEL2 object-centric relations
 
@@ -358,7 +357,7 @@ Ex4pm.OCEL2.attribute_history(log, object_id, attribute_name)
 Ex4pm.OCEL2.object_relationships_for(log, object_id)
 ```
 
-`apps/ex4pm_core`. `object_trace/2` returns the full time-ordered event sequence
+`lib/ex4pm/core`. `object_trace/2` returns the full time-ordered event sequence
 for one object; `attribute_history/3` reconstructs chronological value-change
 history as `%Ex4pm.AttributeChange{}` records; `object_relationships_for/2`
 returns qualifier-typed O2O relationships in either direction.
@@ -370,7 +369,7 @@ Ex4pmEvidence.Conformance.evaluate(event_log_or_raw_ocel_map, model_or_ir, opts 
 # or: Ex4pm.Evidence.Conformance.evaluate/3 (alias)
 ```
 
-`apps/ex4pm_evidence`. Computes a `Vector` (fitness, precision,
+`lib/ex4pm/evidence`. Computes a `Vector` (fitness, precision,
 policy_conformance, lifecycle_conformance, causal_conformance, overall_score)
 plus a list of structured `Violation` records. Accepts a raw OCEL map
 (auto-normalized) or an `%Ex4pm.EventLog{}`.
@@ -385,7 +384,7 @@ Ex4pmEvidence.Engine.build_dcat_catalog_record(opts)  # W3C DCAT 3 catalog recor
 Ex4pmEvidence.Engine.build_spdx_manifest(opts)        # SPDX 3.0 manifest w/ real SHA-256
 ```
 
-All in `apps/ex4pm_evidence`; each returns a map plus Turtle RDF.
+All in `lib/ex4pm/evidence`; each returns a map plus Turtle RDF.
 
 ## How to run a self-conformance pass from the CLI
 
@@ -393,7 +392,7 @@ All in `apps/ex4pm_evidence`; each returns a map plus Turtle RDF.
 mix ex4pm.validate_self --path <ocel_ndjson> --limit <n>
 ```
 
-`Mix.Tasks.Ex4pm.ValidateSelf` (`apps/ex4pm/lib/mix/tasks/ex4pm.validate_self.ex`)
+`Mix.Tasks.Ex4pm.ValidateSelf` (`lib/mix/tasks/ex4pm.validate_self.ex`)
 starts the app, runs `Reactor.run(Ex4pmEngine.Reactors.SelfConformanceReactor, ...)`
 against a real OCEL log, and prints discovery results, the 5-dimensional
 conformance vector, a W3C EARL 1.0 evidence proof in Turtle, and the final
@@ -405,7 +404,7 @@ receipted standing. Exits 1 on `{:error, reason}`.
 mix ex4pm.ocel_to_latex [path_to_ocel_ndjson] [--output path]
 ```
 
-`Mix.Tasks.Ex4pm.OcelToLatex` (`apps/ex4pm/lib/mix/tasks/ex4pm.ocel_to_latex.ex`)
+`Mix.Tasks.Ex4pm.OcelToLatex` (`lib/mix/tasks/ex4pm.ocel_to_latex.ex`)
 reads an IEEE OCEL 2.0 NDJSON log and calls
 `Ex4pmEngine.OcelToLatex.export_latex/2` to emit publication-ready LaTeX benchmark
 tables (default output
@@ -420,7 +419,7 @@ tables (default output
 ./ex4pm discover-xes <log.xes> [case-object-type]
 ```
 
-`Ex4pm.CLI.main/1` (`apps/ex4pm_cli/lib/ex4pm/cli.ex`) is the escript entrypoint
+`Ex4pm.CLI.main/1` (`lib/ex4pm/cli.ex`) is the escript entrypoint
 (`mix.exs` sets `main_module: Ex4pm.CLI`). All discover paths print
 `run.standing` and `run.receipt.hash`, surfacing BRCE/evidence standing at the
 CLI boundary — this is a read/CONSTRUCT-side projection, never a DO path.
@@ -433,7 +432,7 @@ Ex4pm.Information.execute(request_map, opts)
 Ex4pm.Information.dispatch_json(json_binary, opts)
 ```
 
-`apps/ex4pm_information`. Normalizes and admits the request via
+`lib/ex4pm/information`. Normalizes and admits the request via
 `Ex4pm.Information.Protocol.normalize/1`, then runs it through the admitted
 `Ex4pm.Information.Flow` Reactor graph (parse -> route -> admit/refuse ->
 construct -> BRCE -> DO -> receipt). Capability ids are matched against a closed,
@@ -455,4 +454,4 @@ Ex4pm.Information.describe/1   # describe one capability by id string
 - `docs/CHICAGO.md` — the non-circular-worlds model behind `mix chicago` and the
   Chicago-school testing discipline
 - `docs/ROADMAP-xaas-integration.md` — full xaas integration requirements
-- `CLAUDE.md` — umbrella overview, app dependency order, evidence vocabulary
+- `CLAUDE.md` — flat library overview, module namespace layout, evidence vocabulary
