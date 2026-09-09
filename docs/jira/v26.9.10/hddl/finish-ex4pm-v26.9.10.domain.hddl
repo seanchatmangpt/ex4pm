@@ -1,42 +1,75 @@
 ;; finish-ex4pm-v26.9.10.domain.hddl
 ;;
 ;; HDDL 2.1 domain encoding the real, PRD-grounded work to finish ex4pm
-;; v26.9.10 (see docs/PRD-v26.9.10.md, itself derived from real beam4pm
-;; WS-lane scheduled-task receipts, not speculation). Four requirements
-;; (R1-R4), confirmed independent of each other by the PRD's own scoping
-;; (no requirement's design depends on another's implementation), each
-;; closed by the same real design->build->test->document->close shape,
-;; followed by one sequential release-close phase once all four are closed.
+;; v26.9.10 (see docs/PRD-v26.9.10.md). Revised from the first version of
+;; this domain per explicit direction: before deciding how to build R1-R4,
+;; EXPLORE every real ggen_igniter usage pattern across the two repos that
+;; actually use it (~/xaas, ~/beam4pm -- ex4pm itself has zero ggen_igniter
+;; infrastructure today, confirmed by grep), then classify each requirement
+;; against that real taxonomy -- generated, hand-written, or wrapper --
+;; citing which surveyed pattern applies, rather than assuming by default.
 ;;
-;; Hand-verified against HDDL 2.1 grammar (Hoeller et al., "HDDL: An
-;; Extension to PDDL for Expressing Hierarchical Planning Problems"). No
-;; HDDL/HTN parser is available in this repo's toolchain -- syntax is
-;; hand-verified, NOT parser-verified. Per this repo's own no-overclaiming
-;; discipline (docs/ARCHITECTURE.md), this is a real planning artifact, not
-;; an executed one; do not cite it as ALIVE, only as a real, checked plan.
+;; Hand-verified against HDDL 2.1 grammar (Hoeller et al.). No HDDL/HTN
+;; parser is available in this repo's toolchain -- syntax is hand-verified
+;; and parenthesis-balance-checked, NOT parser-verified, matching the same
+;; disclosed limitation as the ~/xaas/docs/hddl/ precedent files this
+;; domain's shape was modeled on.
 
 (define (domain finish-ex4pm-v26-9-10)
-  (:requirements :hierarchy :typing :negative-preconditions)
+  (:requirements :hierarchy :typing :negative-preconditions :equality)
 
   (:types
     requirement - object
     module - object
     doc - object
     release - object
+    pattern - object    ;; one real, cited ggen_igniter usage shape
   )
 
   (:constants
+    r0-wire-ggen-igniter - requirement
     r1-standing-coded - requirement
     r2-evidence-batch - requirement
     r3-git-containment - requirement
     r4-mining-example - requirement
     v26-9-10 - release
+
+    ;; The real, cited taxonomy -- every distinct ggen_igniter usage shape
+    ;; found across ~/xaas and ~/beam4pm (see docs/PRD-v26.9.10.md
+    ;; "ggen_igniter usage taxonomy" section for full citations).
+    pat-struct-projection - pattern           ;; beam4pm bpm:RecordType -> struct + Ash.Resource (igniter_sync.sh)
+    pat-admitted-behavior-pipeline - pattern  ;; beam4pm bpma: -> Reactor BRCE actuation pipeline (actuation_sync.sh)
+    pat-admitted-router - pattern             ;; beam4pm bpmi: -> Plug.Router (ocel_ingest_sync.sh, this session's own prior work)
+    pat-admitted-process-governor - pattern   ;; beam4pm bpmg: -> governed multi-step delegator (process_governor_sync.sh)
+    pat-subprocess-oracle-validation - pattern ;; beam4pm rf1/rf2/rf3 -> Reactor validating a real external oracle vs a real fixture
+    pat-dummy-query-hand-designed - pattern   ;; beam4pm PRO-family/revenue/receipt_chain/claude_workflow_reactor -> ggen_igniter-generated via an unused/dummy query, for provenance-marker + doctrine reasons, even though the content is 100% hand-designed
+    pat-meta-generator - pattern              ;; xaas xaas_library_pack -> a generated Mix task that itself runs ash.gen.* to produce further generated files
+    pat-pure-codec - pattern                  ;; xaas xaas_telemetry_pack -> pure field-construction module, explicitly NOT the HTTP/validation business logic
+    pat-wrapper-over-collaborator - pattern   ;; beam4pm BeamPM.Petgraph/Tract/Rust4pm/Ferroplan -> hand-written wasm/subprocess wrapper, never generated (no algorithm reimplemented BEAM-side)
+    pat-wrapper-over-admitted-data - pattern  ;; beam4pm BeamPM.Ocel/PowlDiscovery/Contracts -> hand-written algorithm operating OVER already-generated data shapes, not itself a projection
+    pat-infra-wiring - pattern                ;; beam4pm BeamPM.Application / either repo's mix.exs -> hand-written manufacturing input, never generated output
   )
 
   (:predicates
+    ;; -- exploration phase --
+    (pattern-surveyed ?p - pattern)
+    (taxonomy-documented)
+
+    ;; -- classification phase (per requirement, against the surveyed taxonomy) --
+    (requirement-classified ?r - requirement)
+    (classified-generated ?r - requirement ?p - pattern)
+    (classified-handwritten ?r - requirement ?p - pattern)
+
+    ;; -- build phase --
     (prd-scoped ?r - requirement)
     (existing-code-checked ?r - requirement)
+    (ggen-igniter-wired)
     (module-designed ?r - requirement)
+    (vocabulary-authored ?r - requirement)
+    (query-authored ?r - requirement)
+    (template-authored ?r - requirement)
+    (sync-script-authored ?r - requirement)
+    (determinism-verified ?r - requirement)
     (module-built ?r - requirement ?m - module)
     (tests-written ?r - requirement)
     (tests-passing ?r - requirement)
@@ -51,11 +84,9 @@
   )
 
   ;; ==========================================================================
-  ;; Top-level task: close all four PRD requirements (mutually independent,
-  ;; per the PRD's own "Explicitly out of scope" section -- none creates a
-  ;; dependency on ex4pm from beam4pm, none touches the same module as
-  ;; another), then close the release once every requirement is real,
-  ;; tested, and documented.
+  ;; Top-level task: explore the real ggen_igniter usage taxonomy FIRST
+  ;; (mandatory, not skippable per explicit direction), classify every
+  ;; requirement against it, close all requirements, then close the release.
   ;; ==========================================================================
 
   (:task FINISH-EX4PM
@@ -66,21 +97,173 @@
     :parameters (?rel - release)
     :task (FINISH-EX4PM ?rel)
     :ordered-subtasks (and
-      (t1 (CLOSE-ALL-REQUIREMENTS))
-      (t2 (confirm-all-closed))
-      (t3 (RELEASE ?rel))
+      (t1 (EXPLORE-GGEN-IGNITER-USAGES))
+      (t2 (CLASSIFY-ALL-REQUIREMENTS))
+      (t3 (CLOSE-ALL-REQUIREMENTS))
+      (t4 (confirm-all-closed))
+      (t5 (RELEASE ?rel))
     )
   )
+
+  ;; ==========================================================================
+  ;; Exploration: survey every real usage pattern in the two repos that
+  ;; actually use ggen_igniter today (ex4pm has none). Unordered -- the
+  ;; patterns are independent findings, not a sequence.
+  ;; ==========================================================================
+
+  (:task EXPLORE-GGEN-IGNITER-USAGES
+    :parameters ()
+  )
+
+  (:method m-explore-usages
+    :task (EXPLORE-GGEN-IGNITER-USAGES)
+    :unordered-subtasks (and
+      (u1 (survey-pattern pat-struct-projection))
+      (u2 (survey-pattern pat-admitted-behavior-pipeline))
+      (u3 (survey-pattern pat-admitted-router))
+      (u4 (survey-pattern pat-admitted-process-governor))
+      (u5 (survey-pattern pat-subprocess-oracle-validation))
+      (u6 (survey-pattern pat-dummy-query-hand-designed))
+      (u7 (survey-pattern pat-meta-generator))
+      (u8 (survey-pattern pat-pure-codec))
+      (u9 (survey-pattern pat-wrapper-over-collaborator))
+      (u10 (survey-pattern pat-wrapper-over-admitted-data))
+      (u11 (survey-pattern pat-infra-wiring))
+      (u12 (document-taxonomy))
+    )
+  )
+
+  (:action survey-pattern
+    :parameters (?p - pattern)
+    :precondition ()
+    :effect (pattern-surveyed ?p)
+    ;; real: each survey cites the exact repo, sync script or pack, ontology
+    ;; prefix, and generated output path that exhibits this pattern -- e.g.
+    ;; pat-admitted-router cites beam4pm's scripts/ocel_ingest_sync.sh,
+    ;; ontology.ttl's bpmi: vocabulary, and lib/beam4pm_ocel_ingest.ex (this
+    ;; session's own prior work in that repo). No pattern is asserted
+    ;; surveyed without a real citation in docs/PRD-v26.9.10.md.
+  )
+
+  (:action document-taxonomy
+    :parameters ()
+    :precondition (and
+      (pattern-surveyed pat-struct-projection)
+      (pattern-surveyed pat-admitted-behavior-pipeline)
+      (pattern-surveyed pat-admitted-router)
+      (pattern-surveyed pat-admitted-process-governor)
+      (pattern-surveyed pat-subprocess-oracle-validation)
+      (pattern-surveyed pat-dummy-query-hand-designed)
+      (pattern-surveyed pat-meta-generator)
+      (pattern-surveyed pat-pure-codec)
+      (pattern-surveyed pat-wrapper-over-collaborator)
+      (pattern-surveyed pat-wrapper-over-admitted-data)
+      (pattern-surveyed pat-infra-wiring)
+    )
+    :effect (taxonomy-documented)
+    ;; real: all 11 patterns written into docs/PRD-v26.9.10.md's usage
+    ;; taxonomy section before any requirement is classified against it --
+    ;; the taxonomy must exist and be checkable BEFORE classification, not
+    ;; retrofitted to justify a decision already made.
+  )
+
+  ;; ==========================================================================
+  ;; Classification: for R0-R4, decide generated-vs-hand-written against the
+  ;; real taxonomy, citing which pattern applies (or, for hand-written
+  ;; choices, which wrapper/infra pattern justifies NOT projecting it).
+  ;; ==========================================================================
+
+  (:task CLASSIFY-ALL-REQUIREMENTS
+    :parameters ()
+  )
+
+  (:method m-classify-all
+    :task (CLASSIFY-ALL-REQUIREMENTS)
+    :precondition (taxonomy-documented)
+    :unordered-subtasks (and
+      (u1 (classify-requirement r0-wire-ggen-igniter))
+      (u2 (classify-requirement r1-standing-coded))
+      (u3 (classify-requirement r2-evidence-batch))
+      (u4 (classify-requirement r3-git-containment))
+      (u5 (classify-requirement r4-mining-example))
+    )
+  )
+
+  (:action classify-requirement
+    :parameters (?r - requirement)
+    :precondition (taxonomy-documented)
+    :effect (requirement-classified ?r)
+    ;; real classification decisions (see docs/PRD-v26.9.10.md "requirement
+    ;; classification" section for the full reasoning, not just the verdict):
+    ;;
+    ;; r0-wire-ggen-igniter -> classified-handwritten, pat-infra-wiring.
+    ;;   Adding {:ggen_igniter, ...} to mix.exs deps IS the manufacturing
+    ;;   input itself (same class as beam4pm's own mix.exs dependency line);
+    ;;   nothing to generate here, it's the precondition for R1 to exist.
+    ;;
+    ;; r1-standing-coded -> classified-generated, pat-admitted-router's
+    ;;   sibling shape pat-admitted-behavior-pipeline / a new
+    ;;   pat-admitted-vocabulary (same admission-fact shape as bpma:/bpmi:):
+    ;;   which STANDING[CODE] combinations are admitted is real, varying,
+    ;;   ontology-shaped data -- matches the bpma:AdmittedActuation /
+    ;;   bpmi:AdmittedIngestRoute precedent exactly.
+    ;;
+    ;; r2-evidence-batch -> classified-handwritten, pat-wrapper-over-
+    ;;   admitted-data. Structurally identical to beam4pm's own
+    ;;   BeamPM.Contracts (also hand-written, explicitly NOT generated,
+    ;;   despite the newly-surveyed pat-dummy-query-hand-designed precedent
+    ;;   showing beam4pm WOULD sometimes generate hand-designed content via
+    ;;   a dummy query for provenance-marker reasons): a batch-ledger state
+    ;;   machine operates over already-existing Ex4pm.Evidence.Receipt/
+    ;;   Store primitives, has no varying "list of admitted instances" to
+    ;;   project, and beam4pm's own BeamPM.Contracts -- the closest real
+    ;;   analog -- was kept hand-written for exactly this reason. The
+    ;;   dummy-query pattern was considered and explicitly rejected here,
+    ;;   not overlooked.
+    ;;
+    ;; r3-git-containment -> classified-handwritten, pat-wrapper-over-
+    ;;   collaborator. A real git subprocess wrapper -- same class as
+    ;;   BeamPM.Petgraph/Tract/Rust4pm/Ferroplan (wasm/subprocess
+    ;;   collaborators, never reimplemented or generated BEAM-side).
+    ;;
+    ;; r4-mining-example -> classified-handwritten, pat-infra-wiring
+    ;;   (closest fit though imperfect): a documentation/example artifact,
+    ;;   not an Elixir module at all -- outside the generated/hand-written
+    ;;   axis entirely, but included here so no requirement is left
+    ;;   unclassified.
+  )
+
+  ;; ==========================================================================
+  ;; Close each requirement -- the concrete build path now branches on the
+  ;; real classification decided above, rather than assuming hand-written
+  ;; by default.
+  ;; ==========================================================================
 
   (:task CLOSE-ALL-REQUIREMENTS
     :parameters ()
   )
 
-  ;; R1-R4 are independent -- unordered-subtasks, not artificially
-  ;; sequenced. A real executor may interleave or parallelize them (matches
-  ;; this session's own worktree/parallel-agent manufacturing discipline).
+  ;; r0 must close FIRST and ordered ahead of the rest: r1's generated
+  ;; branch runs a real `mix ggen_igniter.sync` command, which cannot
+  ;; succeed while the dependency r0 adds doesn't exist yet. r2-r4 don't
+  ;; need ggen_igniter at all (classified hand-written/doc), but keeping
+  ;; r0 strictly first is simpler and still correct than conditionally
+  ;; ordering only against r1.
   (:method m-close-all-requirements
     :task (CLOSE-ALL-REQUIREMENTS)
+    :ordered-subtasks (and
+      (t1 (CLOSE-REQUIREMENT r0-wire-ggen-igniter))
+      (t2 (CLOSE-REMAINING-REQUIREMENTS))
+    )
+  )
+
+  (:task CLOSE-REMAINING-REQUIREMENTS
+    :parameters ()
+  )
+
+  (:method m-close-remaining-requirements
+    :task (CLOSE-REMAINING-REQUIREMENTS)
+    :precondition (requirement-closed r0-wire-ggen-igniter)
     :unordered-subtasks (and
       (u1 (CLOSE-REQUIREMENT r1-standing-coded))
       (u2 (CLOSE-REQUIREMENT r2-evidence-batch))
@@ -93,9 +276,35 @@
     :parameters (?r - requirement)
   )
 
-  (:method m-close-requirement
-    :parameters (?r - requirement ?m - module ?d - doc)
+  ;; Branch A: requirement was classified generated -- build via a real
+  ;; ggen_igniter pack (new ontology vocabulary + SPARQL query + EEx
+  ;; template + sync script), matching pat-admitted-router's own precedent
+  ;; exactly (this session's own prior beam4pm work).
+  (:method m-close-requirement-generated
+    :parameters (?r - requirement ?m - module ?d - doc ?p - pattern)
     :task (CLOSE-REQUIREMENT ?r)
+    :precondition (classified-generated ?r ?p)
+    :ordered-subtasks (and
+      (t1 (check-existing-code ?r))
+      (t2 (author-ontology-vocabulary ?r))
+      (t3 (author-sparql-query ?r))
+      (t4 (author-eex-template ?r))
+      (t5 (author-sync-script ?r))
+      (t6 (run-sync-script ?r ?m))
+      (t7 (write-tests ?r ?m))
+      (t8 (verify-tests ?r))
+      (t9 (verify-determinism ?r))
+      (t10 (update-docs ?r ?d))
+      (t11 (close-requirement ?r ?d))
+    )
+  )
+
+  ;; Branch B: requirement was classified hand-written -- the original
+  ;; design->build->test->document->close shape, unchanged.
+  (:method m-close-requirement-handwritten
+    :parameters (?r - requirement ?m - module ?d - doc ?p - pattern)
+    :task (CLOSE-REQUIREMENT ?r)
+    :precondition (and (classified-handwritten ?r ?p) (not (= ?r r0-wire-ggen-igniter)))
     :ordered-subtasks (and
       (t1 (check-existing-code ?r))
       (t2 (design-module ?r ?m))
@@ -107,69 +316,131 @@
     )
   )
 
+  ;; Branch C: r0 specifically -- adding {:ggen_igniter, ...} to mix.exs is
+  ;; the one real action R1's generated branch causally depends on; this
+  ;; method is the only place ggen-igniter-wired is ever asserted.
+  (:method m-close-r0-wire-ggen-igniter
+    :parameters (?d - doc ?p - pattern)
+    :task (CLOSE-REQUIREMENT r0-wire-ggen-igniter)
+    :precondition (classified-handwritten r0-wire-ggen-igniter ?p)
+    :ordered-subtasks (and
+      (t1 (check-existing-code r0-wire-ggen-igniter))
+      (t2 (wire-ggen-igniter))
+      (t3 (update-docs r0-wire-ggen-igniter ?d))
+      (t4 (close-requirement r0-wire-ggen-igniter ?d))
+    )
+  )
+
+  (:action wire-ggen-igniter
+    :parameters ()
+    :precondition (existing-code-checked r0-wire-ggen-igniter)
+    :effect (ggen-igniter-wired)
+    ;; real: add {:ggen_igniter, "~> 26.9", only: [:dev, :test], runtime:
+    ;; false} to ex4pm's mix.exs deps (matching beam4pm's own dependency
+    ;; line exactly), then `mix deps.get` and confirm `mix
+    ;; ggen_igniter.sync --help` actually runs -- not just that the deps
+    ;; entry exists on disk unverified.
+  )
+
   (:action check-existing-code
     :parameters (?r - requirement)
-    :precondition (prd-scoped ?r)
+    :precondition (and (prd-scoped ?r) (requirement-classified ?r))
     :effect (existing-code-checked ?r)
-    ;; real: re-read the actual current lib/ex4pm/{core,evidence}.ex before
-    ;; writing a line -- the PRD itself was written this way (grep-verified
-    ;; Ex4pm.Standing has no reason-code field, Ex4pm.Evidence has no batch
-    ;; ledger, before proposing R1/R2). Do not re-derive from the PRD prose
-    ;; alone; re-check the live source, which may have moved.
+    ;; real: re-read the actual current lib/ex4pm/{core,evidence}.ex and
+    ;; mix.exs before writing a line -- may have moved since the PRD was
+    ;; written.
   )
+
+  ;; -- generated-branch actions --
+
+  (:action author-ontology-vocabulary
+    :parameters (?r - requirement)
+    :precondition (existing-code-checked ?r)
+    :effect (vocabulary-authored ?r)
+    ;; real: for r1-standing-coded, a new prefix in priv/ontology/ex4pm.ttl
+    ;; (or a sibling manufacturing-specific ontology file, matching beam4pm's
+    ;; own pattern of a separate bpma:/bpmi: prefix per capability rather
+    ;; than overloading the semantic RDFS vocabulary) with real
+    ;; ex4pm:AdmittedStandingCode individuals -- at minimum the literal
+    ;; STANDING[CODE] examples already cited in docs/PRD-v26.9.10.md's
+    ;; source evidence.
+  )
+
+  (:action author-sparql-query
+    :parameters (?r - requirement)
+    :precondition (vocabulary-authored ?r)
+    :effect (query-authored ?r)
+  )
+
+  (:action author-eex-template
+    :parameters (?r - requirement)
+    :precondition (query-authored ?r)
+    :effect (template-authored ?r)
+    ;; real: follows the norm/1 term-normalization convention already
+    ;; established in this session's own beam4pm_ocel_ingest.ex.eex work
+    ;; (oxigraph vs sparql engine output).
+  )
+
+  (:action author-sync-script
+    :parameters (?r - requirement)
+    :precondition (template-authored ?r)
+    :effect (sync-script-authored ?r)
+    ;; real: a new scripts/standing_coded_sync.sh (or equivalent), same
+    ;; shape as beam4pm's *_sync.sh family -- mix ggen_igniter.sync, then
+    ;; compile --warnings-as-errors && test as its own internal verification.
+  )
+
+  (:action run-sync-script
+    :parameters (?r - requirement ?m - module)
+    :precondition (and (sync-script-authored ?r) (ggen-igniter-wired))
+    :effect (module-built ?r ?m)
+    ;; real: the sync script actually run, producing a real file carrying a
+    ;; "GENERATED by ggen_igniter" header -- not a hand-typed file that
+    ;; merely claims to be generated.
+  )
+
+  (:action verify-determinism
+    :parameters (?r - requirement)
+    :precondition (tests-passing ?r)
+    :effect (determinism-verified ?r)
+    ;; real: delete the generated file, rerun the sync script, diff --
+    ;; byte-identical, the same manual-determinism-proof discipline already
+    ;; used for beam4pm_ocel_ingest.ex this session (not run against a
+    ;; shared gate script with a hardcoded sync-script list this time,
+    ;; since ex4pm has no such gate yet -- a standalone check is sufficient
+    ;; at this scale).
+  )
+
+  ;; -- shared / hand-written-branch actions --
 
   (:action design-module
     :parameters (?r - requirement ?m - module)
     :precondition (existing-code-checked ?r)
     :effect (module-designed ?r)
-    ;; real: R1 = Ex4pm.Standing.Coded (does not replace bare-atom
-    ;; Ex4pm.Standing); R2 = Ex4pm.Evidence.Batch (data shape + transition
-    ;; logic only, no new storage subsystem -- persistence stays the
-    ;; caller's job, matching Ex4pm.Evidence.Store's own precedent); R3 =
-    ;; Ex4pm.Evidence.GitContainment (real subprocess git calls, Chicago
-    ;; discipline, no libgit2 binding); R4 has no new module -- it is a
-    ;; docs/consumer/*.md example composed entirely from R1-R3 plus
-    ;; already-existing Ex4pm.ingest/2, discover/2, conform/2.
   )
 
   (:action build-module
     :parameters (?r - requirement ?m - module)
     :precondition (module-designed ?r)
     :effect (module-built ?r ?m)
-    ;; real: for R1, to_string/1 must round-trip the exact literal standing
-    ;; strings quoted in docs/PRD-v26.9.10.md's source evidence section
-    ;; (ALIVE[WS3_CHICAGO_MERGE_50] etc.), not invented examples. For R3,
-    ;; every git call is a real subprocess against a real repo -- no mocked
-    ;; git output.
   )
 
   (:action write-tests
     :parameters (?r - requirement ?m - module)
-    :precondition (and (module-designed ?r) (module-built ?r ?m))
+    :precondition (module-built ?r ?m)
     :effect (tests-written ?r)
-    ;; real: R2's Ex4pm.Evidence.Batch tests assert the exact RCA-specified
-    ;; transition rules (resume-first, never-start-second-batch-while-
-    ;; active, quota-gated close) one test per rule -- not a generic
-    ;; "batch works" smoke test. R3's tests use a real, disposable git repo
-    ;; fixture created and torn down per test.
   )
 
   (:action verify-tests
     :parameters (?r - requirement)
     :precondition (tests-written ?r)
     :effect (tests-passing ?r)
-    ;; real: mix test output pasted/confirmed, not described. Failing tests
-    ;; get fixed here, not deferred.
   )
 
   (:action update-docs
     :parameters (?r - requirement ?d - doc)
     :precondition (tests-passing ?r)
     :effect (doc-updated ?r ?d)
-    ;; real: R1-R3 get real @moduledoc/@doc coverage (this repo publishes
-    ;; real HexDocs, per the ex_doc wiring already shipped); R4's own
-    ;; deliverable IS the doc (docs/consumer/how-to-guides.md addition),
-    ;; with a runnable snippet, not prose describing a snippet.
   )
 
   (:action close-requirement
@@ -181,25 +452,17 @@
   (:action confirm-all-closed
     :parameters ()
     :precondition (and
+      (requirement-closed r0-wire-ggen-igniter)
       (requirement-closed r1-standing-coded)
       (requirement-closed r2-evidence-batch)
       (requirement-closed r3-git-containment)
       (requirement-closed r4-mining-example)
     )
     :effect (all-requirements-closed)
-    ;; real check, not a formality: this is the one place the plan actually
-    ;; verifies R1-R4 are ALL closed (not just "most") before a release is
-    ;; permitted to start -- the exact discipline the source PRD's evidence
-    ;; (WS4: 50 constructed, 0 contained) shows is missing when skipped.
   )
 
   ;; ==========================================================================
-  ;; Release close: only reachable once all four requirements are real,
-  ;; tested, and documented -- matches this session's own verify-before-
-  ;; publish discipline (mix format / mix compile --warnings-as-errors /
-  ;; mix test / mix ex4pm.lint.truth / mix ex4pm.powl.court /
-  ;; mix ex4pm.sabotage.court, then mix hex.publish, as already exercised
-  ;; for v26.9.9 this session).
+  ;; Release close -- unchanged from the first version of this domain.
   ;; ==========================================================================
 
   (:task RELEASE
@@ -223,39 +486,27 @@
     :parameters ()
     :precondition (all-requirements-closed)
     :effect (verify-gate-passed)
-    ;; real: mix verify (format --check-formatted, compile
-    ;; --warnings-as-errors, ex4pm.lint.truth, test, ex4pm.powl.court,
-    ;; ex4pm.sabotage.court) -- the actual gate this repo already has, not a
-    ;; new one invented for this release.
   )
 
   (:action bump-calver
     :parameters (?rel - release)
     :precondition (verify-gate-passed)
     :effect (calver-bumped ?rel)
-    ;; real: mix.exs @version "26.9.10", consistent across the single flat
-    ;; app (no per-app umbrella versions to sync -- that problem no longer
-    ;; exists post-flatten).
   )
 
   (:action write-changelog
     :parameters (?rel - release)
     :precondition (calver-bumped ?rel)
     :effect (changelog-written ?rel)
-    ;; real: commit message(s) citing exactly which of R1-R4 landed, same
-    ;; discipline as every commit this session (git commit -F, never inline
-    ;; -m with multi-line prose).
   )
 
   (:action publish-hex
     :parameters (?rel - release)
     :precondition (changelog-written ?rel)
     :effect (published-to-hex ?rel)
-    ;; real: mix hex.publish package (dry-run first if not yet explicitly
-    ;; authorized for this specific release -- publishing to hex.pm is a
-    ;; real, outward-facing action requiring its own explicit go-ahead, per
-    ;; this session's own operating rules, not implied by this HDDL plan
-    ;; existing).
+    ;; real: mix hex.publish package -- a real, outward-facing action
+    ;; requiring its own explicit go-ahead per this session's own operating
+    ;; rules, not implied by this HDDL plan existing.
   )
 
   (:action close-release

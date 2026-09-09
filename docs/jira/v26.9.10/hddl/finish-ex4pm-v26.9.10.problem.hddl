@@ -1,22 +1,26 @@
 ;; finish-ex4pm-v26.9.10.problem.hddl
-;; HDDL 2.1 problem file for the finish-ex4pm-v26-9-10 domain.
+;; HDDL 2.1 problem file for the revised finish-ex4pm-v26-9-10 domain.
 ;; Hand-verified against HDDL 2.1 grammar, NOT parser-verified (no HDDL/HTN
 ;; reader available in this repo's toolchain -- see domain file header).
 ;;
-;; :init reflects the real state confirmed this session: docs/PRD-v26.9.10.md
-;; is written and grep-verified against the real lib/ex4pm/{core,evidence}.ex
-;; (prd-scoped and existing-code-checked hold for all four requirements
-;; already); nothing past that has been designed, built, tested, or
-;; documented yet. No requirement is closed; no release work has started.
+;; :init reflects real state as of this session: the exploration phase
+;; (survey every ggen_igniter usage pattern across ~/xaas and ~/beam4pm) and
+;; the classification phase (decide generated vs hand-written for R0-R4
+;; against that real taxonomy) are BOTH already done -- two real research
+;; agents this session produced the full pattern inventory with exact
+;; file:line citations, and the classification reasoning is written into
+;; the domain file's classify-requirement action comments and
+;; docs/PRD-v26.9.10.md. Nothing past classification has started: no
+;; ontology vocabulary authored, no module built, no tests written.
 
 (define (problem finish-ex4pm-v26-9-10-2026-09-09)
   (:domain finish-ex4pm-v26-9-10)
 
   (:objects
-    ex4pm-standing-coded - module
-    ex4pm-evidence-batch - module
-    ex4pm-git-containment - module
-    ex4pm-consumer-mining-doc - module
+    ex4pm-standing-coded-mod - module
+    ex4pm-evidence-batch-mod - module
+    ex4pm-git-containment-mod - module
+    ex4pm-ggen-igniter-dep-mod - module
     ex4pm-hexdocs - doc
     ex4pm-consumer-how-to-guides - doc
   )
@@ -29,10 +33,45 @@
   )
 
   (:init
-    ;; All four requirements are real and PRD-scoped (docs/PRD-v26.9.10.md),
-    ;; and the existing-code check that motivated each one is already done
-    ;; (grep-verified against real source, cited by file:line in the PRD) --
-    ;; both facts hold for every requirement before any design work starts.
+    ;; -- exploration already done this session (two real research agents,
+    ;;    full pattern inventory with file:line citations against
+    ;;    ~/xaas and ~/beam4pm) --
+    (pattern-surveyed pat-struct-projection)
+    (pattern-surveyed pat-admitted-behavior-pipeline)
+    (pattern-surveyed pat-admitted-router)
+    (pattern-surveyed pat-admitted-process-governor)
+    (pattern-surveyed pat-subprocess-oracle-validation)
+    (pattern-surveyed pat-dummy-query-hand-designed)
+    (pattern-surveyed pat-meta-generator)
+    (pattern-surveyed pat-pure-codec)
+    (pattern-surveyed pat-wrapper-over-collaborator)
+    (pattern-surveyed pat-wrapper-over-admitted-data)
+    (pattern-surveyed pat-infra-wiring)
+    (taxonomy-documented)
+
+    ;; -- classification already decided this session (see
+    ;;    docs/PRD-v26.9.10.md "requirement classification" section and
+    ;;    the domain file's classify-requirement action comments for full
+    ;;    reasoning per requirement) --
+    (requirement-classified r0-wire-ggen-igniter)
+    (classified-handwritten r0-wire-ggen-igniter pat-infra-wiring)
+
+    (requirement-classified r1-standing-coded)
+    (classified-generated r1-standing-coded pat-admitted-behavior-pipeline)
+
+    (requirement-classified r2-evidence-batch)
+    (classified-handwritten r2-evidence-batch pat-wrapper-over-admitted-data)
+
+    (requirement-classified r3-git-containment)
+    (classified-handwritten r3-git-containment pat-wrapper-over-collaborator)
+
+    (requirement-classified r4-mining-example)
+    (classified-handwritten r4-mining-example pat-infra-wiring)
+
+    ;; -- PRD scoping and existing-code checks, all real, done this session --
+    (prd-scoped r0-wire-ggen-igniter)
+    (existing-code-checked r0-wire-ggen-igniter)
+
     (prd-scoped r1-standing-coded)
     (existing-code-checked r1-standing-coded)
 
@@ -45,16 +84,17 @@
     (prd-scoped r4-mining-example)
     (existing-code-checked r4-mining-example)
 
-    ;; Nothing designed, built, tested, documented, or closed yet -- all
-    ;; four requirements start at the same real starting line. Absent from
-    ;; :init (per HDDL closed-world convention, matching the autofde-lab
-    ;; precedent's "intentionally absent" style): module-designed,
-    ;; module-built, tests-written, tests-passing, doc-updated,
-    ;; requirement-closed, all-requirements-closed, verify-gate-passed,
-    ;; calver-bumped, changelog-written, published-to-hex, release-closed.
+    ;; Nothing past this point has started -- absent from :init (per HDDL
+    ;; closed-world convention): ggen-igniter-wired, vocabulary-authored,
+    ;; query-authored, template-authored, sync-script-authored,
+    ;; module-designed, module-built, tests-written, tests-passing,
+    ;; determinism-verified, doc-updated, requirement-closed,
+    ;; all-requirements-closed, verify-gate-passed, calver-bumped,
+    ;; changelog-written, published-to-hex, release-closed.
   )
 
   (:goal (and
+    (requirement-closed r0-wire-ggen-igniter)
     (requirement-closed r1-standing-coded)
     (requirement-closed r2-evidence-batch)
     (requirement-closed r3-git-containment)
