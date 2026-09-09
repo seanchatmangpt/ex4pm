@@ -30,7 +30,7 @@ defmodule Ex4pm.Chicago.Cluster do
 
   defp bootstrap!(node) do
     :ok = :erpc.call(node, :code, :add_paths, [:code.get_path()], 15_000)
-    {:ok, _} = :erpc.call(node, :application, :ensure_all_started, [:ex4pm_runtime], 15_000)
+    {:ok, _} = :erpc.call(node, :application, :ensure_all_started, [:ex4pm], 15_000)
 
     with {module, binary, filename} <- :code.get_object_code(Ex4pm.Chicago.GlobalBeamTest) do
       :erpc.call(node, :code, :load_binary, [module, filename, binary], 15_000)
