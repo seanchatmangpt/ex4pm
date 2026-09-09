@@ -1,4 +1,21 @@
-> Mirrored from ~/xaas/docs/ROADMAP.md (2026-09-09). This is the CONSUMER-side
+> Mirrored from ~/xaas/docs/ROADMAP.md (2026-09-09) -- this file is a copy, not
+> the source of truth; the "Status" line below (originally "beam4pm is BLOCKED
+> (external)" with an in-progress uncommitted merge) is stale as of a fresh
+> read-only re-verification run from ex4pm later the same session (2026-09-09):
+> beam4pm's merge IS now committed (HEAD 55fb539794f5592c94cdc7089bbc0eb0d0680666,
+> "merge main into PR43 for merge verification", 2026-09-09 01:48:59 -0700, tree
+> clean) -- but neither concrete xaas-blocking gap changed: gap #1 (RF3 OCEL
+> oracle still needs an external Rust binary path, no priv/ bundling, still
+> fixture-bound to `~/wasm4pm/fixtures/negative/`) and gap #2 (no HTTP/PubSub
+> event-ingestion endpoint -- repo-wide grep for Plug/Phoenix/Bandit/cowboy in
+> beam4pm's lib/ and mix.exs returned zero matches) are both confirmed STILL
+> TRUE. beam4pm's own mix.exs also still has no package()/hex-publishable shape
+> (app: :beam4pm, version: "0.1.0", no description/licenses/links). This
+> addendum does not edit the mirrored body below -- that stays as xaas's own
+> doc read it; re-sync from ~/xaas/docs/ROADMAP.md if xaas's own copy has since
+> been updated to reflect the merge.
+>
+> This is the CONSUMER-side
 > spec: xaas is a real sibling Elixir/Phoenix/Ash app that wants to depend on
 > ex4pm_core/ex4pm_contracts as a real library and push OCEL v2 events to
 > ex4pm_web's real /api/v1/ocel/events endpoint. Work items below marked

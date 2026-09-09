@@ -4,7 +4,7 @@
 
 ex4pm preserves the wasm4pm evidence law: claims may not exceed the exact subject, runtime, authority, receipt, and replay evidence supporting them. It does not preserve incidental language or product-shell choices.
 
-Canonical semantic objects remain in `ex4pm_core`. Execution is a projection of admitted process semantics, not a second source of process truth.
+Canonical semantic objects remain in `lib/ex4pm_core/`. Execution is a projection of admitted process semantics, not a second source of process truth.
 
 ## Fence
 
