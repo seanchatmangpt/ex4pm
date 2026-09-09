@@ -4,7 +4,7 @@
 % Reproducibility: run `mix ex4pm.ocel_to_latex <path_to_ocel.ndjson>`
 % ==========================================================================
 
-\subsection{Empirical Execution Benchmark (Full 820110 Event Ingestion)}
+\subsection{Empirical Execution Benchmark (Full 823511 Event Ingestion)}
 
 \begin{table}[ht!]
 \centering
@@ -13,16 +13,16 @@
 \toprule
 \textbf{Benchmark Dimension} & \textbf{Observed Measurement} & \textbf{Unit} \\
 \midrule
-\textbf{Total Ingested Events} & \textbf{820110} & events \\
-Ingestion Execution Wall Time & 1087 & ms \\
-\textbf{Peak Streaming Rate} & \textbf{754471.02} & ev/sec \\
+\textbf{Total Ingested Events} & \textbf{823511} & events \\
+Ingestion Execution Wall Time & 2064 & ms \\
+\textbf{Peak Streaming Rate} & \textbf{398987.89} & ev/sec \\
 Discovered Unique Activities & 188 & actions \\
 Discovered Object Types & 69 & types \\
 \midrule
-\textbf{Shannon Log Entropy $H(\mathcal{L})$} & \textbf{5.2058} & bits \\
-Log-Normal Parameter $\hat{\mu}$ & 0.3697 & -- \\
-Log-Normal Parameter $\hat{\sigma}$ & 1.0117 & -- \\
-Mean Action Duration & 7.36 & ms \\
+\textbf{Shannon Log Entropy $H(\mathcal{L})$} & \textbf{5.2112} & bits \\
+Log-Normal Parameter $\hat{\mu}$ & 0.3695 & -- \\
+Log-Normal Parameter $\hat{\sigma}$ & 1.0109 & -- \\
+Mean Action Duration & 7.35 & ms \\
 P50 (Median) Latency & 0 & ms \\
 P90 Latency & 3 & ms \\
 \textbf{P99 Tail Bottleneck Latency} & \textbf{178} & ms \\
@@ -42,18 +42,18 @@ Maximum Observed Latency & 10978 & ms \\
 \toprule
 \textbf{Discovered Activity} & \textbf{Enterprise Domain} & \textbf{Count} \\
 \midrule
-\texttt{capability\_liveness\_receipt.ingest} & Operations & 252241 \\
-\texttt{capability\_liveness\_receipt.read} & Operations & 56738 \\
-\texttt{org.create} & Accounts & 45078 \\
-\texttt{org.read} & Accounts & 28311 \\
-\texttt{account.read} & Accounts & 24088 \\
-\texttt{version.create} & Platform & 21895 \\
-\texttt{event\_log.create} & Enterprise Core & 17908 \\
-\texttt{account.open} & Accounts & 11549 \\
-\texttt{subscription.read} & Billing & 10764 \\
-\texttt{subscription.create} & Billing & 10347 \\
-\texttt{book.read} & Enterprise Core & 9675 \\
-\texttt{provider.create} & Marketplace & 9671 \\
+\texttt{capability\_liveness\_receipt.ingest} & Operations & 252736 \\
+\texttt{capability\_liveness\_receipt.read} & Operations & 56852 \\
+\texttt{org.create} & Accounts & 45248 \\
+\texttt{org.read} & Accounts & 28430 \\
+\texttt{account.read} & Accounts & 24177 \\
+\texttt{version.create} & Platform & 21963 \\
+\texttt{event\_log.create} & Enterprise Core & 17968 \\
+\texttt{account.open} & Accounts & 11590 \\
+\texttt{subscription.read} & Billing & 10805 \\
+\texttt{subscription.create} & Billing & 10381 \\
+\texttt{book.read} & Enterprise Core & 9872 \\
+\texttt{provider.create} & Marketplace & 9697 \\
 \bottomrule
 \end{tabular}
 \caption{Top-12 activity execution frequencies extracted directly from the IEEE OCEL 2.0 stream.}
@@ -69,16 +69,16 @@ Maximum Observed Latency & 10978 & ms \\
 \toprule
 \textbf{Source Activity} & \textbf{Target Activity} & \textbf{Count} \\
 \midrule
-\texttt{capability\_liveness\_receipt.ingest} $\to$ \texttt{capability\_liveness\_receipt.ingest} & & 195407 \\
-\texttt{capability\_liveness\_receipt.ingest} $\to$ \texttt{capability\_liveness\_receipt.read} & & 52627 \\
-\texttt{capability\_liveness\_receipt.read} $\to$ \texttt{capability\_liveness\_receipt.ingest} & & 50750 \\
-\texttt{event\_log.create} $\to$ \texttt{account.open} & & 10951 \\
-\texttt{org.create} $\to$ \texttt{org.create} & & 10531 \\
-\texttt{account.read} $\to$ \texttt{event\_log.create} & & 10424 \\
-\texttt{org.create} $\to$ \texttt{org.read} & & 7660 \\
-\texttt{org.create} $\to$ \texttt{version.create} & & 6455 \\
-\texttt{account.read} $\to$ \texttt{balance.read} & & 6422 \\
-\texttt{account.lock\_accounts} $\to$ \texttt{transfer.transfer} & & 6061 \\
+\texttt{capability\_liveness\_receipt.ingest} $\to$ \texttt{capability\_liveness\_receipt.ingest} & & 195791 \\
+\texttt{capability\_liveness\_receipt.ingest} $\to$ \texttt{capability\_liveness\_receipt.read} & & 52732 \\
+\texttt{capability\_liveness\_receipt.read} $\to$ \texttt{capability\_liveness\_receipt.ingest} & & 50851 \\
+\texttt{event\_log.create} $\to$ \texttt{account.open} & & 10992 \\
+\texttt{org.create} $\to$ \texttt{org.create} & & 10569 \\
+\texttt{account.read} $\to$ \texttt{event\_log.create} & & 10467 \\
+\texttt{org.create} $\to$ \texttt{org.read} & & 7694 \\
+\texttt{org.create} $\to$ \texttt{version.create} & & 6478 \\
+\texttt{account.read} $\to$ \texttt{balance.read} & & 6445 \\
+\texttt{account.lock\_accounts} $\to$ \texttt{transfer.transfer} & & 6080 \\
 \bottomrule
 \end{tabular}
 \caption{Top-10 most frequent directly-follows transitions across the full event log. Stochastic row-normalized probabilities $P_{ij}$ are available in the companion supplementary matrix.}
@@ -94,26 +94,26 @@ Maximum Observed Latency & 10978 & ms \\
 \toprule
 \textbf{Activity (Ordered by Frequency)} & \textbf{Event Count} & \textbf{Cumulative Coverage (\%)} \\
 \midrule
-\texttt{capability\_liveness\_receipt.ingest} & 252241 & 30.76\% \\
-\texttt{capability\_liveness\_receipt.read} & 56738 & 37.68\% \\
-\texttt{org.create} & 45078 & 43.17\% \\
-\texttt{org.read} & 28311 & 46.62\% \\
-\texttt{account.read} & 24088 & 49.56\% \\
-\texttt{version.create} & 21895 & 52.23\% \\
-\texttt{event\_log.create} & 17908 & 54.41\% \\
-\texttt{account.open} & 11549 & 55.82\% \\
-\texttt{subscription.read} & 10764 & 57.14\% \\
-\texttt{subscription.create} & 10347 & 58.4\% \\
-\texttt{book.read} & 9675 & 59.58\% \\
-\texttt{provider.create} & 9671 & 60.76\% \\
-\texttt{incident.create} & 9642 & 61.93\% \\
-\texttt{webhook.read} & 8028 & 62.91\% \\
-\texttt{approval\_backup\_retention\_change.read} & 7720 & 63.85\% \\
-\texttt{provider.read} & 7613 & 64.78\% \\
-\texttt{book.create} & 7538 & 65.7\% \\
-\texttt{transfer.transfer} & 7416 & 66.6\% \\
-\texttt{approval\_backup\_retention\_change.create} & 6980 & 67.45\% \\
-\texttt{balance.read} & 6600 & 68.26\% \\
+\texttt{capability\_liveness\_receipt.ingest} & 252736 & 30.69\% \\
+\texttt{capability\_liveness\_receipt.read} & 56852 & 37.59\% \\
+\texttt{org.create} & 45248 & 43.09\% \\
+\texttt{org.read} & 28430 & 46.54\% \\
+\texttt{account.read} & 24177 & 49.48\% \\
+\texttt{version.create} & 21963 & 52.14\% \\
+\texttt{event\_log.create} & 17968 & 54.33\% \\
+\texttt{account.open} & 11590 & 55.73\% \\
+\texttt{subscription.read} & 10805 & 57.04\% \\
+\texttt{subscription.create} & 10381 & 58.31\% \\
+\texttt{book.read} & 9872 & 59.5\% \\
+\texttt{provider.create} & 9697 & 60.68\% \\
+\texttt{incident.create} & 9674 & 61.86\% \\
+\texttt{webhook.read} & 8047 & 62.83\% \\
+\texttt{book.create} & 7746 & 63.77\% \\
+\texttt{approval\_backup\_retention\_change.read} & 7740 & 64.71\% \\
+\texttt{provider.read} & 7644 & 65.64\% \\
+\texttt{transfer.transfer} & 7440 & 66.55\% \\
+\texttt{approval\_backup\_retention\_change.create} & 6997 & 67.4\% \\
+\texttt{balance.read} & 6623 & 68.2\% \\
 \bottomrule
 \end{tabular}
 \caption{Pareto cumulative event coverage across top-20 activities, demonstrating the long-tail concentration in the production event log.}

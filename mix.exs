@@ -26,6 +26,7 @@ defmodule Ex4pm.MixProject do
           "POWL discovery/conformance/simulation, BRCE-gated DO, receipts and replay.",
       source_url: @source_url,
       package: package(),
+      docs: docs(),
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -117,6 +118,7 @@ defmodule Ex4pm.MixProject do
       # Dev/test only
       {:igniter, "~> 0.8.3", only: [:dev, :test]},
       {:faker, "~> 0.18", only: :test},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
 
       # ash_admin's own LiveView UI needs Phoenix/LiveView to compile even
       # though nothing outside ash_admin uses them directly.
@@ -130,6 +132,23 @@ defmodule Ex4pm.MixProject do
       {:telemetry_poller, "~> 1.0", only: :test},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:floki, ">= 0.30.0", only: :test}
+    ]
+  end
+
+  defp docs do
+    [
+      main: "readme",
+      extras: [
+        "README.md",
+        "docs/ARCHITECTURE.md",
+        "docs/consumer/tutorials.md",
+        "docs/consumer/how-to-guides.md",
+        "docs/consumer/reference.md",
+        "docs/consumer/explanation.md"
+      ],
+      groups_for_extras: [
+        "Consumer Guide": Path.wildcard("docs/consumer/*.md")
+      ]
     ]
   end
 
