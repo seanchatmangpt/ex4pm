@@ -1,0 +1,151 @@
+;; errc-ggen-ecosystem-best-practices.problem.hddl
+;;
+;; The 8 clusters below are the exact synthesis output of the 2026-09-09
+;; deep-search workflow (task w7g5rh8wg, 5 parallel per-repo discovery
+;; agents + 1 cross-repo synthesis agent, 801551 subagent tokens, 57 tool
+;; uses). Each :evidence comment cites the real file:line the discovery
+;; agents actually read. root-cause-local/root-cause-upstream classifies
+;; whether this cluster's action item is executable inside ~/ex4pm alone
+;; (per the active "only work on the ex4pm" session restriction) or
+;; requires editing ~/ggen_igniter/~/ggen, which stays a filed report
+;; (file-upstream-report) rather than a direct edit until separately
+;; confirmed.
+(define (problem errc-ggen-ecosystem-best-practices-p1)
+  (:domain errc-ggen-ecosystem-best-practices)
+
+  (:objects
+    c1 - cluster  ;; ENFORCE-DETERMINISTIC-QUERY-ORDERING
+    c2 - cluster  ;; GENERATE-SHARED-NORMALIZATION-PRIMITIVE
+    c3 - cluster  ;; GENERATE-DETERMINISM-VERIFIER
+    c4 - cluster  ;; PORT-CHEAT-SCANNER-TO-ELIXIR
+    c5 - cluster  ;; RAISE-EVIDENCE-DERIVED-ACTUATION-GUARANTEES
+    c6 - cluster  ;; ELIMINATE-SUPERSEDED-GENERATION-ARTIFACTS
+    c7 - cluster  ;; GENERATE-CROSS-REPO-ONTOLOGY-IMPORT-LOADER
+    c8 - cluster  ;; GENERATE-SHARED-SYNC-VERIFY-TASK
+  )
+
+  (:init
+    ;; c1 -- ENFORCE-DETERMINISTIC-QUERY-ORDERING (Eliminate, upstream)
+    ;; Evidence: ggen_igniter/lib/mix/tasks/ggen_igniter.sync.ex:55-58,692
+    ;; (`--engine sparql` still selectable despite documented row-order
+    ;; corruption); ggen/crates/ggen-config/src/manifest/validation.rs:119,203
+    ;; (E0011/E0013 hard-refuse missing ORDER BY at compile time); xaas
+    ;; priv/packs/xaas_library_pack/{gates,queries}/ -- 14 byte-identical
+    ;; .rq files duplicated across two directories that can desync.
+    (cluster-evidenced c1)
+    (category-eliminate c1)
+    (root-cause-upstream c1)
+
+    ;; c2 -- GENERATE-SHARED-NORMALIZATION-PRIMITIVE (Reduce, local)
+    ;; Evidence: beam4pm lib/beam4pm_actuation.ex:601-620,
+    ;; beam4pm_rf2_conformance.ex:395-405, beam4pm_rf3_ocel.ex:461-470
+    ;; (near-identical normalize_opts!/1 hand-copied 3x); ex4pm
+    ;; priv/ggen/templates/standing_coded.ex.eex:9-33 and
+    ;; standing_coded_test.exs.eex:11-30 (byte-identical norm/1 closures,
+    ;; confirmed dead code now that ggen_igniter v26.9.8's oxigraph NIF
+    ;; fix returns plain values by default -- see this session's earlier
+    ;; verified finding against ggen_igniter/lib/ggen_igniter/query/
+    ;; oxigraph.ex's moduledoc). The ex4pm-side action is local: delete
+    ;; the dead norm/1 from both templates.
+    (cluster-evidenced c2)
+    (category-reduce c2)
+    (root-cause-local c2)
+
+    ;; c3 -- GENERATE-DETERMINISM-VERIFIER (Create, local)
+    ;; Evidence: ggen/CONSTITUTION.md:1-10, VERIFICATION.md:1-9 (generated
+    ;; from admitted ver: facts + SPARQL ASK gates -- ggen's own quality
+    ;; state is itself an admitted, checked-in artifact); ggen_igniter has
+    ;; no CONSTITUTION.md/VERIFICATION.md mirror; ex4pm's own
+    ;; docs/PRD-v26.9.10.md:221-223 states determinism is "proven manually
+    ;; (delete, regenerate, diff byte-identical)" -- not wired into `mix
+    ;; verify` or scripts/standing_coded_sync.sh. Local action: add a real
+    ;; `mix ex4pm.ggen.verify_determinism` task (or extend
+    ;; standing_coded_sync.sh) that runs the delete+regenerate+diff proof
+    ;; automatically, in ex4pm's own repo, rather than as a one-time
+    ;; narrated check.
+    (cluster-evidenced c3)
+    (category-create c3)
+    (root-cause-local c3)
+
+    ;; c4 -- PORT-CHEAT-SCANNER-TO-ELIXIR (Create, upstream)
+    ;; Evidence: ggen/CONSTITUTION.md:60-64 Principle IV, enforced by
+    ;; crates/ggen-cheat-scanner (CHEAT-T01..T04: vacuous asserts,
+    ;; tautologies, mock imports), wired into justfile:377-378
+    ;; pre-commit; grep across ggen_igniter's lib/+test/ for any
+    ;; vacuous/tautology/cheat-scan-equivalent tooling returns zero
+    ;; matches. This is a genuinely missing capability in the Elixir tool
+    ;; itself, not something ex4pm can build locally without duplicating
+    ;; ggen_igniter's own testing infrastructure -- filed as an upstream
+    ;; report, not edited directly, per the active scope restriction.
+    (cluster-evidenced c4)
+    (category-create c4)
+    (root-cause-upstream c4)
+
+    ;; c5 -- RAISE-EVIDENCE-DERIVED-ACTUATION-GUARANTEES (Raise, upstream)
+    ;; Evidence: ggen_igniter doc/gaps-to-fill-v26-9-1.md gap #4
+    ;; (Controller.run_pipeline/1 defaults to the uncompensated
+    ;; Reconcile.run/1 path, use_reactor: false by default) and gap #5
+    ;; (eval-mode targets crash ReconcileReactor's :render step -- zero
+    ;; compensation coverage for the highest-risk actuation class); ggen
+    ;; CONSTITUTION.md:94-100 (sync.rs:1857 hardcodes andon: Andon::Green
+    ;; regardless of real admission outcome, an admitted active
+    ;; divergence from Principle VII). Root cause and fix both live
+    ;; upstream in ggen_igniter/ggen.
+    (cluster-evidenced c5)
+    (category-raise c5)
+    (root-cause-upstream c5)
+
+    ;; c6 -- ELIMINATE-SUPERSEDED-GENERATION-ARTIFACTS (Eliminate, upstream)
+    ;; Evidence: xaas priv/packs/xaas_ocel_envelope_pack (dead) vs
+    ;; xaas_telemetry_pack (live) both declaring `to:
+    ;; lib/xaas/telemetry/ocel_envelope.ex` with no cross-warning;
+    ;; ggen_igniter lib/ggen_igniter/doctor_fixes.ex:340-369 already fixes
+    ;; gap #8 via dep_opts_elem/1, but
+    ;; doc/gaps-to-fill-v26-9-1.md's own STATUS PASS block still marks it
+    ;; "OPEN, unaddressed," citing the now-superseded line
+    ;; doctor_fixes.ex:359. Fixing xaas's dead pack and ggen_igniter's
+    ;; stale doc both live outside ex4pm.
+    (cluster-evidenced c6)
+    (category-eliminate c6)
+    (root-cause-upstream c6)
+
+    ;; c7 -- GENERATE-CROSS-REPO-ONTOLOGY-IMPORT-LOADER (Create, upstream)
+    ;; Evidence: ggen_igniter's Ontology.load!/1 reads exactly one file
+    ;; per sync invocation with no owl:imports resolution (per xaas
+    ;; priv/packs/xaas_ocel_envelope_pack/ontology.ttl's own rdfs:comment
+    ;; disclosing this); xaas priv/packs/xaas_telemetry_pack/ontology.ttl
+    ;; hand-vendors ex4pm's ontology facts with only a prose commit-SHA
+    ;; pin, not an executable gate; ex4pm's docs/PRD-v26.9.10.md:215-217
+    ;; documents the norm/1 convention itself being hand-copied from
+    ;; beam4pm's templates in-session -- the same symptom (no real
+    ;; cross-repo import mechanism) recurring at the ontology layer and
+    ;; the template-convention layer. The loader itself is a
+    ;; ggen_igniter/Ontology.load!/1 change.
+    (cluster-evidenced c7)
+    (category-create c7)
+    (root-cause-upstream c7)
+
+    ;; c8 -- GENERATE-SHARED-SYNC-VERIFY-TASK (Create, local)
+    ;; Evidence: beam4pm scripts/gate_m2_check.sh:1-260 (hand-rolled
+    ;; delete/regenerate/sha256-diff determinism check with documented
+    ;; missed-directory bugs -- the exact bug class this session avoided
+    ;; twice by manually checking rather than trusting the script); ex4pm
+    ;; scripts/standing_coded_sync.sh:1-27 (bespoke deps.get/sync-x2/
+    ;; compile/test script for one consumer, no shared `mix
+    ;; ex4pm.ggen.sync` task). The ex4pm-side action is local and
+    ;; directly buildable: promote standing_coded_sync.sh's shape into a
+    ;; real `mix ex4pm.ggen.sync` Mix task so future ex4pm-side
+    ;; generated modules (c3's determinism verifier included) don't each
+    ;; get their own bespoke bash script.
+    (cluster-evidenced c8)
+    (category-create c8)
+    (root-cause-local c8)
+  )
+
+  (:htn
+    :parameters ()
+    :subtasks (and (t1 (CLOSE-ALL-ERRC-CLUSTERS)))
+  )
+
+  (:goal (all-clusters-closed))
+)

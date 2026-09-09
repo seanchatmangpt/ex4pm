@@ -1,0 +1,258 @@
+;; errc-ggen-ecosystem-best-practices.domain.hddl
+;;
+;; HDDL 2.1 domain for the 8 cross-repo ERRC clusters found by the
+;; 2026-09-09 deep-search workflow (Task w7g5rh8wg) over the real state of
+;; ~/ggen, ~/ggen_igniter, ~/xaas, ~/beam4pm, ~/ex4pm at that commit. Each
+;; cluster is grounded in real file:line evidence (see the paired .problem
+;; file's :evidence facts) -- this domain is the task-network shape for
+;; closing them, not a fresh proposal. Hand-verified against HDDL 2.1
+;; grammar; no local HDDL/HTN parser is available in this toolchain (same
+;; disclosed limitation as docs/jira/v26.9.10/hddl/finish-ex4pm-v26.9.10).
+;;
+;; Scope note: per the active session restriction ("only work on the
+;; ex4pm"), every :action below is scoped to close/mitigate its cluster
+;; from ex4pm's own side (this repo's templates, scripts, docs) even where
+;; the cluster's root cause lives upstream in ggen_igniter/ggen. Upstream
+;; changes (e.g. PORT-CHEAT-SCANNER-TO-ELIXIR, ENFORCE-DETERMINISTIC-
+;; QUERY-ORDERING's --engine sparql refusal) are represented as
+;; report-upstream actions -- filing/documenting the finding against the
+;; other repo, not editing it -- since editing ~/ggen_igniter or ~/ggen
+;; needs its own explicit go-ahead.
+(define (domain errc-ggen-ecosystem-best-practices)
+  (:requirements :hierarchy :typing :negative-preconditions :disjunctive-preconditions :equality)
+
+  (:types
+    cluster - object
+  )
+
+  (:predicates
+    (cluster-evidenced ?c - cluster)
+    (cluster-classified ?c - cluster)
+    (category-eliminate ?c - cluster)
+    (category-reduce ?c - cluster)
+    (category-raise ?c - cluster)
+    (category-create ?c - cluster)
+    (root-cause-local ?c - cluster)      ;; fixable inside ex4pm's own repo
+    (root-cause-upstream ?c - cluster)   ;; fix belongs in ggen_igniter/ggen
+    (local-fix-applied ?c - cluster)
+    (upstream-report-filed ?c - cluster)
+    (verification-run ?c - cluster)
+    (receipt-written ?c - cluster)
+    (cluster-closed ?c - cluster)
+    (all-clusters-closed)
+  )
+
+  ;; ---------------------------------------------------------------
+  ;; Top task
+  ;; ---------------------------------------------------------------
+  (:task CLOSE-ALL-ERRC-CLUSTERS
+    :parameters ()
+  )
+
+  (:method m-close-all-errc-clusters
+    :parameters ()
+    :task (CLOSE-ALL-ERRC-CLUSTERS)
+    :ordered-subtasks (and
+      (CLOSE-CLUSTER c1)
+      (CLOSE-CLUSTER c2)
+      (CLOSE-CLUSTER c3)
+      (CLOSE-CLUSTER c4)
+      (CLOSE-CLUSTER c5)
+      (CLOSE-CLUSTER c6)
+      (CLOSE-CLUSTER c7)
+      (CLOSE-CLUSTER c8)
+      (CONFIRM-ALL-CLOSED)
+    )
+  )
+
+  ;; ---------------------------------------------------------------
+  ;; Per-cluster compound task, dispatched by category + root-cause
+  ;; locality. Each combination gets its own dedicated method (same
+  ;; discipline as finish-ex4pm-v26.9.10.domain.hddl's per-requirement
+  ;; methods) so CLOSE-CLUSTER is never ambiguous about which action
+  ;; fires for a given ?c.
+  ;; ---------------------------------------------------------------
+  (:task CLOSE-CLUSTER
+    :parameters (?c - cluster)
+  )
+
+  (:method m-close-eliminate-local
+    :parameters (?c - cluster)
+    :task (CLOSE-CLUSTER ?c)
+    :precondition (and (category-eliminate ?c) (root-cause-local ?c))
+    :ordered-subtasks (and
+      (VERIFY-EVIDENCE ?c)
+      (remove-dead-artifact ?c)
+      (VERIFY-CLUSTER ?c)
+      (WRITE-RECEIPT ?c)
+    )
+  )
+
+  (:method m-close-eliminate-upstream
+    :parameters (?c - cluster)
+    :task (CLOSE-CLUSTER ?c)
+    :precondition (and (category-eliminate ?c) (root-cause-upstream ?c))
+    :ordered-subtasks (and
+      (VERIFY-EVIDENCE ?c)
+      (file-upstream-report ?c)
+      (VERIFY-CLUSTER ?c)
+      (WRITE-RECEIPT ?c)
+    )
+  )
+
+  (:method m-close-reduce-local
+    :parameters (?c - cluster)
+    :task (CLOSE-CLUSTER ?c)
+    :precondition (and (category-reduce ?c) (root-cause-local ?c))
+    :ordered-subtasks (and
+      (VERIFY-EVIDENCE ?c)
+      (extract-shared-primitive ?c)
+      (VERIFY-CLUSTER ?c)
+      (WRITE-RECEIPT ?c)
+    )
+  )
+
+  (:method m-close-raise-upstream
+    :parameters (?c - cluster)
+    :task (CLOSE-CLUSTER ?c)
+    :precondition (and (category-raise ?c) (root-cause-upstream ?c))
+    :ordered-subtasks (and
+      (VERIFY-EVIDENCE ?c)
+      (file-upstream-report ?c)
+      (VERIFY-CLUSTER ?c)
+      (WRITE-RECEIPT ?c)
+    )
+  )
+
+  (:method m-close-create-local
+    :parameters (?c - cluster)
+    :task (CLOSE-CLUSTER ?c)
+    :precondition (and (category-create ?c) (root-cause-local ?c))
+    :ordered-subtasks (and
+      (VERIFY-EVIDENCE ?c)
+      (build-new-capability ?c)
+      (VERIFY-CLUSTER ?c)
+      (WRITE-RECEIPT ?c)
+    )
+  )
+
+  (:method m-close-create-upstream
+    :parameters (?c - cluster)
+    :task (CLOSE-CLUSTER ?c)
+    :precondition (and (category-create ?c) (root-cause-upstream ?c))
+    :ordered-subtasks (and
+      (VERIFY-EVIDENCE ?c)
+      (file-upstream-report ?c)
+      (VERIFY-CLUSTER ?c)
+      (WRITE-RECEIPT ?c)
+    )
+  )
+
+  ;; ---------------------------------------------------------------
+  ;; Sub-tasks / actions
+  ;; ---------------------------------------------------------------
+  (:task VERIFY-EVIDENCE
+    :parameters (?c - cluster)
+  )
+  (:method m-verify-evidence
+    :parameters (?c - cluster)
+    :task (VERIFY-EVIDENCE ?c)
+    :precondition (cluster-evidenced ?c)
+    :ordered-subtasks (classify-cluster ?c)
+  )
+
+  (:task VERIFY-CLUSTER
+    :parameters (?c - cluster)
+  )
+  (:method m-verify-cluster-local
+    :parameters (?c - cluster)
+    :task (VERIFY-CLUSTER ?c)
+    :precondition (local-fix-applied ?c)
+    :ordered-subtasks (run-verification ?c)
+  )
+  (:method m-verify-cluster-upstream
+    :parameters (?c - cluster)
+    :task (VERIFY-CLUSTER ?c)
+    :precondition (upstream-report-filed ?c)
+    :ordered-subtasks (run-verification ?c)
+  )
+
+  (:task WRITE-RECEIPT
+    :parameters (?c - cluster)
+  )
+  (:method m-write-receipt
+    :parameters (?c - cluster)
+    :task (WRITE-RECEIPT ?c)
+    :precondition (verification-run ?c)
+    :ordered-subtasks (emit-receipt ?c)
+  )
+
+  (:task CONFIRM-ALL-CLOSED
+    :parameters ()
+  )
+  (:method m-confirm-all-closed
+    :parameters ()
+    :task (CONFIRM-ALL-CLOSED)
+    :precondition (and
+      (cluster-closed c1) (cluster-closed c2) (cluster-closed c3)
+      (cluster-closed c4) (cluster-closed c5) (cluster-closed c6)
+      (cluster-closed c7) (cluster-closed c8)
+    )
+    :ordered-subtasks (assert-all-closed)
+  )
+
+  ;; ---------------------------------------------------------------
+  ;; Primitive actions
+  ;; ---------------------------------------------------------------
+  (:action classify-cluster
+    :parameters (?c - cluster)
+    :precondition (and (cluster-evidenced ?c) (not (cluster-classified ?c)))
+    :effect (cluster-classified ?c)
+  )
+
+  (:action remove-dead-artifact
+    :parameters (?c - cluster)
+    :precondition (and (cluster-classified ?c) (category-eliminate ?c) (root-cause-local ?c))
+    :effect (local-fix-applied ?c)
+  )
+
+  (:action extract-shared-primitive
+    :parameters (?c - cluster)
+    :precondition (and (cluster-classified ?c) (category-reduce ?c) (root-cause-local ?c))
+    :effect (local-fix-applied ?c)
+  )
+
+  (:action build-new-capability
+    :parameters (?c - cluster)
+    :precondition (and (cluster-classified ?c) (category-create ?c) (root-cause-local ?c))
+    :effect (local-fix-applied ?c)
+  )
+
+  (:action file-upstream-report
+    :parameters (?c - cluster)
+    :precondition (and (cluster-classified ?c) (root-cause-upstream ?c))
+    :effect (upstream-report-filed ?c)
+  )
+
+  (:action run-verification
+    :parameters (?c - cluster)
+    :precondition (or (local-fix-applied ?c) (upstream-report-filed ?c))
+    :effect (verification-run ?c)
+  )
+
+  (:action emit-receipt
+    :parameters (?c - cluster)
+    :precondition (verification-run ?c)
+    :effect (and (receipt-written ?c) (cluster-closed ?c))
+  )
+
+  (:action assert-all-closed
+    :parameters ()
+    :precondition (and
+      (cluster-closed c1) (cluster-closed c2) (cluster-closed c3)
+      (cluster-closed c4) (cluster-closed c5) (cluster-closed c6)
+      (cluster-closed c7) (cluster-closed c8)
+    )
+    :effect (all-clusters-closed)
+  )
+)
