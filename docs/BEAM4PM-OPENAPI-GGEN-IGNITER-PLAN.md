@@ -340,8 +340,6 @@ Ordered prerequisite/migration steps, once that go-ahead is given:
 
 ## 5a. ex4pm-side consumer readiness (new, this session)
 
-> **Status 2026-09-24: NOT landed on `feat/a2a-client-additive-path` — implemented only on worktree branch `worktree-wf_ae9bd890-20d-1` (`924db0a`). Treat as design intent until merged.**
-
 `Ex4pm.Engine.Beam4pm` (ex4pm's network-backed engine candidate, `lib/ex4pm/engine/beam4pm.ex`)
 now includes an opt-in `verify_contract` flag: when set, it fetches beam4pm's live
 `/openapi.json` document and confirms the admitted route table it dispatches from actually
