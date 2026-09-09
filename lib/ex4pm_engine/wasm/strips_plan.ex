@@ -1,8 +1,10 @@
 defmodule Ex4pmEngine.Wasm.StripsPlan do
   @moduledoc """
-  wasm4pm-ex4pm-bindings `strips_plan` adapter — generated from
-  `~/ggen-marketplace/packs/ex4pm-wasm4pm-bindings-pack`, source crate
-  `wasm4pm-cognition`.
+  wasm4pm-ex4pm-bindings `strips_plan` adapter -- Phase 2 (thin wrappers over
+  miniml/ocpq/wasm4pm-cognition), thin wrapper over an already-implemented,
+  plain (non-wasm_bindgen) pub fn already present in the `wasm4pm` crate.
+  See `~/wasm4pm/crates/wasm4pm-ex4pm-bindings/src/phase2.rs` for the
+  real Rust implementation this binds.
 
   See `Ex4pmEngine.Wasm.Adapter` for the shared six-state standing shape.
   Injected transport key: `:strips_plan_wasm_fun`.
