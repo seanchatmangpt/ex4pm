@@ -338,6 +338,19 @@ Ordered prerequisite/migration steps, once that go-ahead is given:
    modules to confirm the emitted `json_api do ... end` blocks and router compile
    and pass beam4pm's real `just verify` gate.
 
+## 5a. ex4pm-side consumer readiness (new, this session)
+
+`Ex4pm.Engine.Beam4pm` (ex4pm's network-backed engine candidate, `lib/ex4pm/engine/beam4pm.ex`)
+now includes an opt-in `verify_contract` flag: when set, it fetches beam4pm's live
+`/openapi.json` document and confirms the admitted route table it dispatches from actually
+matches beam4pm's real declared OpenAPI spec, refusing with a typed `:beam4pm_contract_drift`
+refusal on mismatch. This means the **ex4pm side of a live OpenAPI-driven connection to
+beam4pm is now READY** — once beam4pm's own Phase 0/1 work above (still plan-only in this
+document: `ash_json_api` wiring, `json_api do ... end` generation, a mounted
+`AshJsonApi.Router` serving `/openapi.json`) lands, ex4pm already has a real consumer able to
+fetch and verify that spec. The remaining gap for an actual live connection is entirely on
+beam4pm's side — everything this plan's §5 ordered steps describe — not on ex4pm's.
+
 ## 6. Risks / open questions
 
 - **`ash_json_api` 1.7.1's exact OpenAPI-enablement DSL surface is unverified this
