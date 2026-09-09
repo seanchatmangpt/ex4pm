@@ -126,10 +126,20 @@ as a real library dependency and to push OCEL v2 events to this app's real
 ocel_controller}.ex`). Full requirements: `docs/ROADMAP-xaas-integration.md` (mirrored
 from `~/xaas/docs/ROADMAP.md`).
 
-**Role split, explicit user decision:** ex4pm is the downstream library layer other
-Elixir apps import (`ex4pm_core` already has a real hex-publishable shape — `package()`,
-`@version`, `description` in its `mix.exs`); beam4pm is a separate runtime reached only
-over the network, never as a compile-time dependency of anything outside its own repo.
+**Role split, explicit user decision (2026-09-09):** ex4pm is the downstream library
+layer other Elixir apps import — `ex4pm_core`/`ex4pm_contracts` may appear as a real
+`path:`/hex dependency in xaas's `mix.exs` (`ex4pm_core` already has a real
+hex-publishable shape: `package()`, `@version`, `description` in its `mix.exs`).
+beam4pm is a separate runtime (the actual execution substrate — Rust rf1-rf4 oracles,
+whatever receipt/actuation machinery survives its current merge) reached only over the
+network (HTTP/PubSub), never as a compile-time dependency of anything outside its own
+repo — xaas has no business knowing beam4pm's internal module names.
+
+**Status per the roadmap, as of 2026-09-09: beam4pm is BLOCKED (external)** — `~/beam4pm`
+has an in-progress, uncommitted git merge; nothing in the roadmap is actionable against
+beam4pm until that resolves, and the roadmap's own explicit resume trigger says not to
+touch it again until the user confirms that merge is committed. **ex4pm is NOT
+blocked** — the three items below can proceed independently of beam4pm's state.
 
 **What that roadmap asks of this repo specifically**, if you're the one picking this
 up:
@@ -142,6 +152,18 @@ up:
    (`priv/shacl/ex4pm-shapes.ttl`) are meant to be ggen'd by xaas's `ggen_igniter`
    pipeline to generate xaas-side OCEL envelope code — this repo doesn't need to do
    anything for that except keep those contract files real and versioned (which
-   `ex4pm_contracts`'s own moduledoc says it already does via hash manifests).
+   `ex4pm_contracts`'s own moduledoc says it already does via hash manifests). The
+   consuming side of this (adding the `path:` dependency, wiring `ggen_igniter`,
+   generating the envelope builder to replace xaas's hand-written
+   `Xaas.Telemetry.OcelForwarder`) lives in `~/xaas`, not here — see `~/xaas/CLAUDE.md`
+   and `~/xaas/docs/ROADMAP.md` for that side's own doctrine and non-negotiable
+   discipline (Chicago-style testing, Ash policy floor, BRCE-gated DO, no-overclaiming).
+4. `POST /api/v1/ocel/events` → `Ex4pmWeb.OcelController.ingest/2`
+   (`apps/ex4pm_web/lib/ex4pm_web/{router,controllers/ocel_controller}.ex`) stays the
+   real network seam xaas reaches at runtime — confirmed present as of this note.
+   Adding `ex4pm_core` as xaas's compile-time dependency (item 1) is for shared types
+   and validation only; it does not change xaas calling this endpoint over HTTP rather
+   than in-process.
 
-beam4pm-specific items in that roadmap are explicitly out of scope for this repo.
+beam4pm-specific items in that roadmap are explicitly out of scope for this repo, and
+are BLOCKED per the status above regardless.
