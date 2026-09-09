@@ -144,10 +144,14 @@ whatever receipt/actuation machinery survives its current merge) reached only ov
 network (HTTP/PubSub), never as a compile-time dependency of anything outside its own
 repo — xaas has no business knowing beam4pm's internal module names.
 
-**Status per the roadmap, as of 2026-09-09: beam4pm is BLOCKED (external)** — `~/beam4pm`
-has an in-progress, uncommitted git merge; nothing in the roadmap is actionable against
-beam4pm until that resolves, and the roadmap's own explicit resume trigger says not to
-touch it again until the user confirms that merge is committed. **ex4pm is NOT
+**Status update, 2026-09-09 (later same day):** a research pass found beam4pm's git
+state clean — `HEAD` at `61f8d48 merge: integrate local/session-integration (11 real
+branches' work)`, no `.git/MERGE_HEAD` — meaning the merge this note originally
+described as in-progress appears committed. Per this note's own standing rule, that
+observation alone does not lift the block: the rule requires the *user* to confirm the
+merge is committed before beam4pm is touched again, not an agent's `git status` read.
+Treat beam4pm as **PARTIAL_ALIVE / pending confirmation** rather than either fully
+BLOCKED or fully clear until the user says so explicitly. **ex4pm is NOT
 blocked** — the three items below can proceed independently of beam4pm's state.
 
 **What that roadmap asks of this repo specifically**, if you're the one picking this
