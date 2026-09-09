@@ -197,6 +197,116 @@ problem map appropriate to that operation), the left engine id, the right engine
 and an opts keyword list. Use `Ex4pm.capabilities/2` first to confirm both engine ids
 you want to compare are actually registered candidates for that operation.
 
+## How to mine your own CI/scheduled-task pipeline for throughput and conformance
+
+If you run a CI or scheduled-task pipeline that qualifies commits, runs a crown/release
+process, merges the result, and occasionally repairs a failure, you can model each of
+those pipeline events as an OCEL v2 event and use ex4pm to discover the pipeline's real
+directly-follows behavior and check it against an expected model — rather than manually
+cross-referencing scheduler logs against merge timestamps by hand.
+
+Model each event with `event_type` one of `"commit_qualified"`, `"crown_run"`,
+`"merge"`, or `"rca_repair"`, and `object_type` `"batch"` (or `"lane"` if you track
+concurrent lanes separately). First, ingest a known-good lane — one where a
+`commit_qualified` run was always followed by a `crown_run` and then a `merge` — and
+discover its directly-follows graph with `Ex4pm.discover/2`:
+
+```elixir
+expected_raw = %{
+  "objects" => %{
+    "batch-good" => %{"type" => "batch"}
+  },
+  "events" => %{
+    "e1" => %{
+      "activity" => "commit_qualified",
+      "timestamp" => "2026-09-09T09:00:00Z",
+      "objects" => ["batch-good"]
+    },
+    "e2" => %{
+      "activity" => "crown_run",
+      "timestamp" => "2026-09-09T09:05:00Z",
+      "objects" => ["batch-good"]
+    },
+    "e3" => %{
+      "activity" => "merge",
+      "timestamp" => "2026-09-09T09:10:00Z",
+      "objects" => ["batch-good"]
+    }
+  }
+}
+
+{:ok, expected_log} = Ex4pm.ingest(expected_raw)
+{:ok, expected_model} = Ex4pm.discover(expected_log, object_type: "batch")
+```
+
+`expected_model.value` is the real discovered directly-follows graph — a map with
+`edges` keyed by `{from_activity, to_activity}` tuples, plus `starts`, `ends`, and
+`activities` counts:
+
+```elixir
+%{
+  type: :dfg,
+  edges: %{
+    {"commit_qualified", "crown_run"} => %{count: 1, average_duration_ms: 300_000.0},
+    {"crown_run", "merge"} => %{count: 1, average_duration_ms: 300_000.0}
+  },
+  object_type: "batch",
+  activities: %{"commit_qualified" => 1, "crown_run" => 1, "merge" => 1},
+  ends: %{"merge" => 1},
+  starts: %{"commit_qualified" => 1},
+  trace_count: 1
+}
+```
+
+Now ingest the pipeline's actual behavior for a batch that ran `commit_qualified` and
+`crown_run` but never merged — the scheduler retried the qualifying commit instead —
+and check it with `Ex4pm.conform/2` against the expected model:
+
+```elixir
+actual_raw = %{
+  "objects" => %{
+    "batch-stalled" => %{"type" => "batch"}
+  },
+  "events" => %{
+    "f1" => %{
+      "activity" => "commit_qualified",
+      "timestamp" => "2026-09-09T10:00:00Z",
+      "objects" => ["batch-stalled"]
+    },
+    "f2" => %{
+      "activity" => "crown_run",
+      "timestamp" => "2026-09-09T10:05:00Z",
+      "objects" => ["batch-stalled"]
+    },
+    "f3" => %{
+      "activity" => "commit_qualified",
+      "timestamp" => "2026-09-09T10:35:00Z",
+      "objects" => ["batch-stalled"]
+    }
+  }
+}
+
+{:ok, actual_log} = Ex4pm.ingest(actual_raw)
+{:ok, conformance} = Ex4pm.conform(actual_log, expected_model.value, object_type: "batch")
+
+conformance.value.fitness
+# => 0.5
+
+conformance.value.deviations
+# => %{{"crown_run", "commit_qualified"} => 1}
+```
+
+The `crown_run -> commit_qualified` deviation is the real signal: this batch's crown
+ran, but instead of the expected `merge` within the modeled window, the pipeline looped
+back into another qualifying-commit attempt — an expected `merge` event absent where the
+model says one should follow. That is the concrete mechanism that turns a stalled,
+unmerged batch into a conformance violation `Ex4pm.conform/2` surfaces automatically,
+instead of requiring a human to manually diff scheduler logs against merge timestamps
+after the fact. Widen the expected model (ingest more known-good lanes before calling
+`Ex4pm.discover/2`) to admit legitimate variations — such as a `rca_repair` step between
+`crown_run` and `merge` — without losing the check on the pipeline stalling out
+entirely.
+
 ## See Also
 
 - `Ex4pm.Contracts.verify/0` (via `Ex4pm.contracts/0`) — fetch and verify the
