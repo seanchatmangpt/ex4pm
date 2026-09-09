@@ -89,6 +89,23 @@ ex4pmsc:alive_ws3_fortune5_runtime_value_50 a ex4pmsc:AdmittedStandingCode ;
 # section 4), admitted here so the ex4pm-side generated client exists and
 # is tested against a real local JSON:API-shaped server now, ready to
 # point at beam4pm's real endpoint the moment that Phase 0 work lands.
+#
+# CORRECT BY CONSTRUCTION, not runtime-verified (explicit user correction,
+# 2026-09-09): the plan is NOT for ex4pm to fetch beam4pm's live OpenAPI
+# spec and check for drift at runtime. It is for beam4pm's own future
+# ggen_igniter pipeline (see docs/BEAM4PM-OPENAPI-GGEN-IGNITER-PLAN.md) to
+# generate its `json_api do ... end` blocks from this EXACT SAME
+# ex4pmb:AdmittedBeam4pmService graph -- the identical mechanism beam4pm
+# already proves works today for merging a vendored pack's ontology.ttl
+# with its own before querying (scripts/igniter_sync.sh's MERGED_TTL
+# step). Once both Ex4pm.Engine.Beam4pm (this repo) and beam4pm's
+# generated json_api routes are pure functions of byte-identical ontology
+# input, they cannot disagree -- agreement is structural, the same
+# guarantee Ex4pm.Contracts.manifest/0's content hash already gives any
+# consumer of this whole file. No drift-detection refusal is needed or
+# should be built; the correct fix for potential drift is ensuring
+# beam4pm's generation step reads this file (or the exact ex4pmb: graph
+# within it), not a runtime check against what it happens to have read.
 # =============================================================================
 @prefix ex4pmb: <https://chatman.ai/ex4pm/beam4pm-services#> .
 
