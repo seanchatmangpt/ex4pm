@@ -1,7 +1,7 @@
 defmodule Ex4pmEvidence.MixProject do
   use Mix.Project
 
-  @version "26.8.22"
+  @version "26.9.9"
   @source_url "https://github.com/seanchatmangpt/ex4pm"
 
   def project do
@@ -17,7 +17,7 @@ defmodule Ex4pmEvidence.MixProject do
       lockfile: "../../mix.lock",
       start_permanent: Mix.env() == :prod,
       deps: [
-        {:ex4pm_core, "~> 26.8.22", in_umbrella: true},
+        {:ex4pm_core, "~> 26.9.9", in_umbrella: true},
         {:faker, "~> 0.18", only: :test}
       ]
     ]
