@@ -1,6 +1,7 @@
 defmodule Ex4pm.ContractsTest do
   use ExUnit.Case, async: true
 
+  @tag :integration
   test "ontology, SHACL, WIT, and receipt schema close into one contract hash" do
     assert {:ok, contract} = Ex4pm.Contracts.verify()
     assert contract.standing == :alive

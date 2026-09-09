@@ -45,6 +45,7 @@ defmodule Ex4pm.RuntimeTest do
              Runtime.execute(plan, nil)
   end
 
+  @tag :integration
   test "incomparable POWL tasks are scheduled concurrently by Reactor" do
     assert {:ok, model} = diamond_model()
     assert {:ok, plan} = Runtime.compile(model)
@@ -99,6 +100,7 @@ defmodule Ex4pm.RuntimeTest do
     assert_receive {:ran, "d"}, 1_000
   end
 
+  @tag :integration
   test "Reactor cannot silently retry a failed BRCE task" do
     assert {:ok, model} = POWL.new([%{id: "a", label: "A"}], [])
     assert {:ok, plan} = Runtime.compile(model)

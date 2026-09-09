@@ -10,6 +10,7 @@ defmodule Ex4pmEngine.Reactors.NegativeConformanceRollbackTest do
   alias Ex4pmEngine.POWL
 
   describe "Fortune 5 Negative Verification: Fault Injection, Non-Conformance, & LIFO Rollback Conformance" do
+    @tag :integration
     test "terminal fault triggers forward non-conformance and proves 100% LIFO undo rollback conformance" do
       # 1. Execute saga with deliberate terminal delivery fault
       result =

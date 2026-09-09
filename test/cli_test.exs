@@ -2,6 +2,7 @@ defmodule Ex4pm.CLITest do
   use ExUnit.Case, async: true
   import ExUnit.CaptureIO
 
+  @tag :integration
   test "doctor exposes the complete engine candidate graph and contract identity" do
     output = capture_io(fn -> Ex4pm.CLI.main(["doctor"]) end)
     assert output =~ "beam"
@@ -12,6 +13,7 @@ defmodule Ex4pm.CLITest do
     assert output =~ "sha256:"
   end
 
+  @tag :integration
   test "contracts command emits the canonical artifact graph" do
     output = capture_io(fn -> Ex4pm.CLI.main(["contracts"]) end)
     assert output =~ "contract_hash"

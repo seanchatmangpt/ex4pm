@@ -33,6 +33,7 @@ defmodule Ex4pmEngine.AutoFdePlannerReactorTest do
       %{write_script: write_script, dir: dir}
     end
 
+    @tag :integration
     test "runs the real primary script and returns its output when it succeeds", %{
       write_script: write_script
     } do
@@ -60,6 +61,7 @@ defmodule Ex4pmEngine.AutoFdePlannerReactorTest do
       assert result.value == "primary-result-#{number}"
     end
 
+    @tag :integration
     test "falls back to the real fallback script when the primary script exits non-zero, compensating the primary port",
          %{write_script: write_script} do
       run_id = Faker.UUID.v4()
