@@ -27,6 +27,16 @@
     },
     "template": "priv/ggen/templates/beam4pm.ex.eex",
     "out": "lib/ex4pm/engine/beam4pm.ex",
+    "test_path": null
+  },
+  {
+    "name": "engine_beam4pm_test",
+    "ontology": "priv/ontology/ex4pm.ttl",
+    "query_bindings": {
+      "admitted": "priv/ggen/queries/admitted_beam4pm_services.rq"
+    },
+    "template": "priv/ggen/templates/engine_beam4pm_test.exs.eex",
+    "out": "test/engine_beam4pm_test.exs",
     "test_path": "test/engine_beam4pm_test.exs"
   }
 ]
