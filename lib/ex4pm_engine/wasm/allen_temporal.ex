@@ -1,8 +1,10 @@
 defmodule Ex4pmEngine.Wasm.AllenTemporal do
   @moduledoc """
-  wasm4pm-ex4pm-bindings `allen_temporal` adapter — generated from
-  `~/ggen-marketplace/packs/ex4pm-wasm4pm-bindings-pack`, source crate
-  `wasm4pm-cognition`.
+  wasm4pm-ex4pm-bindings `allen_temporal` adapter -- Phase 2 (process mining core),
+  thin wrapper over an already-implemented, plain (non-wasm_bindgen) pub
+  fn already present in the `wasm4pm` crate. See
+  `~/wasm4pm/crates/wasm4pm-ex4pm-bindings/src/phase2.rs` for the
+  real Rust implementation this binds.
 
   See `Ex4pmEngine.Wasm.Adapter` for the shared six-state standing shape.
   Injected transport key: `:allen_temporal_wasm_fun`.
