@@ -1,8 +1,10 @@
 defmodule Ex4pmEngine.Wasm.PrologQuery do
   @moduledoc """
-  wasm4pm-ex4pm-bindings `prolog_query` adapter — generated from
-  `~/ggen-marketplace/packs/ex4pm-wasm4pm-bindings-pack`, source crate
-  `prolog8`.
+  wasm4pm-ex4pm-bindings `prolog_query` adapter -- Phase 2 (process mining core),
+  thin wrapper over an already-implemented, plain (non-wasm_bindgen) pub
+  fn already present in the `prolog8` crate. See
+  `~/wasm4pm/crates/wasm4pm-ex4pm-bindings/src/prolog.rs` for the
+  real Rust implementation this binds.
 
   See `Ex4pmEngine.Wasm.Adapter` for the shared six-state standing shape.
   Injected transport key: `:prolog_query_wasm_fun`.
