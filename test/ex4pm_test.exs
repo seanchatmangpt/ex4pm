@@ -72,4 +72,55 @@ defmodule Ex4pmTest do
     assert contract.standing == :alive
     assert map_size(contract.artifacts) == 4
   end
+
+  describe "ingest/2 against the real committed marketplace-ocel.json fixture" do
+    # Regression for a real, reproducible bug: OCEL 2.0's own spec allows an
+    # event's/object's "attributes" to be a plain map OR a list of
+    # {name, value} pair-maps (the shape test/fixtures/marketplace-ocel.json
+    # actually uses). Ex4pm.OCEL.drop_known_event_keys/1 and
+    # drop_known_object_keys/1 only handled the map shape, so a direct
+    # Ex4pm.ingest/2 call on this real fixture raised an unhandled
+    # BadMapError (events) and silently double-nested attributes (objects)
+    # instead of returning {:ok, log} or a typed {:error, %Refusal{}} --
+    # violating the documented "never raise" ingestion contract
+    # (docs/consumer/tutorials.md).
+    test "ingests real events and flattens explicit list-shaped attributes, never raises" do
+      fixture_path = Path.join([__DIR__, "fixtures", "marketplace-ocel.json"])
+      {:ok, bytes} = File.read(fixture_path)
+      {:ok, raw} = Jason.decode(bytes)
+
+      assert {:ok, log} = Ex4pm.ingest(raw, [])
+      assert length(log.events) > 0
+      assert map_size(log.objects) > 0
+
+      # e1 in the fixture carries attributes: [%{"name" => "channel", "value" => "web"}]
+      event = Enum.find(log.events, &(&1.id == "e1"))
+      assert event.attributes == %{"channel" => "web"}
+
+      # order-001 in the fixture carries attributes: {"currency": "USD", "value": 150.0}
+      # (object-side attributes fixture happens to already be a map -- the
+      # object-side bug this regression also covers was double-nesting,
+      # asserted below via a synthetic list-shaped object).
+      object = Map.get(log.objects, "order-001")
+      assert object.attributes == %{"currency" => "USD", "value" => 150.0}
+    end
+
+    test "flattens a synthetic object whose explicit attributes are list-shaped, not double-nested" do
+      raw = %{
+        "objects" => [
+          %{
+            "id" => "o1",
+            "type" => "Order",
+            "attributes" => [%{"name" => "priority", "value" => "high"}]
+          }
+        ],
+        "events" => []
+      }
+
+      assert {:ok, log} = Ex4pm.ingest(raw, [])
+      object = Map.get(log.objects, "o1")
+      assert object.attributes == %{"priority" => "high"}
+      refute Map.has_key?(object.attributes, "attributes")
+    end
+  end
 end

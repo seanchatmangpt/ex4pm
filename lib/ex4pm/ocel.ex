@@ -464,12 +464,54 @@ defmodule Ex4pm.OCEL do
 
   defp event_sort_key(event), do: {event.timestamp, event.id}
 
+  # OCEL 2.0's own spec allows an event's/object's "attributes" to be
+  # represented two real ways: a plain map (%{"channel" => "web"}), or a
+  # list of {name, value} pair-maps ([%{"name" => "channel", "value" =>
+  # "web"}]) -- the canonical OCEL 2.0 JSON shape (see
+  # test/fixtures/marketplace-ocel.json's real events). Only the map shape
+  # was handled here; the list-of-pairs shape hit Map.merge/2 downstream
+  # with a list as its second argument and raised an unhandled
+  # BadMapError, breaking the documented "never raise, always {:error,
+  # %Refusal{}}" contract for exactly this real, committed fixture.
+  defp normalize_attributes(nil), do: %{}
+  defp normalize_attributes(attrs) when is_map(attrs), do: attrs
+
+  defp normalize_attributes(attrs) when is_list(attrs) do
+    Map.new(attrs, fn pair ->
+      {value(pair, ["name", :name]), value(pair, ["value", :value])}
+    end)
+  end
+
   defp drop_known_object_keys(map) do
-    Map.drop(map, ["id", :id, "ocel:oid", :"ocel:oid", "type", :type, "ocel:type", :"ocel:type"])
+    # Symmetric with drop_known_event_keys/1: an object's real OCEL 2.0
+    # "attributes" sub-key (map, or list-of-{name,value} pairs) must be
+    # EXTRACTED and merged into the top level, not left nested. Real bug
+    # this fixes: the prior Map.drop/2 never dropped "attributes"/:attributes,
+    # so an object carrying an explicit attributes sub-key double-nested it
+    # (attributes: %{"attributes" => %{"currency" => "USD", ...}}) instead of
+    # flattening it (attributes: %{"currency" => "USD", ...}) -- confirmed
+    # against test/fixtures/marketplace-ocel.json's real objects.
+    explicit_attrs = normalize_attributes(value(map, ["attributes", :attributes]))
+
+    top_level =
+      Map.drop(map, [
+        "id",
+        :id,
+        "ocel:oid",
+        :"ocel:oid",
+        "type",
+        :type,
+        "ocel:type",
+        :"ocel:type",
+        "attributes",
+        :attributes
+      ])
+
+    Map.merge(top_level, explicit_attrs)
   end
 
   defp drop_known_event_keys(map) do
-    explicit_attrs = value(map, ["attributes", :attributes]) || %{}
+    explicit_attrs = normalize_attributes(value(map, ["attributes", :attributes]))
 
     top_level =
       Map.drop(map, [
