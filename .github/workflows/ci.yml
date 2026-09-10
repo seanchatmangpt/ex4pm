@@ -44,6 +44,15 @@ jobs:
       - name: Compile with warnings as errors
         run: mix compile --warnings-as-errors
 
+      - name: Qualify Frontier Release information plane
+        run: mix test test/information/frontier_release_test.exs
+
+      - name: Check Frontier Release formatting
+        run: |
+          mix format --check-formatted \
+            lib/ex4pm/information/frontier_release.ex \
+            test/information/frontier_release_test.exs
+
       - name: Run tests
         run: mix test
 
