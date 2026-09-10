@@ -1,0 +1,76 @@
+name: frontier-release-qualification
+
+on:
+  pull_request:
+    paths:
+      - 'lib/ex4pm/information/frontier_release.ex'
+      - 'test/information/frontier_release_test.exs'
+      - 'docs/FRONTIER-RELEASE-PROCESS-INTELLIGENCE.md'
+      - '.github/workflows/frontier-release-qualification.yml'
+  push:
+    branches:
+      - main
+      - feat/**
+    paths:
+      - 'lib/ex4pm/information/frontier_release.ex'
+      - 'test/information/frontier_release_test.exs'
+      - 'docs/FRONTIER-RELEASE-PROCESS-INTELLIGENCE.md'
+      - '.github/workflows/frontier-release-qualification.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  qualify-information-plane:
+    runs-on: ubuntu-latest
+    env:
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+
+      - name: Verify exact subject identity
+        run: |
+          actual="$(git rev-parse HEAD)"
+          printf 'admitted=%s\nobserved=%s\n' "$EX4PM_SUBJECT_SHA" "$actual"
+          test "$actual" = "$EX4PM_SUBJECT_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Compile pure information plane with warnings as errors
+        run: |
+          rm -rf /tmp/frontier-release-ebin
+          mkdir -p /tmp/frontier-release-ebin
+          elixirc --warnings-as-errors \
+            -o /tmp/frontier-release-ebin \
+            lib/ex4pm/information/frontier_release.ex
+
+      - name: Execute Frontier Release falsifiers
+        run: |
+          elixir -pa /tmp/frontier-release-ebin -e '
+            ExUnit.start(autorun: false)
+            Code.require_file("test/information/frontier_release_test.exs")
+            result = ExUnit.run()
+            IO.inspect(result, label: "frontier_release_exact_head")
+            if result.failures != 0, do: System.halt(1)
+          '
+
+      - name: Check Frontier Release formatting
+        run: |
+          mix format --check-formatted \
+            lib/ex4pm/information/frontier_release.ex \
+            test/information/frontier_release_test.exs
+
+      - name: Record authority ceiling
+        run: |
+          printf '%s\n' \
+            'standing=ALIVE(subject=Ex4pm.Information.FrontierRelease information-plane slice)' \
+            'authority=NONE' \
+            'rss_retrieval=NOT_CLAIMED' \
+            'repository_creation=NOT_CLAIMED' \
+            'publication=NOT_CLAIMED' \
+            'external_actuation=NOT_CLAIMED'
