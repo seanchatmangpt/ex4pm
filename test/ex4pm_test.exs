@@ -100,9 +100,17 @@ defmodule Ex4pmTest do
       # order-001 in the fixture carries attributes: {"currency": "USD", "value": 150.0}
       # (object-side attributes fixture happens to already be a map -- the
       # object-side bug this regression also covers was double-nesting,
-      # asserted below via a synthetic list-shaped object).
+      # asserted below via a synthetic list-shaped object). A plain map with
+      # no per-value time normalizes into one nil-time (always-known) log
+      # entry per attribute name -- see Ex4pm.ObjectRef's moduledoc.
       object = Map.get(log.objects, "order-001")
-      assert object.attributes == %{"currency" => "USD", "value" => 150.0}
+
+      assert object.attributes == %{
+               "currency" => [%{value: "USD", time: nil}],
+               "value" => [%{value: 150.0, time: nil}]
+             }
+
+      assert Ex4pm.ObjectRef.attribute_at(object, "currency") == "USD"
     end
 
     test "flattens a synthetic object whose explicit attributes are list-shaped, not double-nested" do
@@ -119,8 +127,46 @@ defmodule Ex4pmTest do
 
       assert {:ok, log} = Ex4pm.ingest(raw, [])
       object = Map.get(log.objects, "o1")
-      assert object.attributes == %{"priority" => "high"}
+      assert object.attributes == %{"priority" => [%{value: "high", time: nil}]}
       refute Map.has_key?(object.attributes, "attributes")
+      assert Ex4pm.ObjectRef.attribute_at(object, "priority") == "high"
+    end
+
+    test "OCEL 2.0 attribute-VALUE-TIME log: an object's attribute changing value over time is two real log entries, not one overwritten map key" do
+      raw = %{
+        "objects" => [
+          %{
+            "id" => "order-1",
+            "type" => "Order",
+            "attributes" => [
+              %{"name" => "status", "value" => "pending", "time" => "2026-01-01T00:00:00Z"},
+              %{"name" => "status", "value" => "shipped", "time" => "2026-01-02T00:00:00Z"}
+            ]
+          }
+        ],
+        "events" => []
+      }
+
+      assert {:ok, log} = Ex4pm.ingest(raw, [])
+      object = Map.get(log.objects, "order-1")
+
+      # Real value-time log: both historical values are present as separate,
+      # time-stamped entries in one attribute name's log, sorted ascending.
+      assert object.attributes == %{
+               "status" => [
+                 %{value: "pending", time: "2026-01-01T00:00:00Z"},
+                 %{value: "shipped", time: "2026-01-02T00:00:00Z"}
+               ]
+             }
+
+      # attribute_at/3 reconstructs the object's real state at any point in
+      # its life by scanning the value-time log, not by reading a frozen
+      # snapshot.
+      assert Ex4pm.ObjectRef.attribute_at(object, "status", "2026-01-01T12:00:00Z") == "pending"
+      assert Ex4pm.ObjectRef.attribute_at(object, "status", "2026-01-02T12:00:00Z") == "shipped"
+      assert Ex4pm.ObjectRef.attribute_at(object, "status", "2025-12-31T00:00:00Z") == nil
+      # No as_of given -> latest known value, same as OCEL 1.0-style current state.
+      assert Ex4pm.ObjectRef.attribute_at(object, "status") == "shipped"
     end
   end
 end
