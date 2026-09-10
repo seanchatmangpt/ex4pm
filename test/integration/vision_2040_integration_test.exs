@@ -72,10 +72,24 @@ defmodule Ex4pm.Integration.Vision2040IntegrationTest do
       ocel_path = "/Users/sac/xaas/priv/ocel/ash-actions.ndjson"
       output_path = "docs/thesis/chapters/generated_ocel_benchmark_tables.tex"
 
+      # Derive the expected top activity from the real, current file content instead of
+      # the hardcoded "capability_liveness" activity name from an old snapshot of this
+      # live-growing file -- keeps proving "the top real activity shows up in the LaTeX
+      # table" without drifting out of sync as the file's real activity mix changes.
+      real_top_activity =
+        ocel_path
+        |> File.stream!()
+        |> Stream.map(&Jason.decode!/1)
+        |> Enum.frequencies_by(& &1["ocel:activity"])
+        |> Enum.max_by(fn {_activity, count} -> count end)
+        |> elem(0)
+
+      escaped_top_activity = String.replace(real_top_activity, "_", "\\_")
+
       assert {:ok, latex_snippet} = OcelToLatex.export_latex(ocel_path, output: output_path)
       assert String.contains?(latex_snippet, "\\begin{table}")
       assert String.contains?(latex_snippet, "Shannon Log Entropy")
-      assert String.contains?(latex_snippet, "capability\\_liveness")
+      assert String.contains?(latex_snippet, escaped_top_activity)
       assert File.exists?(output_path)
     end
   end

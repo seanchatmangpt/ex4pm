@@ -8,15 +8,28 @@ defmodule Ex4pm.Integration.SelfConformanceReactorTest do
   describe "Autonomous Self-Conformance Reactor Execution" do
     test "executes full Reactor validation pipeline over real production OCEL 2.0 log" do
       if File.exists?(@real_ocel_path) do
+        limit = 1000
+
+        # Real, current line count of the live-growing external file, measured at
+        # test-run time -- the reactor caps ingestion at `limit`, so the real expected
+        # event count is min(real file size, limit), not a hardcoded 1000 that only
+        # matched a past snapshot of this file.
+        real_line_count =
+          @real_ocel_path
+          |> File.stream!()
+          |> Enum.count(&(String.trim(&1) != ""))
+
+        expected_events = min(real_line_count, limit)
+
         assert {:ok, report} =
                  Reactor.run(SelfConformanceReactor, %{
                    ocel_path: @real_ocel_path,
-                   limit: 1000,
+                   limit: limit,
                    target_ir: nil
                  })
 
         assert report.standing == :ALIVE
-        assert report.total_events == 1000
+        assert report.total_events == expected_events
         assert report.discovered_activities >= 2
         assert report.conformance.fitness >= 0.85
         assert report.ocpq_satisfied == true
