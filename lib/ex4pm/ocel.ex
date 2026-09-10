@@ -5,9 +5,56 @@ defmodule Ex4pm.Event do
 end
 
 defmodule Ex4pm.ObjectRef do
-  @moduledoc "Canonical object-centric process object."
+  @moduledoc """
+  Canonical object-centric process object.
+
+  `attributes` is a real OCEL 2.0 value-time log, not a single snapshot:
+  `%{attr_name => [%{value: v, time: t}, ...]}`, one entry per admitted
+  `{value, time}` pair for that attribute, sorted ascending by `time` (a `nil`
+  time -- a plain-map attribute with no explicit per-value timestamp -- sorts
+  first, i.e. is treated as known since the object's earliest observation).
+  This lets an object's real attribute history ("status was 'pending' at t1,
+  then 'shipped' at t2") be represented as two log entries instead of one
+  overwritten map key. Use `attribute_at/3` to resolve a value as of a given
+  time rather than reading the map directly.
+  """
   @enforce_keys [:id, :type]
   defstruct [:id, :type, attributes: %{}]
+
+  @doc """
+  Resolves attribute `name`'s value as of timestamp `as_of` by scanning its
+  value-time log: the latest entry whose `time` is `nil` (always-known) or
+  `<= as_of` (ISO-8601 strings compare lexically in chronological order).
+  Returns `nil` when the attribute is unknown or has no entry at or before
+  `as_of`. Omit `as_of` (or pass `nil`) to get the latest known value
+  regardless of time.
+  """
+  def attribute_at(%__MODULE__{attributes: attributes}, name, as_of \\ nil) do
+    case Map.get(attributes, to_string(name)) do
+      entries when is_list(entries) and entries != [] ->
+        entries
+        |> maybe_filter_as_of(as_of)
+        |> List.last()
+        |> case do
+          nil -> nil
+          %{value: value} -> value
+        end
+
+      _ ->
+        nil
+    end
+  end
+
+  defp maybe_filter_as_of(entries, nil), do: entries
+
+  defp maybe_filter_as_of(entries, as_of) do
+    as_of_key = lookup_time_key(as_of)
+    Enum.filter(entries, fn %{time: t} -> is_nil(t) or t <= as_of_key end)
+  end
+
+  defp lookup_time_key(%DateTime{} = t), do: DateTime.to_iso8601(t)
+  defp lookup_time_key(%NaiveDateTime{} = t), do: NaiveDateTime.to_iso8601(t)
+  defp lookup_time_key(t), do: to_string(t)
 end
 
 defmodule Ex4pm.ObjectRelationship do
@@ -482,19 +529,63 @@ defmodule Ex4pm.OCEL do
     end)
   end
 
+  # Object-side attribute normalization into the real OCEL 2.0 value-time LOG
+  # shape (see Ex4pm.ObjectRef's moduledoc): %{name => [%{value:, time:}, ...]},
+  # sorted ascending by time (nil/always-known entries sort first). A plain
+  # map (no per-value time in the source) becomes one nil-time entry per key.
+  # The canonical OCEL 2.0 list-of-pairs shape ([%{"name":, "value":, "time":}])
+  # has its "time" key parsed instead of discarded, and repeated names are
+  # appended as separate log entries rather than the last one winning --
+  # this is the actual fix: attributes changing value over an object's life
+  # are representable as two entries, not silently collapsed to one.
+  defp normalize_object_attributes(nil), do: %{}
+
+  defp normalize_object_attributes(attrs) when is_map(attrs) do
+    Map.new(attrs, fn {k, v} -> {to_string(k), [%{value: v, time: nil}]} end)
+  end
+
+  defp normalize_object_attributes(attrs) when is_list(attrs) do
+    attrs
+    |> Enum.map(fn pair ->
+      {
+        value(pair, ["name", :name]),
+        value(pair, ["value", :value]),
+        value(pair, ["time", :time])
+      }
+    end)
+    |> Enum.reject(fn {name, _value, _time} -> is_nil(name) end)
+    |> Enum.group_by(
+      fn {name, _value, _time} -> to_string(name) end,
+      fn {_name, value, time} -> %{value: value, time: normalize_optional_timestamp(time)} end
+    )
+    |> Map.new(fn {name, entries} -> {name, sort_attribute_log(entries)} end)
+  end
+
+  defp normalize_optional_timestamp(nil), do: nil
+  defp normalize_optional_timestamp(t), do: normalize_timestamp(t)
+
+  defp sort_attribute_log(entries) do
+    Enum.sort_by(entries, fn %{time: t} -> t || "" end)
+  end
+
   defp drop_known_object_keys(map) do
-    # Symmetric with drop_known_event_keys/1: an object's real OCEL 2.0
-    # "attributes" sub-key (map, or list-of-{name,value} pairs) must be
-    # EXTRACTED and merged into the top level, not left nested. Real bug
-    # this fixes: the prior Map.drop/2 never dropped "attributes"/:attributes,
-    # so an object carrying an explicit attributes sub-key double-nested it
-    # (attributes: %{"attributes" => %{"currency" => "USD", ...}}) instead of
-    # flattening it (attributes: %{"currency" => "USD", ...}) -- confirmed
-    # against test/fixtures/marketplace-ocel.json's real objects.
-    explicit_attrs = normalize_attributes(value(map, ["attributes", :attributes]))
+    # Symmetric with drop_known_event_keys/1 for top-level key removal, but an
+    # object's "attributes" are admitted as a real OCEL 2.0 value-time LOG
+    # (%{name => [%{value:, time:}, ...]}), not a single overwritten map --
+    # see Ex4pm.ObjectRef's moduledoc. Both real OCEL 2.0 attribute shapes are
+    # accepted: a plain map (one always-known entry per key, time: nil), or
+    # the canonical list-of-{name, value, time} pair-maps, where each entry's
+    # optional "time" key is now parsed and kept instead of discarded. Any
+    # stray top-level keys (non-"attributes" object fields) are folded into
+    # the same log shape as always-known (time: nil) entries so every key
+    # ends up addressable via ObjectRef.attribute_at/3, and a name present
+    # both at the top level and inside an explicit "attributes" sub-key has
+    # both entries preserved (merged, not overwritten) in the combined log.
+    explicit_attrs = normalize_object_attributes(value(map, ["attributes", :attributes]))
 
     top_level =
-      Map.drop(map, [
+      map
+      |> Map.drop([
         "id",
         :id,
         "ocel:oid",
@@ -506,8 +597,11 @@ defmodule Ex4pm.OCEL do
         "attributes",
         :attributes
       ])
+      |> Map.new(fn {k, v} -> {to_string(k), [%{value: v, time: nil}]} end)
 
-    Map.merge(top_level, explicit_attrs)
+    Map.merge(top_level, explicit_attrs, fn _name, log1, log2 ->
+      sort_attribute_log(log1 ++ log2)
+    end)
   end
 
   defp drop_known_event_keys(map) do
