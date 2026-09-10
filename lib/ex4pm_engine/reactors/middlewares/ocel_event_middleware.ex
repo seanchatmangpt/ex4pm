@@ -15,12 +15,40 @@ defmodule Ex4pmEngine.Reactors.Middlewares.OCELEventMiddleware do
   end
 
   @impl true
-  def complete(result, _context) do
+  def complete(result, context) do
+    target = Map.get(context, :test_pid, self())
+
+    send(
+      target,
+      {:ocel_step_event,
+       %{
+         activity: reactor_identity(context),
+         lifecycle: :complete,
+         timestamp: DateTime.utc_now(),
+         type: :forward,
+         result: result
+       }}
+    )
+
     {:ok, result}
   end
 
   @impl true
-  def error(_errors, _context) do
+  def error(errors, context) do
+    target = Map.get(context, :test_pid, self())
+
+    send(
+      target,
+      {:ocel_step_event,
+       %{
+         activity: reactor_identity(context),
+         lifecycle: :error,
+         timestamp: DateTime.utc_now(),
+         type: :forward,
+         errors: List.wrap(errors)
+       }}
+    )
+
     :ok
   end
 
@@ -77,5 +105,64 @@ defmodule Ex4pmEngine.Reactors.Middlewares.OCELEventMiddleware do
     :ok
   end
 
-  def event(_event, _step, _context), do: :ok
+  def event({:run_complete, result}, step, context) do
+    target = Map.get(context, :test_pid, self())
+
+    send(
+      target,
+      {:ocel_step_event,
+       %{
+         activity: to_string(step.name),
+         lifecycle: :complete,
+         timestamp: DateTime.utc_now(),
+         type: :forward,
+         result: result
+       }}
+    )
+
+    :ok
+  end
+
+  def event({:run_error, errors}, step, context) do
+    target = Map.get(context, :test_pid, self())
+
+    send(
+      target,
+      {:ocel_step_event,
+       %{
+         activity: to_string(step.name),
+         lifecycle: :error,
+         timestamp: DateTime.utc_now(),
+         type: :forward,
+         errors: List.wrap(errors)
+       }}
+    )
+
+    :ok
+  end
+
+  def event(unmodeled_event, step, context) do
+    target = Map.get(context, :test_pid, self())
+
+    send(
+      target,
+      {:ocel_step_event,
+       %{
+         activity: "unmodeled_" <> to_string(step.name),
+         lifecycle: :unmodeled,
+         timestamp: DateTime.utc_now(),
+         type: :unmodeled,
+         raw_event: unmodeled_event
+       }}
+    )
+
+    :ok
+  end
+
+  defp reactor_identity(context) do
+    case Map.get(context, :id) do
+      nil -> "reactor"
+      id -> to_string(id)
+    end
+  end
 end
