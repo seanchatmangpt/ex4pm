@@ -16,27 +16,32 @@ defmodule Ex4pmDomain.Notifier.OcelNotifier do
   def notify(%Ash.Notifier.Notification{} = notification) do
     event = transform_notification(notification)
 
-    if Code.ensure_loaded?(Ex4pm.Stream.Ingest) and
-         function_exported?(Ex4pm.Stream.Ingest, :ingest_batch, 1) do
-      try do
-        envelope = %{
-          "schema" => "chatgpt-cloud-ocel/1",
-          "producer" => %{
-            "agent_id" => "ash_notifier",
-            "runtime" => "beam",
-            "resource" => inspect(notification.resource)
-          },
-          "sequence" => System.unique_integer([:positive]),
-          "digest" => :crypto.hash(:sha256, event["id"]) |> Base.encode16(case: :lower),
-          "events" => [event]
-        }
+    objects =
+      event["relationships"]
+      |> List.wrap()
+      |> Enum.map(& &1["object_id"])
+      |> Enum.uniq()
+      |> Enum.reduce(%{}, fn object_id, acc ->
+        Map.put(acc, object_id, %{"id" => object_id, "type" => "Entity"})
+      end)
 
-        apply(Ex4pm.Stream.Ingest, :ingest_batch, [envelope])
-      rescue
-        _ -> {:ok, event}
-      end
-    else
-      {:ok, event}
+    envelope = %{
+      "schema" => "chatgpt-cloud-ocel/1",
+      "producer" => %{
+        "agent_id" => "ash_notifier",
+        "runtime" => "beam",
+        "resource" => inspect(notification.resource)
+      },
+      "sequence" => System.unique_integer([:positive]),
+      "digest" => :crypto.hash(:sha256, event["id"]) |> Base.encode16(case: :lower),
+      "objects" => objects,
+      "events" => [event]
+    }
+
+    try do
+      Ex4pm.Stream.Ingest.ingest_envelope(envelope)
+    rescue
+      _ -> {:ok, event}
     end
   end
 
