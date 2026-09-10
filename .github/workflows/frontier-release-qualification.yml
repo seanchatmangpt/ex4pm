@@ -61,9 +61,24 @@ jobs:
 
       - name: Check Frontier Release formatting
         run: |
-          mix format --check-formatted \
-            lib/ex4pm/information/frontier_release.ex \
-            test/information/frontier_release_test.exs
+          elixir -e '
+            files = [
+              "lib/ex4pm/information/frontier_release.ex",
+              "test/information/frontier_release_test.exs"
+            ]
+
+            mismatches =
+              Enum.reject(files, fn path ->
+                source = File.read!(path)
+                formatted = source |> Code.format_string!(file: path) |> IO.iodata_to_binary()
+                source == formatted
+              end)
+
+            if mismatches != [] do
+              IO.puts(:stderr, "unformatted Frontier Release files: #{Enum.join(mismatches, ", ")}")
+              System.halt(1)
+            end
+          '
 
       - name: Record authority ceiling
         run: |
