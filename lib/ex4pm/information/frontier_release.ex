@@ -19,6 +19,7 @@ defmodule Ex4pm.Information.FrontierRelease do
   @response_modes ~w(reuse compose extend invent benchmark formalize automate eliminate)a
   @stages ~w(observe extract fence invert specify manufacture verify publish)a
   @stage_index @stages |> Enum.with_index() |> Map.new()
+  @evidence_standings ~w(unknown partial_alive alive blocked build_broken unsupported)a
 
   @type refusal :: {:refused, atom(), map()}
   @type result(value) :: {:ok, value} | {:error, refusal()}
@@ -51,18 +52,18 @@ defmodule Ex4pm.Information.FrontierRelease do
   def normalize_observation(value),
     do: refuse(:invalid_observation, %{expected: :map, got: inspect(value)})
 
-  @doc "Builds a bounded candidate opportunity from a normalized observation."
+  @doc "Builds a bounded candidate opportunity from a structurally admitted observation."
   @spec qualify_opportunity(map(), map()) :: result(map())
-  def qualify_opportunity(%{content_digest: source_digest} = observation, attrs)
-      when is_map(attrs) and is_binary(source_digest) do
-    with {:ok, response_mode} <- normalize_response_mode(value(attrs, :response_mode)),
+  def qualify_opportunity(observation, attrs) when is_map(observation) and is_map(attrs) do
+    with {:ok, admitted_observation} <- admit_observation(observation),
+         {:ok, response_mode} <- normalize_response_mode(value(attrs, :response_mode)),
          {:ok, target_repository} <- required_string(attrs, :target_repository),
          {:ok, required_capability} <- required_string(attrs, :required_capability),
          {:ok, benchmark} <- normalize_benchmark(value(attrs, :benchmark)) do
       {:ok,
        %{
-         source_digest: source_digest,
-         source_url: Map.get(observation, :source_url),
+         source_digest: admitted_observation.content_digest,
+         source_url: admitted_observation.source_url,
          response_mode: response_mode,
          target_repository: target_repository,
          required_capability: required_capability,
@@ -77,27 +78,40 @@ defmodule Ex4pm.Information.FrontierRelease do
     do: refuse(:unadmitted_source_observation, %{})
 
   @doc """
-  Intersects working-backwards claims with ALIVE evidence.
+  Intersects working-backwards claims with exact-subject, exact-verifier ALIVE evidence.
+
+  `binding` is the admitted evidence boundary. It supplies the exact subject and
+  verifier identities that a receipt must match. Evidence is searched
+  existentially per claim, so a later non-ALIVE receipt cannot erase an earlier
+  qualifying receipt and input ordering cannot change the earned set.
 
   Claims without a matching evidence receipt are withheld rather than silently
-  promoted or treated as failures of the entire release. The result contains
-  only evidence-backed earned claims plus the ids that remain unearned.
+  promoted or treated as failures of the entire release. Mixed earned and
+  withheld claims are PARTIAL_ALIVE; ALIVE is reserved for the fully earned set.
   """
-  @spec qualify_release([map()], [map()]) :: result(map())
-  def qualify_release(working_claims, evidence_receipts)
-      when is_list(working_claims) and is_list(evidence_receipts) do
+  @spec qualify_release([map()], [map()], map()) :: result(map())
+  def qualify_release(working_claims, evidence_receipts, binding)
+      when is_list(working_claims) and is_list(evidence_receipts) and is_map(binding) do
     with {:ok, claims} <- normalize_working_claims(working_claims),
-         {:ok, evidence} <- normalize_evidence(evidence_receipts) do
-      evidence_by_claim = Map.new(evidence, &{&1.claim_id, &1})
+         :ok <- ensure_unique_claim_ids(claims),
+         {:ok, evidence} <- normalize_evidence(evidence_receipts),
+         {:ok, subject_identity} <- required_string(binding, :subject_identity),
+         {:ok, verifier_identity} <- required_string(binding, :verifier_identity) do
+      evidence_by_claim = Enum.group_by(evidence, & &1.claim_id)
 
       {earned, withheld} =
         Enum.reduce(claims, {[], []}, fn claim, {earned, withheld} ->
-          case Map.get(evidence_by_claim, claim.id) do
-            %{standing: :alive} = receipt ->
-              {[Map.put(claim, :evidence, receipt) | earned], withheld}
+          qualifying_receipt =
+            evidence_by_claim
+            |> Map.get(claim.id, [])
+            |> Enum.find(&qualifying_receipt?(&1, subject_identity, verifier_identity))
 
-            _ ->
+          case qualifying_receipt do
+            nil ->
               {earned, [claim.id | withheld]}
+
+            receipt ->
+              {[Map.put(claim, :evidence, receipt) | earned], withheld}
           end
         end)
 
@@ -108,14 +122,22 @@ defmodule Ex4pm.Information.FrontierRelease do
        %{
          earned_claims: earned,
          withheld_claim_ids: withheld,
-         standing: if(earned == [], do: :blocked, else: :alive),
+         standing: release_standing(earned, withheld),
+         admitted_subject_identity: subject_identity,
+         admitted_verifier_identity: verifier_identity,
          publication_authority: :none
        }}
     end
   end
 
-  def qualify_release(_working_claims, _evidence_receipts),
+  def qualify_release(_working_claims, _evidence_receipts, _binding),
     do: refuse(:invalid_release_inputs, %{})
+
+  @doc "Refuses unbound release qualification; exact subject and verifier admission is mandatory."
+  @spec qualify_release([map()], [map()]) :: result(map())
+  def qualify_release(_working_claims, _evidence_receipts) do
+    refuse(:missing_release_binding, %{required: [:subject_identity, :verifier_identity]})
+  end
 
   @doc "Checks that an observed lifecycle trace never moves backward in the factory stage order."
   @spec conform_trace([atom() | String.t()]) :: result(:conformant)
@@ -130,6 +152,20 @@ defmodule Ex4pm.Information.FrontierRelease do
   end
 
   def conform_trace(value), do: refuse(:invalid_trace, %{got: inspect(value)})
+
+  defp admit_observation(observation) do
+    with :observed <- value(observation, :standing),
+         :none <- value(observation, :authority),
+         {:ok, normalized} <- normalize_observation(observation) do
+      {:ok, normalized}
+    else
+      _ ->
+        refuse(:unadmitted_source_observation, %{
+          standing: value(observation, :standing),
+          authority: value(observation, :authority)
+        })
+    end
+  end
 
   defp normalize_response_mode(mode) when mode in @response_modes, do: {:ok, mode}
 
@@ -190,6 +226,15 @@ defmodule Ex4pm.Information.FrontierRelease do
     end
   end
 
+  defp ensure_unique_claim_ids(claims) do
+    ids = Enum.map(claims, & &1.id)
+
+    case ids -- Enum.uniq(ids) do
+      [] -> :ok
+      duplicates -> refuse(:duplicate_working_claim_id, %{claim_ids: Enum.uniq(duplicates)})
+    end
+  end
+
   defp normalize_evidence(receipts) do
     Enum.reduce_while(receipts, {:ok, []}, fn receipt, {:ok, acc} ->
       case normalize_receipt(receipt) do
@@ -225,10 +270,28 @@ defmodule Ex4pm.Information.FrontierRelease do
   defp normalize_receipt(value),
     do: refuse(:invalid_evidence_receipt, %{got: inspect(value)})
 
-  defp normalize_standing(:alive), do: {:ok, :alive}
-  defp normalize_standing("ALIVE"), do: {:ok, :alive}
-  defp normalize_standing("alive"), do: {:ok, :alive}
-  defp normalize_standing(value), do: {:ok, {:not_alive, value}}
+  defp normalize_standing(standing) when standing in @evidence_standings, do: {:ok, standing}
+
+  defp normalize_standing(standing) when is_binary(standing) do
+    standing
+    |> String.downcase()
+    |> String.to_existing_atom()
+    |> normalize_standing()
+  rescue
+    ArgumentError -> refuse(:unknown_evidence_standing, %{standing: standing})
+  end
+
+  defp normalize_standing(value),
+    do: refuse(:unknown_evidence_standing, %{standing: inspect(value)})
+
+  defp qualifying_receipt?(receipt, subject_identity, verifier_identity) do
+    receipt.standing == :alive and receipt.subject_identity == subject_identity and
+      receipt.verifier_identity == verifier_identity
+  end
+
+  defp release_standing([], _withheld), do: :blocked
+  defp release_standing(_earned, []), do: :alive
+  defp release_standing(_earned, _withheld), do: :partial_alive
 
   defp normalize_datetime(%DateTime{} = datetime), do: {:ok, datetime}
 
