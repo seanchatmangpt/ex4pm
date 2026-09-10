@@ -19,6 +19,8 @@ defmodule Engine.Beam4pmTest do
   #
     #   * `GET /conformance_result` (action `read`, informational only -- not sent over the wire) -> `:beam4pm_conformance_results`
   #   * `GET /ocel_event` (action `read`, informational only -- not sent over the wire) -> `:beam4pm_ocel_events`
+  #   * `POST /fond_policy` (action `create`, informational only -- not sent over the wire) -> `:ferroplan_fond_policy` (forward_declared)
+  #   * `POST /hierarchical_plan` (action `create`, informational only -- not sent over the wire) -> `:ferroplan_hierarchical_plan` (forward_declared)
 
   alias Ex4pm.Engine.Beam4pm
 
@@ -79,6 +81,8 @@ defmodule Engine.Beam4pmTest do
     assert Beam4pm.id() == :beam4pm
     assert Beam4pm.supports?(:beam4pm_conformance_results, [])
     assert Beam4pm.supports?(:beam4pm_ocel_events, [])
+    assert Beam4pm.supports?(:ferroplan_fond_policy, [])
+    assert Beam4pm.supports?(:ferroplan_hierarchical_plan, [])
     refute Beam4pm.supports?(:not_an_admitted_operation, [])
   end
 
@@ -199,4 +203,18 @@ defmodule Engine.Beam4pmTest do
     # anywhere near the fake server's multi-second sleep.
     assert elapsed_us < 2_000_000
   end
+
+  test "ferroplan_fond_policy is forward_declared, so execute/3 refuses it as not-yet-live rather than attempting a real request", %{base_url: base_url} do
+    assert {:error, refusal} = Beam4pm.execute(:ferroplan_fond_policy, %{}, beam4pm_base_url: base_url)
+    assert refusal.code == :beam4pm_route_not_live
+    assert refusal.details.status == :forward_declared
+  end
+
+
+  test "ferroplan_hierarchical_plan is forward_declared, so execute/3 refuses it as not-yet-live rather than attempting a real request", %{base_url: base_url} do
+    assert {:error, refusal} = Beam4pm.execute(:ferroplan_hierarchical_plan, %{}, beam4pm_base_url: base_url)
+    assert refusal.code == :beam4pm_route_not_live
+    assert refusal.details.status == :forward_declared
+  end
+
 end

@@ -19,6 +19,8 @@ defmodule Ex4pm.Engine.Beam4pm do
 
       * `:beam4pm_conformance_results` -> `GET /conformance_result` (action `read`)
     * `:beam4pm_ocel_events` -> `GET /ocel_event` (action `read`)
+    * `:ferroplan_fond_policy` -> `POST /fond_policy` (action `create`) (forward_declared)
+    * `:ferroplan_hierarchical_plan` -> `POST /hierarchical_plan` (action `create`) (forward_declared)
 
   ## Honest status
 
@@ -35,8 +37,10 @@ defmodule Ex4pm.Engine.Beam4pm do
   alias Ex4pm.Refusal
 
   @route_table %{
-    :beam4pm_conformance_results => %{json_api_type: "conformance_result", action: "read", http_method: :get},
-    :beam4pm_ocel_events => %{json_api_type: "ocel_event", action: "read", http_method: :get}
+    :beam4pm_conformance_results => %{json_api_type: "conformance_result", action: "read", http_method: :get, status: :live},
+    :beam4pm_ocel_events => %{json_api_type: "ocel_event", action: "read", http_method: :get, status: :live},
+    :ferroplan_fond_policy => %{json_api_type: "fond_policy", action: "create", http_method: :post, planning_type: :fond, status: :forward_declared},
+    :ferroplan_hierarchical_plan => %{json_api_type: "hierarchical_plan", action: "create", http_method: :post, planning_type: :hierarchical, status: :forward_declared}
   }
 
   @impl true
@@ -53,12 +57,21 @@ defmodule Ex4pm.Engine.Beam4pm do
 
   @impl true
   def execute(operation, subject, opts) do
-    with %{json_api_type: type, action: action, http_method: method} <-
+    with %{json_api_type: type, action: action, http_method: method, status: status} <-
            Map.get(@route_table, operation) ||
              {:error,
               Refusal.new(:beam4pm_unsupported_operation, "beam4pm has no admitted route for this operation",
                 details: %{operation: operation}
               )},
+         :ok <-
+           (if status == :live do
+              :ok
+            else
+              {:error,
+               Refusal.new(:beam4pm_route_not_live, "this operation's beam4pm route is forward_declared, not live yet",
+                 details: %{operation: operation, status: status}
+               )}
+            end),
          base when is_binary(base) <-
            base_url(opts) ||
              {:error,
@@ -108,7 +121,7 @@ defmodule Ex4pm.Engine.Beam4pm do
   # that a real AshJsonApi instance proved they were never part of the
   # real contract. `action` is still threaded through for evidence/logging
   # only, not sent over the wire.
-  defp request(base, type, _action, method, _subject, opts) do
+  defp request(base, type, _action, method, subject, opts) do
     http_module = Keyword.get(opts, :beam4pm_http_module, Req)
     url = Path.join(base, "/#{type}")
     receive_timeout = Keyword.get(opts, :beam4pm_receive_timeout, @default_receive_timeout_ms)
@@ -116,7 +129,7 @@ defmodule Ex4pm.Engine.Beam4pm do
     result =
       case method do
         :get -> http_module.get(url, retry: false, receive_timeout: receive_timeout)
-        :post -> http_module.post(url, json: %{}, retry: false, receive_timeout: receive_timeout)
+        :post -> http_module.post(url, json: subject || %{}, retry: false, receive_timeout: receive_timeout)
       end
 
     case result do

@@ -137,3 +137,58 @@ ex4pmb:conformance_result_query a ex4pmb:AdmittedBeam4pmService ;
     ex4pmb:actionName "read" ;
     ex4pmb:httpMethod "GET" ;
     rdfs:comment "Targets BeamPM.Ash.Resources.ConformanceResult's default :read action once beam4pm mounts AshJsonApi. NOT live yet -- see ex4pmb: prefix comment above." .
+
+# -----------------------------------------------------------------------
+# Ferroplan planning capabilities, admitted 2026-09-10 as MORE beam4pm
+# services -- not a new sub-prefix or a new Ex4pm.Engine.* module. Per the
+# user's explicit correction: ex4pm (and ash_ex4pm by proxy, since it only
+# ever talks to ex4pm) is a facade over beam4pm; beam4pm is the substrate.
+# ex4pmb:AdmittedBeam4pmService already models exactly this facade shape,
+# so ferroplan's native hierarchical/FOND capabilities extend that same
+# graph and are served by the same Ex4pm.Engine.Beam4pm route table.
+#
+# Two new OPTIONAL predicates on ex4pmb:AdmittedBeam4pmService, additive --
+# the two individuals above simply don't set them:
+#   ex4pmb:planningType  -- ferroplan's PlanningType variant this maps to
+#   ex4pmb:status         -- "forward_declared" | "live" honesty gate
+#
+# EVIDENCE (investigated 2026-09-10 directly against beam4pm's real
+# source, not doc-trusting): beam4pm's ferroplan core crate
+# (native/ferroplan/crates/ferroplan/src/planning_runtime.rs) has real,
+# tested PlanningType::Hierarchical (hierarchical_plan(), recursive
+# task/method decomposition) and PlanningType::Fond (fond_policy(), a
+# strong FOND fixed point over PPDDL `oneof` non-deterministic effects --
+# see planning_types.rs, ppddl/syntax/part04.rs, tests/planning_runtime.rs
+# line 133). NEITHER is reachable today: ferroplan-wasm's dispatch() table
+# (crates/ferroplan-wasm/src/wasi_abi.rs, lines 279-317, the complete
+# 29-op list) and its 1:1 Elixir mirror (lib/beam4pm_ferroplan.ex) expose
+# only the classical/temporal Session PDDL surface -- zero hierarchical/
+# Fond terms anywhere in that ABI. HONEST STATUS: these two individuals
+# are forward-declared exactly like ocel_event_query/
+# conformance_result_query above -- reachable only once beam4pm (a)
+# extends ferroplan-wasm's dispatch() with hierarchical_plan/fond_policy
+# ops and (b) mounts matching json_api routes. That beam4pm-side work is
+# tracked separately; this admission exists so ex4pm's generated facade
+# client and contract tests are ready the moment it lands, same
+# CORRECT-BY-CONSTRUCTION discipline as the rest of this graph.
+# -----------------------------------------------------------------------
+ex4pmb:planningType a rdf:Property ; rdfs:domain ex4pmb:AdmittedBeam4pmService ; rdfs:range xsd:string .
+ex4pmb:status a rdf:Property ; rdfs:domain ex4pmb:AdmittedBeam4pmService ; rdfs:range xsd:string .
+
+ex4pmb:ferroplan_hierarchical_plan a ex4pmb:AdmittedBeam4pmService ;
+    ex4pmb:operation "ferroplan_hierarchical_plan" ;
+    ex4pmb:jsonApiType "hierarchical_plan" ;
+    ex4pmb:actionName "create" ;
+    ex4pmb:httpMethod "POST" ;
+    ex4pmb:planningType "Hierarchical" ;
+    ex4pmb:status "forward_declared" ;
+    rdfs:comment "Recursive task/method decomposition (ferroplan core planning_runtime.rs::hierarchical_plan, PlanningType::Hierarchical). Reachable only once beam4pm extends ferroplan-wasm's dispatch() table with a hierarchical_plan op AND mounts a matching json_api route -- same forward-declaration discipline as this graph's existing beam4pm_conformance_results/beam4pm_ocel_events entries. NOT live yet." .
+
+ex4pmb:ferroplan_fond_policy a ex4pmb:AdmittedBeam4pmService ;
+    ex4pmb:operation "ferroplan_fond_policy" ;
+    ex4pmb:jsonApiType "fond_policy" ;
+    ex4pmb:actionName "create" ;
+    ex4pmb:httpMethod "POST" ;
+    ex4pmb:planningType "Fond" ;
+    ex4pmb:status "forward_declared" ;
+    rdfs:comment "Strong FOND fixed-point policy over PPDDL oneof effects (ferroplan core planning_runtime.rs::fond_policy, PlanningType::Fond). Not yet reachable via ferroplan-wasm or a beam4pm json_api route. NOT live yet." .
