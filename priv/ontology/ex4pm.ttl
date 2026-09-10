@@ -175,20 +175,20 @@ ex4pmb:conformance_result_query a ex4pmb:AdmittedBeam4pmService ;
 ex4pmb:planningType a rdf:Property ; rdfs:domain ex4pmb:AdmittedBeam4pmService ; rdfs:range xsd:string .
 ex4pmb:status a rdf:Property ; rdfs:domain ex4pmb:AdmittedBeam4pmService ; rdfs:range xsd:string .
 
-ex4pmb:ferroplan_hierarchical_plan a ex4pmb:AdmittedBeam4pmService ;
-    ex4pmb:operation "ferroplan_hierarchical_plan" ;
-    ex4pmb:jsonApiType "hierarchical_plan" ;
+ex4pmb:htn_plan a ex4pmb:AdmittedBeam4pmService ;
+    ex4pmb:operation "htn_plan" ;
+    ex4pmb:jsonApiType "htn_plan" ;
     ex4pmb:actionName "create" ;
     ex4pmb:httpMethod "POST" ;
     ex4pmb:planningType "Hierarchical" ;
     ex4pmb:status "forward_declared" ;
-    rdfs:comment "Recursive task/method decomposition (ferroplan core planning_runtime.rs::hierarchical_plan, PlanningType::Hierarchical). Reachable only once beam4pm extends ferroplan-wasm's dispatch() table with a hierarchical_plan op AND mounts a matching json_api route -- same forward-declaration discipline as this graph's existing beam4pm_conformance_results/beam4pm_ocel_events entries. NOT live yet." .
+    rdfs:comment "Recursive task/method decomposition (ferroplan core planning_runtime.rs::hierarchical_plan, PlanningType::Hierarchical). beam4pm's ferroplan-wasm dispatch() table now exposes this op (GATE ENGINE DISPATCH 32/32), but no beam4pm json_api route is mounted yet -- beam4pm has no AshJsonApi usage anywhere to extend. NOT live yet." .
 
-ex4pmb:ferroplan_fond_policy a ex4pmb:AdmittedBeam4pmService ;
-    ex4pmb:operation "ferroplan_fond_policy" ;
+ex4pmb:fond_policy a ex4pmb:AdmittedBeam4pmService ;
+    ex4pmb:operation "fond_policy" ;
     ex4pmb:jsonApiType "fond_policy" ;
     ex4pmb:actionName "create" ;
     ex4pmb:httpMethod "POST" ;
     ex4pmb:planningType "Fond" ;
     ex4pmb:status "forward_declared" ;
-    rdfs:comment "Strong FOND fixed-point policy over PPDDL oneof effects (ferroplan core planning_runtime.rs::fond_policy, PlanningType::Fond). Not yet reachable via ferroplan-wasm or a beam4pm json_api route. NOT live yet." .
+    rdfs:comment "Strong FOND fixed-point policy over PPDDL oneof effects (ferroplan core planning_runtime.rs::fond_policy, PlanningType::Fond). beam4pm's ferroplan-wasm dispatch() table now exposes this op (GATE ENGINE DISPATCH 32/32), but no beam4pm json_api route is mounted yet. NOT live yet." .

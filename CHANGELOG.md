@@ -12,6 +12,34 @@ explicitly in a "Public contract" subsection, including an explicit
 "UNCHANGED" statement when a release does not touch it. Don't assume
 silence means unchanged; state it.
 
+## [26.9.10] - 2026-09-10
+
+### Changed
+
+- **Renamed forward-declared beam4pm planning service identifiers** away
+  from the `ferroplan` brand name: `ex4pmb:ferroplan_hierarchical_plan` ->
+  `ex4pmb:htn_plan` and `ex4pmb:ferroplan_fond_policy` -> `ex4pmb:fond_policy`
+  in `priv/ontology/ex4pm.ttl`, with matching `ex4pmb:operation` and
+  `ex4pmb:jsonApiType` literal renames. `ex4pmb:planningType`
+  `"Hierarchical"`/`"Fond"` are unchanged (mirror the Rust `PlanningType`
+  enum verbatim). The underlying beam4pm-side Rust crate keeps its real name
+  `ferroplan` — only ex4pm/ash_ex4pm-side generated identifiers changed.
+  Regenerated `lib/ex4pm/engine/beam4pm.ex` now exposes `:htn_plan` /
+  `:fond_policy` route-table keys and `htn_plan/2` / `fond_policy/2`
+  functions in place of the old `ferroplan_*` names. No deprecation alias:
+  these individuals were `forward_declared` and never released under the
+  old names. Both services remain `ex4pmb:status "forward_declared"` — the
+  sibling beam4pm-side dispatch work landed (`htn_plan`/`fond_policy` are
+  live in beam4pm's ferroplan-wasm dispatch table, GATE ENGINE DISPATCH
+  32/32), but beam4pm has no `AshJsonApi`/`json_api` routing layer anywhere
+  to mount a matching route, so these stay not-yet-reachable from ex4pm.
+
+### Public contract
+
+UNCHANGED beyond the identifier rename above — both services were
+`forward_declared` (not reachable) before and after this release, so there
+is no live public-contract surface being renamed out from under a caller.
+
 ## [26.9.9] - 2026-09-09
 
 ### Changed
