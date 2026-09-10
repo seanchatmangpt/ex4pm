@@ -177,14 +177,14 @@ Both blocks compile through the same `Persist` transformer (§3.1) into a map pi
 
 Consolidated from §2 and §3.9 — every gap the research actually found, none glossed over:
 
-- BLOCKER 1: `Ex4pmDomain.Notifier.OcelNotifier`'s `ingest_batch/1` call is dead (function doesn't exist; gate always false; falls through to fake success).
-- BLOCKER 2: `OcelEventMiddleware.complete/2` and `error/2` are silent no-ops; catch-all swallows all other Reactor events.
-- BLOCKER 3: `Ex4pm.Event.new/1` does not exist.
-- BLOCKER 4: `Ex4pm.OCEL.Source` behaviour does not exist.
-- Arity mismatch between `aex:legacyAdapterFunction`'s documented arity-1 contract and the real arity-2 `ingest_envelope/2`.
-- Pack gap: no `aex:globalNotifierInjection`-equivalent property.
-- Pack gap: `aex:workflowReactor`'s per-Reactor middleware-injection support is UNVERIFIED.
-- `Ex4pm.Evidence.BRCE`'s real public API is UNVERIFIED in this session's research — FR8 (BRCE gate) cannot be scoped further until read.
+- **BLOCKER 1 — RESOLVED, 2026-09-09.** `Ex4pmDomain.Notifier.OcelNotifier` now calls the real `Ex4pm.Stream.Ingest.ingest_envelope/1` directly (the dead `function_exported?/3` guard over the nonexistent `ingest_batch/1` was removed), with the envelope's `"objects"` field correctly reshaped to a map keyed by object id. A real Chicago-style test (`test/ocel_notifier_test.exs`) asserts the event actually lands in `Ex4pm.Evidence.Store`'s real receipts, not just "did not crash." `mix test` 4/4 passing.
+- **BLOCKER 2 — RESOLVED, 2026-09-09.** `OcelEventMiddleware.complete/2` and `error/2` now emit real OCEL-shaped messages (reactor identity, real result/error, real UTC timestamp), matching `run_start`/`undo_start`'s existing convention. New `run_complete`/`run_error` step-level clauses added. The catch-all now emits a distinguishable "unmodeled event" message rather than silently discarding — `Reactor.Middleware`'s real `step_event` type still lists several unmodeled shapes (`:run_retry`, `:compensate_*`, `:guard_*`, `:process_*`, `:undo_complete/error/retry`), so the catch-all itself stays warranted, not removed. New `test/ex4pm_engine/reactors/middlewares/ocel_event_middleware_test.exs`, 6/6 passing.
+- BLOCKER 3: `Ex4pm.Event.new/1` does not exist. Still open — `ash_ex4pm` routes around it (calls `ingest_envelope/1` with a plain map directly, per §3.3's correction), not resolved upstream.
+- BLOCKER 4: `Ex4pm.OCEL.Source` behaviour does not exist. Still open, same disposition as BLOCKER 3.
+- Arity mismatch between `aex:legacyAdapterFunction`'s documented arity-1 contract and the real arity-2 `ingest_envelope/2` — moot in the shipped `ash_ex4pm` implementation, which calls `ingest_envelope/1` directly rather than through the pack's `aex:legacyAdapterModule` wiring; still a real, unresolved documentation/implementation gap in `ash-extension-core-pack` itself if another consumer relies on that property literally.
+- Pack gap: no `aex:globalNotifierInjection`-equivalent property. Still open, unchanged.
+- Pack gap: `aex:workflowReactor`'s per-Reactor middleware-injection support is UNVERIFIED. Still open, unchanged.
+- `Ex4pm.Evidence.BRCE`'s real public API — RESOLVED, 2026-09-09: `execute/4,5` and `admit/2` confirmed real and directly usable (`lib/ex4pm/evidence.ex:222-344`). FR8 implemented for real as `AshEx4pm.Changes.BrceGate` in the shipped `~/ash_ex4pm`, with an honestly-disclosed scope limit (gates admission only, not the underlying DB write) — see that module's own moduledoc.
 - Exact DSL entity names/args/identifiers for `ex4pm do ... end` are illustrative only (§4), not derived from a real completed design pass.
 
 ## 6. Explicitly out of scope for this document
