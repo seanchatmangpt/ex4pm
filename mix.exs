@@ -105,6 +105,13 @@ defmodule Ex4pm.MixProject do
       # toolchain, consistent with the "ex4pm thinning" goal this engine
       # candidate itself exists to serve.
       {:req, "~> 0.5"},
+      # Additive A2A.Client-based path to beam4pm's newly-mounted A2A agent
+      # (Ex4pm.Engine.Beam4pmA2A) -- alongside, not replacing,
+      # Ex4pm.Engine.Beam4pm's existing hand-rolled JSON:API route-table
+      # client above. Client-side role only needs the `:a2a` package
+      # itself (A2A.Client), not `:ash_a2a` (server-side Spark DSL
+      # extension that beam4pm, not ex4pm, uses to expose its skills).
+      {:a2a, "~> 0.2"},
       {:explorer, "~> 0.12"},
       {:reactor, "~> 1.0"},
       {:postgrex, "~> 0.22.4"},
