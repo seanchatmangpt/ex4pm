@@ -1,0 +1,13 @@
+# Daily factory policy for ex4pm
+repository: seanchatmangpt/ex4pm
+daily_capacity: 1
+acceptance:
+  primary: mix verify
+  extended:
+    - mix chicago
+    - mix test.stress
+  extended_policy: run only for an explicitly admitted issue; preserve exact runtime evidence
+wip:
+  labels: [factory:bot-owned, factory:ready, factory:repair, factory:blocked]
+  zero_at_eod: true
+  blocked_disposition: close_branch_and_create_issue
