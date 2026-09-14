@@ -6,6 +6,8 @@ on:
     branches:
       - main
       - feat/**
+      - fix/**
+      - epoch/**
 
 permissions:
   contents: read
@@ -18,9 +20,10 @@ jobs:
       EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       EX4PM_PLAN_SHA: 99816fb389670174be44ddaaf3b42f00496e6f21
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.EX4PM_SUBJECT_SHA }}
+          persist-credentials: false
 
       - name: Verify exact subject identity
         run: |
@@ -61,7 +64,7 @@ jobs:
 
       - name: Upload formatting patch
         if: failure() && steps.format.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: format-patch-${{ env.EX4PM_SUBJECT_SHA }}
           path: .ci/format.patch
@@ -69,7 +72,7 @@ jobs:
 
       - name: Upload formatter-produced source
         if: failure() && steps.format.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: formatted-source-${{ env.EX4PM_SUBJECT_SHA }}
           path: |
@@ -80,13 +83,14 @@ jobs:
           if-no-files-found: error
 
       - name: Checkout exact ex4pm-plan source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: seanchatmangpt/ex4pm-plan
           ref: ${{ env.EX4PM_PLAN_SHA }}
           path: .ci/ex4pm-plan
           submodules: recursive
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Verify exact planner source identity
         run: |
@@ -94,7 +98,7 @@ jobs:
           printf 'planner_admitted=%s\nplanner_observed=%s\n' "$EX4PM_PLAN_SHA" "$actual"
           test "$actual" = "$EX4PM_PLAN_SHA"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -194,7 +198,7 @@ jobs:
 
       - name: Upload resolved lockfile
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mix-lock-${{ env.EX4PM_SUBJECT_SHA }}
           path: mix.lock
