@@ -1,0 +1,95 @@
+name: Exact-head production court
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ex4pm-production-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      MIX_ENV: prod
+    steps:
+      - name: Checkout exact subject
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Assert exact subject identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          actual="$(git rev-parse HEAD)"
+          printf 'admitted=%s\nobserved=%s\n' "$SUBJECT_SHA" "$actual"
+          if [[ "$actual" != "$SUBJECT_SHA" ]]; then
+            echo "::error title=REFUSED:EXACT_HEAD_MISMATCH::actual=$actual expected=$SUBJECT_SHA"
+            exit 2
+          fi
+
+      - name: Set up Elixir and Erlang
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Resolve production dependencies from clean state
+        run: |
+          set -euo pipefail
+          rm -rf deps _build
+          mix deps.get --check-locked
+
+      - name: Check deterministic formatting
+        run: mix format --check-formatted
+
+      - name: Compile exact production candidate with warnings as errors
+        run: mix compile --force --warnings-as-errors
+
+      - name: Prove generator task remains resolvable without Igniter loaded
+        run: mix help ex4pm.engine.gen.adapter >/tmp/ex4pm-engine-gen-adapter-help.txt
+
+      - name: Manufacture bounded production receipt
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p receipt
+          actual="$(git rev-parse HEAD)"
+          cat > receipt/production.json <<JSON
+          {
+            "subject_sha": "$actual",
+            "environment": "prod",
+            "court": "locked_deps+format+warnings_as_errors_compile+mix_task_resolution",
+            "publication": "not_attempted",
+            "runtime_execution": "not_claimed",
+            "standing": "candidate_evidence_only"
+          }
+          JSON
+          python3 -m json.tool receipt/production.json
+
+      - name: Preserve production receipt
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-production-${{ env.SUBJECT_SHA }}
+          path: receipt/production.json
+          if-no-files-found: error
+          retention-days: 14
