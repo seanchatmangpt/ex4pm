@@ -3,7 +3,11 @@ name: Exact-head production court
 on:
   pull_request:
   push:
-    branches: [main]
+    branches:
+      - main
+      - feat/**
+      - fix/**
+      - epoch/**
   workflow_dispatch:
 
 permissions:
