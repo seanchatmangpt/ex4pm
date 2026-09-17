@@ -60,6 +60,22 @@ defmodule Ex4pm.Engine.Beam4pm do
   tested against a real local JSON:API-shaped server
   (`test/engine_beam4pm_test.exs`); connecting it to a real beam4pm
   instance is gated on that separate, disclosed prerequisite.
+
+  ## Contract verification against a live OpenAPI spec
+
+  The admitted route table above is the authority for what this engine
+  will dispatch -- it is never expanded or overridden by whatever a live
+  beam4pm instance's OpenAPI document happens to expose (see
+  `~/CLAUDE.md`'s "generate less, admit more slowly": an OpenAPI document
+  is data to check the admitted facts against, not a source to trust and
+  auto-dispatch against). Passing `verify_contract: true` in opts makes
+  `execute/3` fetch beam4pm's live OpenAPI 3.x document (default path
+  `/openapi.json`, override via `openapi_path` in opts) and confirm the
+  admitted route's `{path, http_method}` pair is actually present in it
+  before making the real request. A mismatch or an unreachable/absent
+  spec is refused as `:beam4pm_contract_drift` -- never a silent wrong
+  call. This check is opt-in and defaults to `false`, so existing
+  callers and existing behavior are unaffected unless they ask for it.
   """
   @behaviour Ex4pm.Engine
 
@@ -82,6 +98,102 @@ defmodule Ex4pm.Engine.Beam4pm do
     supports_any? and is_binary(base_url(opts))
   end
 
+  @doc """
+  Fetches and parses a live OpenAPI 3.x document from beam4pm. Real HTTP
+  (via `Req`, or the `beam4pm_http_module` opt) and real JSON parsing --
+  no schema assumptions beyond the standard `paths.<path>.<method>` shape.
+  Returns `{:ok, decoded_document}` or a typed `Refusal`.
+  """
+  def fetch_openapi_document(base, opts) do
+    http_module = Keyword.get(opts, :beam4pm_http_module, Req)
+    path = Keyword.get(opts, :openapi_path, "/openapi.json")
+    url = Path.join(base, path)
+
+    case http_module.get(url, retry: false) do
+      {:ok, %{status: status, body: body}} when status in 200..299 and is_map(body) ->
+        {:ok, body}
+
+      {:ok, %{status: status, body: body}} when status in 200..299 ->
+        {:error,
+         Refusal.new(:beam4pm_openapi_unavailable, "beam4pm returned a 2xx status but a non-JSON-object openapi body",
+           details: %{status: status, url: url, body: inspect(body)}
+         )}
+
+      {:ok, %{status: status}} ->
+        {:error,
+         Refusal.new(:beam4pm_openapi_unavailable, "beam4pm returned a non-2xx status for its openapi document",
+           details: %{status: status, url: url}
+         )}
+
+      {:error, reason} ->
+        {:error,
+         Refusal.new(:beam4pm_openapi_unavailable, "beam4pm openapi document request failed",
+           details: %{url: url, reason: inspect(reason)}
+         )}
+    end
+  end
+
+  @doc """
+  Verifies that the admitted route for `operation` (`{path, http_method}`,
+  derived from the route table's `json_api_type`) actually appears in
+  beam4pm's live OpenAPI document. Returns `:ok` on a match, or
+  `{:error, %Refusal{code: :beam4pm_contract_drift}}` naming the admitted
+  route and what the live spec actually has (or its absence) in
+  `details`. Does not itself refuse when the document can't be fetched at
+  all -- that surfaces as the `fetch_openapi_document/2` refusal
+  (`:beam4pm_openapi_unavailable`) instead, so the two failure modes stay
+  distinguishable.
+  """
+  def verify_contract(operation, opts) do
+    with %{json_api_type: type, http_method: method} <-
+           Map.get(@route_table, operation) ||
+             {:error,
+              Refusal.new(:beam4pm_unsupported_operation, "beam4pm has no admitted route for this operation",
+                details: %{operation: operation}
+              )},
+         base when is_binary(base) <-
+           base_url(opts) ||
+             {:error,
+              Refusal.new(:beam4pm_unavailable, "no beam4pm_base_url configured", details: %{operation: operation})},
+         {:ok, document} <- fetch_openapi_document(base, opts) do
+      admitted_path = "/#{type}"
+      paths = Map.get(document, "paths", %{})
+      method_key = Atom.to_string(method)
+
+      case Map.get(paths, admitted_path) do
+        methods when is_map(methods) ->
+          if Map.has_key?(methods, method_key) do
+            :ok
+          else
+            {:error,
+             Refusal.new(
+               :beam4pm_contract_drift,
+               "beam4pm's live openapi document has the admitted path but not the admitted method",
+               details: %{
+                 operation: operation,
+                 admitted_path: admitted_path,
+                 admitted_http_method: method_key,
+                 live_methods: Map.keys(methods)
+               }
+             )}
+          end
+
+        nil ->
+          {:error,
+           Refusal.new(
+             :beam4pm_contract_drift,
+             "beam4pm's live openapi document has no entry for the admitted route's path",
+             details: %{
+               operation: operation,
+               admitted_path: admitted_path,
+               admitted_http_method: method_key,
+               live_paths: Map.keys(paths)
+             }
+           )}
+      end
+    end
+  end
+
   @impl true
   def execute(operation, subject, opts) do
     with %{json_api_type: type, action: action, http_method: method} <-
@@ -94,6 +206,7 @@ defmodule Ex4pm.Engine.Beam4pm do
            base_url(opts) ||
              {:error,
               Refusal.new(:beam4pm_unavailable, "no beam4pm_base_url configured", details: %{operation: operation})},
+         :ok <- maybe_verify_contract(operation, opts),
          {:ok, response} <- request(base, type, action, method, subject, opts) do
       {:ok,
        %Result{
@@ -117,6 +230,14 @@ defmodule Ex4pm.Engine.Beam4pm do
 
   defp base_url(opts) do
     Keyword.get(opts, :beam4pm_base_url) || Application.get_env(:ex4pm, :beam4pm_base_url)
+  end
+
+  defp maybe_verify_contract(operation, opts) do
+    if Keyword.get(opts, :verify_contract, false) do
+      verify_contract(operation, opts)
+    else
+      :ok
+    end
   end
 
   defp request(base, type, action, method, subject, opts) do
