@@ -89,8 +89,9 @@ jobs:
         with:
           name: formatted-source-${{ env.EX4PM_SUBJECT_SHA }}
           path: |
-            apps
             config
+            lib
+            test
             mix.exs
             .formatter.exs
           if-no-files-found: error
@@ -215,3 +216,43 @@ jobs:
           name: mix-lock-${{ env.EX4PM_SUBJECT_SHA }}
           path: mix.lock
           if-no-files-found: error
+
+
+  production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      MIX_ENV: prod
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Verify exact production subject identity
+        run: |
+          actual="$(git rev-parse HEAD)"
+          printf 'admitted=%s\nobserved=%s\n' "$EX4PM_SUBJECT_SHA" "$actual"
+          test "$actual" = "$EX4PM_SUBJECT_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Resolve exact locked production dependencies
+        run: |
+          rm -rf deps _build
+          mix deps.get --check-locked
+
+      - name: Compile production candidate with warnings as errors
+        run: mix compile --force --warnings-as-errors
+
+      - name: Prove generator task remains resolvable without Igniter
+        run: mix help ex4pm.engine.gen.adapter >/tmp/ex4pm-engine-gen-adapter-help.txt
