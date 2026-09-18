@@ -89,8 +89,9 @@ jobs:
         with:
           name: formatted-source-${{ env.EX4PM_SUBJECT_SHA }}
           path: |
-            apps
             config
+            lib
+            test
             mix.exs
             .formatter.exs
           if-no-files-found: error
