@@ -132,9 +132,12 @@ defmodule Ex4pm.Gall.Powl do
 
     order =
       flow
-      |> Enum.flat_map(fn
-        {left, right} when left in transitions and right in transitions -> [{left, right}]
-        _ -> []
+      |> Enum.flat_map(fn {left, right} ->
+        if left in transitions and right in transitions do
+          [{left, right}]
+        else
+          []
+        end
       end)
       |> transitive_closure()
       |> Enum.sort()
@@ -313,7 +316,7 @@ defmodule Ex4pm.Gall.Ocpq do
     with :ok <- validate_query(query) do
       matches =
         events
-        |> Enum.filter(&matches?(&1, query))
+        |> Enum.filter(&matches?(&1, query, events))
         |> Enum.map(&binding/1)
         |> Enum.sort_by(&Gall.digest/1)
 
@@ -345,7 +348,7 @@ defmodule Ex4pm.Gall.Ocpq do
     end
   end
 
-  defp matches?(event, query) do
+  defp matches?(event, query, events) do
     activity_ok = is_nil(query[:activity]) or event[:activity] == query[:activity]
 
     object_ok =
@@ -356,7 +359,16 @@ defmodule Ex4pm.Gall.Ocpq do
       is_nil(query[:qualifier]) or
         Enum.any?(event[:objects] || [], fn {_id, _type, qualifier} -> qualifier == query[:qualifier] end)
 
-    activity_ok and object_ok and qualifier_ok
+    after_ok =
+      is_nil(query[:after_activity]) or
+        Enum.any?(events, fn prior ->
+          prior[:activity] == query[:after_activity] and
+            is_integer(prior[:sequence]) and
+            is_integer(event[:sequence]) and
+            prior[:sequence] < event[:sequence]
+        end)
+
+    activity_ok and object_ok and qualifier_ok and after_ok
   end
 
   defp binding(event) do
