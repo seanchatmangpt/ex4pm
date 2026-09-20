@@ -36,7 +36,7 @@ defmodule Ex4pm.Gall.Portable do
   The envelope grants no authority and carries no execution standing.
   """
 
-  @schema "ex4pm.gall.portable/v26.9.18"
+  @schema "ex4pm.gall.portable/v26.9.19"
   @sha ~r/\A[0-9a-f]{40}\z/
   @digest ~r/\Asha256:[0-9a-f]{64}\z/
 
@@ -51,9 +51,9 @@ defmodule Ex4pm.Gall.Portable do
 
     with :ok <- repository(repository),
          :ok <- producer_sha(producer_sha),
-         :ok <- digest_value(:corpus_digest, corpus_digest) do
-      payload = json_value(payload)
-
+         :ok <- digest_value(:corpus_digest, corpus_digest),
+         payload = json_value(payload),
+         :ok <- jcs_subset(payload) do
       body = %{
         "schema" => @schema,
         "kind" => to_string(kind),
@@ -62,6 +62,7 @@ defmodule Ex4pm.Gall.Portable do
         "payload" => payload,
         "payload_digest" => digest(payload),
         "evidence_class" => to_string(evidence_class),
+        "canonicalization" => "RFC8785/JCS-IJSON-ASCII-INTEGER-SUBSET",
         "authority" => "NONE"
       }
 
@@ -82,6 +83,8 @@ defmodule Ex4pm.Gall.Portable do
          :ok <- digest_value(:corpus_digest, artifact["corpus_digest"]),
          :ok <- digest_value(:payload_digest, artifact["payload_digest"]),
          :ok <- digest_value(:artifact_digest, artifact["artifact_digest"]),
+         :ok <- equal(:canonicalization, artifact["canonicalization"], "RFC8785/JCS-IJSON-ASCII-INTEGER-SUBSET"),
+         :ok <- jcs_subset(artifact["payload"]),
          true <-
            digest(artifact["payload"]) == artifact["payload_digest"] ||
              {:error, :payload_digest_mismatch},
@@ -112,29 +115,79 @@ defmodule Ex4pm.Gall.Portable do
   semantic order; tuples become arrays; non-boolean atoms become strings.
   """
   @spec canonical_json(term()) :: String.t()
-  def canonical_json(value) when is_map(value) do
+  def canonical_json(value) do
+    value = json_value(value)
+
+    case jcs_subset(value) do
+      :ok -> canonical_jcs_subset(value)
+      {:error, reason} -> raise ArgumentError, "non-portable JCS input: #{inspect(reason)}"
+    end
+  end
+
+  defp canonical_jcs_subset(value) when is_map(value) do
     entries =
       value
-      |> Enum.map(fn {key, item} -> {to_string(key), item} end)
       |> Enum.sort_by(&elem(&1, 0))
       |> Enum.map_join(",", fn {key, item} ->
-        Jason.encode!(key) <> ":" <> canonical_json(item)
+        Jason.encode!(key) <> ":" <> canonical_jcs_subset(item)
       end)
 
     "{" <> entries <> "}"
   end
 
-  def canonical_json(value) when is_list(value),
-    do: "[" <> Enum.map_join(value, ",", &canonical_json/1) <> "]"
+  defp canonical_jcs_subset(value) when is_list(value),
+    do: "[" <> Enum.map_join(value, ",", &canonical_jcs_subset/1) <> "]"
 
-  def canonical_json(value) when is_tuple(value),
-    do: value |> Tuple.to_list() |> canonical_json()
+  defp canonical_jcs_subset(true), do: "true"
+  defp canonical_jcs_subset(false), do: "false"
+  defp canonical_jcs_subset(nil), do: "null"
+  defp canonical_jcs_subset(value) when is_binary(value), do: Jason.encode!(value)
+  defp canonical_jcs_subset(value) when is_integer(value), do: Integer.to_string(value)
 
-  def canonical_json(true), do: "true"
-  def canonical_json(false), do: "false"
-  def canonical_json(nil), do: "null"
-  def canonical_json(value) when is_atom(value), do: value |> Atom.to_string() |> Jason.encode!()
-  def canonical_json(value), do: Jason.encode!(value)
+  # RFC 8785 is the cross-language canonicalization law. This protocol uses
+  # a deliberately smaller domain whose serialization is identical under JCS:
+  # ASCII object names/strings, booleans, null, arrays/objects, and integers
+  # exactly representable as IEEE-754 doubles. Floats are refused rather than
+  # relying on runtime-specific number rendering.
+  defp jcs_subset(value) when is_map(value) do
+    Enum.reduce_while(value, :ok, fn
+      {key, item}, :ok when is_binary(key) ->
+        with :ok <- ascii(:object_key, key),
+             :ok <- jcs_subset(item) do
+          {:cont, :ok}
+        else
+          {:error, _} = error -> {:halt, error}
+        end
+
+      {key, _item}, :ok ->
+        {:halt, {:error, {:non_string_object_key, key}}}
+    end)
+  end
+
+  defp jcs_subset(value) when is_list(value) do
+    Enum.reduce_while(value, :ok, fn item, :ok ->
+      case jcs_subset(item) do
+        :ok -> {:cont, :ok}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp jcs_subset(value) when is_binary(value), do: ascii(:string, value)
+  defp jcs_subset(value) when is_integer(value) and abs(value) <= 9_007_199_254_740_991, do: :ok
+  defp jcs_subset(value) when is_integer(value), do: {:error, {:integer_outside_ijson_exact_range, value}}
+  defp jcs_subset(value) when is_float(value), do: {:error, {:float_not_in_portable_subset, value}}
+  defp jcs_subset(value) when value in [true, false, nil], do: :ok
+  defp jcs_subset(value), do: {:error, {:unsupported_json_value, value}}
+
+  defp ascii(_field, value) when is_binary(value) do
+    if String.to_charlist(value) |> Enum.all?(&(&1 <= 0x7F)),
+      do: :ok,
+      else: {:error, {:non_ascii_portable_string, value}}
+  end
+
+  defp equal(_field, value, value), do: :ok
+  defp equal(field, actual, expected), do: {:error, {:identity_mismatch, field, expected, actual}}
 
   defp json_value(value) when is_map(value) do
     value
