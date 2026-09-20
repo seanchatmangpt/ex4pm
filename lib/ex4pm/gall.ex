@@ -25,6 +25,153 @@ defmodule Ex4pm.Gall do
   def canonical(value), do: value
 end
 
+defmodule Ex4pm.Gall.Portable do
+  @moduledoc """
+  Language-neutral GALL artifact envelope for cross-repository courts.
+
+  Ex4pm.Gall.digest/1 intentionally remains the BEAM-local semantic digest.
+  Cross-language consumers instead verify this envelope's canonical JSON
+  SHA-256 so Rust/WASM/BEAM can independently recompute the same identity.
+
+  The envelope grants no authority and carries no execution standing.
+  """
+
+  @schema "ex4pm.gall.portable/v26.9.18"
+  @sha ~r/\A[0-9a-f]{40}\z/
+  @digest ~r/\Asha256:[0-9a-f]{64}\z/
+
+  @spec build(atom() | String.t(), term(), keyword() | map()) ::
+          {:ok, map()} | {:error, term()}
+  def build(kind, payload, attrs) do
+    attrs = Map.new(attrs)
+    repository = attrs[:repository] || attrs["repository"]
+    producer_sha = attrs[:producer_sha] || attrs["producer_sha"]
+    corpus_digest = attrs[:corpus_digest] || attrs["corpus_digest"]
+    evidence_class = attrs[:evidence_class] || attrs["evidence_class"] || "process-law"
+
+    with :ok <- repository(repository),
+         :ok <- producer_sha(producer_sha),
+         :ok <- digest_value(:corpus_digest, corpus_digest) do
+      payload = json_value(payload)
+
+      body = %{
+        "schema" => @schema,
+        "kind" => to_string(kind),
+        "producer" => %{"repository" => repository, "sha" => producer_sha},
+        "corpus_digest" => corpus_digest,
+        "payload" => payload,
+        "payload_digest" => digest(payload),
+        "evidence_class" => to_string(evidence_class),
+        "authority" => "NONE"
+      }
+
+      {:ok, Map.put(body, "artifact_digest", digest(body))}
+    end
+  end
+
+  @spec verify(map()) :: {:ok, map()} | {:error, term()}
+  def verify(artifact) when is_map(artifact) do
+    artifact = json_value(artifact)
+
+    with @schema <- artifact["schema"] || {:error, :schema_mismatch},
+         "NONE" <- artifact["authority"] || {:error, :authority_expanded},
+         %{"repository" => repository, "sha" => producer_sha} <-
+           artifact["producer"] || {:error, :producer_missing},
+         :ok <- repository(repository),
+         :ok <- producer_sha(producer_sha),
+         :ok <- digest_value(:corpus_digest, artifact["corpus_digest"]),
+         :ok <- digest_value(:payload_digest, artifact["payload_digest"]),
+         :ok <- digest_value(:artifact_digest, artifact["artifact_digest"]),
+         true <-
+           digest(artifact["payload"]) == artifact["payload_digest"] ||
+             {:error, :payload_digest_mismatch},
+         body = Map.delete(artifact, "artifact_digest"),
+         true <-
+           digest(body) == artifact["artifact_digest"] ||
+             {:error, :artifact_digest_mismatch} do
+      {:ok, artifact}
+    else
+      {:error, _reason} = error -> error
+      _ -> {:error, :invalid_portable_artifact}
+    end
+  end
+
+  def verify(_), do: {:error, :invalid_portable_artifact}
+
+  @spec digest(term()) :: String.t()
+  def digest(value) do
+    "sha256:" <>
+      (:crypto.hash(:sha256, canonical_json(json_value(value)))
+       |> Base.encode16(case: :lower))
+  end
+
+  @doc """
+  Canonical JSON used by every portable GALL digest.
+
+  Object keys are UTF-8 strings sorted lexicographically; arrays preserve
+  semantic order; tuples become arrays; non-boolean atoms become strings.
+  """
+  @spec canonical_json(term()) :: String.t()
+  def canonical_json(value) when is_map(value) do
+    entries =
+      value
+      |> Enum.map(fn {key, item} -> {to_string(key), item} end)
+      |> Enum.sort_by(&elem(&1, 0))
+      |> Enum.map_join(",", fn {key, item} ->
+        Jason.encode!(key) <> ":" <> canonical_json(item)
+      end)
+
+    "{" <> entries <> "}"
+  end
+
+  def canonical_json(value) when is_list(value),
+    do: "[" <> Enum.map_join(value, ",", &canonical_json/1) <> "]"
+
+  def canonical_json(value) when is_tuple(value),
+    do: value |> Tuple.to_list() |> canonical_json()
+
+  def canonical_json(true), do: "true"
+  def canonical_json(false), do: "false"
+  def canonical_json(nil), do: "null"
+  def canonical_json(value) when is_atom(value), do: value |> Atom.to_string() |> Jason.encode!()
+  def canonical_json(value), do: Jason.encode!(value)
+
+  defp json_value(value) when is_map(value) do
+    value
+    |> Enum.map(fn {key, item} -> {to_string(key), json_value(item)} end)
+    |> Map.new()
+  end
+
+  defp json_value(value) when is_list(value), do: Enum.map(value, &json_value/1)
+  defp json_value(value) when is_tuple(value), do: value |> Tuple.to_list() |> json_value()
+  defp json_value(true), do: true
+  defp json_value(false), do: false
+  defp json_value(nil), do: nil
+  defp json_value(value) when is_atom(value), do: Atom.to_string(value)
+  defp json_value(value), do: value
+
+  defp repository(value) when is_binary(value) do
+    case String.split(value, "/", parts: 3) do
+      [owner, name] when owner != "" and name != "" -> :ok
+      _ -> {:error, {:invalid_repository, value}}
+    end
+  end
+
+  defp repository(value), do: {:error, {:invalid_repository, value}}
+
+  defp producer_sha(value) when is_binary(value) do
+    if Regex.match?(@sha, value), do: :ok, else: {:error, {:invalid_producer_sha, value}}
+  end
+
+  defp producer_sha(value), do: {:error, {:invalid_producer_sha, value}}
+
+  defp digest_value(field, value) when is_binary(value) do
+    if Regex.match?(@digest, value), do: :ok, else: {:error, {:invalid_digest, field, value}}
+  end
+
+  defp digest_value(field, value), do: {:error, {:invalid_digest, field, value}}
+end
+
 defmodule Ex4pm.Gall.Corpus do
   @moduledoc "GALL-015 executable process reference corpus."
 
