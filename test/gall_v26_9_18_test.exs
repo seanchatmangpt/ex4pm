@@ -161,6 +161,15 @@ defmodule Ex4pm.GallTest do
 
     assert Portable.digest(%{"b" => 2, "a" => 1}) ==
              Portable.digest(%{"a" => 1, "b" => 2})
+
+    assert artifact["canonicalization"] == "RFC8785/JCS-IJSON-ASCII-INTEGER-SUBSET"
+
+    assert {:error, {:float_not_in_portable_subset, 0.5}} =
+             Portable.build(:powl, %{"threshold" => 0.5},
+               repository: "seanchatmangpt/ex4pm",
+               producer_sha: "5abf57f91e85628a605a1dacace2a50e43fabb8b",
+               corpus_digest: Corpus.manifest_digest()
+             )
   end
 
   test "portable artifact rejects unbound producer identity" do
