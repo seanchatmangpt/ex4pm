@@ -2,7 +2,7 @@ defmodule Ex4pm.GallTest do
   use ExUnit.Case, async: true
 
   alias Ex4pm.Gall
-  alias Ex4pm.Gall.{Compliance, Compute, Corpus, Discovery, Ocpq, Powl}
+  alias Ex4pm.Gall.{Compliance, Compute, Corpus, Discovery, Ocpq, Portable, Powl}
 
   test "GALL-015 corpus is content-addressed and includes positive/negative process classes" do
     manifest = Corpus.manifest()
@@ -130,5 +130,45 @@ defmodule Ex4pm.GallTest do
 
   test "canonical digest is invariant to map insertion order" do
     assert Gall.digest(%{a: 1, b: 2}) == Gall.digest(%{b: 2, a: 1})
+  end
+
+  test "portable artifact survives JSON transport and fails closed on tampering" do
+    assert {:ok, powl} =
+             Powl.from_semantic(%{
+               type: :partial_order,
+               children: ["a", "b"],
+               order: []
+             })
+
+    assert {:ok, artifact} =
+             Portable.build(:powl, powl,
+               repository: "seanchatmangpt/ex4pm",
+               producer_sha: "5abf57f91e85628a605a1dacace2a50e43fabb8b",
+               corpus_digest: Corpus.manifest_digest(),
+               evidence_class: "normative-process-law"
+             )
+
+    assert artifact["authority"] == "NONE"
+    assert String.starts_with?(artifact["payload_digest"], "sha256:")
+    assert String.starts_with?(artifact["artifact_digest"], "sha256:")
+    assert {:ok, ^artifact} = Portable.verify(artifact)
+
+    transported = artifact |> Jason.encode!() |> Jason.decode!()
+    assert {:ok, ^transported} = Portable.verify(transported)
+
+    tampered = put_in(transported, ["payload", "model", "type"], "sequence")
+    assert {:error, :payload_digest_mismatch} = Portable.verify(tampered)
+
+    assert Portable.digest(%{"b" => 2, "a" => 1}) ==
+             Portable.digest(%{"a" => 1, "b" => 2})
+  end
+
+  test "portable artifact rejects unbound producer identity" do
+    assert {:error, {:invalid_producer_sha, "main"}} =
+             Portable.build(:powl, %{},
+               repository: "seanchatmangpt/ex4pm",
+               producer_sha: "main",
+               corpus_digest: Corpus.manifest_digest()
+             )
   end
 end
