@@ -32,8 +32,8 @@ jobs:
           mix format --check-formatted
           mkdir -p format-capsule
           git diff --binary -- . ':!format-capsule' > format-capsule/format.patch
-          sources=(apps mix.exs .formatter.exs)
-          for optional in config lib scripts formal; do
+          sources=(mix.exs .formatter.exs)
+          for optional in config lib test scripts formal priv; do
             if [ -e "$optional" ]; then sources+=("$optional"); fi
           done
           tar -czf format-capsule/formatted-source.tar.gz "${sources[@]}"
