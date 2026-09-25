@@ -1,0 +1,84 @@
+{
+  "episode_id": "ex4pm-qualification-episode-20260903",
+  "domain": "Ex4pmQualificationDomain (tools/qualification_domain.py, built earlier this workflow at /Users/sac/ex4pm-worktrees/qualification-domain)",
+  "isolation": {
+    "ex4pm_worktree": "/Users/sac/ex4pm-worktrees/predict-execute-episode-20260903 (branch predict-execute-episode-20260903, from origin @ e1eb78a, created fresh this step so deps/ was genuinely never fetched)",
+    "wasm4pm_worktree": "/Users/sac/wasm4pm-worktrees/predict-execute-episode-wf10-20260903 (detached @ 69017c123, created fresh this step so target/ was genuinely absent -- superseded an earlier attempt that reused the shared ex4pm-qual-episode-20260903 worktree, discovered contaminated by a concurrent sibling workflow agent mid-episode; see reversibility_confirmed)",
+    "note": "the canonical checkouts /Users/sac/ex4pm and /Users/sac/wasm4pm were never touched"
+  },
+  "initial_state": {
+    "deps_materialized": false,
+    "wasm_built": false,
+    "server_running": false,
+    "tests_passing": false,
+    "qualification_complete": false
+  },
+  "solver_admission_trace": [
+    {"solver": "autofde_lab.hub.solver.astar.astar.Astar", "outcome": "UNSUPPORTED", "reason": "ModuleNotFoundError: autofde_lab.hub.__autofde_lab_hub_cpp -- C++ hub extension not built (cpp/sdk/* submodules uninitialized), confirmed live and by a real `uv sync` CMake-configure failure this session"},
+    {"solver": "autofde_lab.hub.solver.simple_greedy.simple_greedy.SimpleGreedy", "outcome": "ADMISSIBLE_BUT_REJECTED_FOR_PREDICTION", "reason": "check_domain()==True for real, but its online rollout would dispatch real subprocesses to 'compute' a plan, collapsing predict into execute"},
+    {"solver": "hand-implemented BFS over domain._applicable (simple greedy fallback, explicitly labeled)", "outcome": "SUCCEEDED", "note": "no repo-registered solver could produce a plan without either an unbuilt C++ extension or executing real commands merely to predict; this is the solver actually used"}
+  ],
+  "solver_used": "hand-implemented BFS fallback (explicitly labeled simple-greedy substitute)",
+  "predicted_plan": {
+    "action_sequence": ["materialize_deps", "build_wasm", "start_server", "run_tests"],
+    "intermediate_states": [
+      {"deps_materialized": false, "wasm_built": false, "server_running": false, "tests_passing": false, "qualification_complete": false},
+      {"deps_materialized": true,  "wasm_built": false, "server_running": false, "tests_passing": false, "qualification_complete": false},
+      {"deps_materialized": true,  "wasm_built": true,  "server_running": false, "tests_passing": false, "qualification_complete": false},
+      {"deps_materialized": true,  "wasm_built": true,  "server_running": true,  "tests_passing": false, "qualification_complete": false},
+      {"deps_materialized": true,  "wasm_built": true,  "server_running": true,  "tests_passing": true,  "qualification_complete": true}
+    ],
+    "predicted_terminal_state": {"deps_materialized": true, "wasm_built": true, "server_running": true, "tests_passing": true, "qualification_complete": true},
+    "predicted_qualification_standing": "ALIVE"
+  },
+  "actual_trajectory": [
+    {
+      "step": 1, "action": "materialize_deps", "command": "mix deps.get", "returncode": 0, "wall_seconds": 8.692,
+      "observed_after": {"deps_materialized": false, "wasm_built": false, "server_running": false, "tests_passing": false, "qualification_complete": false}
+    },
+    {
+      "step": 2, "action": "build_wasm", "command": "cargo build --release --target wasm32-unknown-unknown -p wasm4pm-ex4pm-bindings", "returncode": 0, "wall_seconds": 72.029,
+      "observed_after": {"deps_materialized": false, "wasm_built": true, "server_running": false, "tests_passing": false, "qualification_complete": false}
+    },
+    {
+      "step": 3, "action": "start_server", "command": null, "refused": true,
+      "refusal_reason": "REFUSED:PRECONDITION_NOT_MET -- domain._applicable() is False for real because deps_materialized is still False (propagated Step-1 mismatch); mix phx.server was never launched",
+      "observed_after": {"deps_materialized": false, "wasm_built": true, "server_running": false, "tests_passing": false, "qualification_complete": false}
+    },
+    {
+      "step": 4, "action": "run_tests", "command": "mix test --color=false", "returncode": 0,
+      "note": "domain._applicable() was also False for this action, but it was run anyway as an independent, out-of-band verification (not a domain-admitted action) because terminal_standing must come from the real mix test exit code",
+      "observed_after": {"deps_materialized": false, "wasm_built": true, "server_running": false, "tests_passing": true, "qualification_complete": false}
+    }
+  ],
+  "terminal_standing": {
+    "real_mix_test_exit_code": 0,
+    "mix_test_summary": "every ExUnit segment across all 13 umbrella apps reported 0 failures (ex4pm_core, ex4pm_contracts, ex4pm_evidence, ex4pm_engine incl. the wasm4pm Chicago suite + CPM/RUL benchmarks, ex4pm_domain, ex4pm_stream, ex4pm_runtime, ex4pm, ex4pm_cli, ex4pm_information, ex4pm_qualification, ex4pm_web)",
+    "domain_qualification_complete": false,
+    "reconciliation": "the real software qualifies (tests pass, code compiles, wasm artifact builds) but the domain's own coarse boolean model reports qualification_complete=False, because deps_materialized and server_running never flipped True -- both are domain-model defects (see mismatches), not real defects in ex4pm itself"
+  },
+  "transition_comparison": [
+    {"step": 0, "kind": "initial_state", "verdict": "MATCH", "detail": "constructed initial state (F,F,F,F,F) matched the predicted/required initial state exactly"},
+    {"step": 1, "kind": "materialize_deps", "verdict": "MISMATCH", "detail": "predicted deps_materialized: False->True; observed: stayed False despite a real, successful (exit 0) `mix deps.get`. Root cause: check_deps_materialized() requires every mix.lock entry to have a populated deps/<name> dir, but mix.lock carries a stale entry (\"ranch\") that `mix deps` itself does not list as a real dependency and that `mix deps.get` correctly never fetches. Classification: wrong prerequisite assumption in the domain's own state-checking function, not a wrong action effect."},
+    {"step": 2, "kind": "build_wasm", "verdict": "MISMATCH", "detail": "wasm_built field matched prediction (False->True, real cargo build exit 0, 72s) but deps_materialized carried forward Step 1's mismatch rather than being True as predicted at this point in the plan"},
+    {"step": 3, "kind": "start_server", "verdict": "REFUSED", "detail": "predicted to execute and set server_running=True; never attempted for real because domain._applicable() reported it inapplicable (deps_materialized precondition unmet) -- correctly refused rather than forced"},
+    {"step": 4, "kind": "run_tests", "verdict": "MISMATCH", "detail": "predicted terminal state ALIVE (all four True); real mix test exit code was 0 (tests genuinely pass) but qualification_complete stayed False because deps_materialized and server_running never became True. The tests_passing field itself matched the optimistic prediction (True); the divergence is entirely in the two upstream fields corrupted by Step 1's mismatch."}
+  ],
+  "cost": {
+    "materialize_deps_wall_seconds": 8.692,
+    "build_wasm_wall_seconds": 72.029,
+    "start_server_wall_seconds": 0.0,
+    "run_tests_wall_seconds_approx": "first (untimed) run ~140s per log growth; second exit-code-capturing run completed at 13:43:50, started immediately after predict.json write at 13:36:10",
+    "total_episode_wall_clock": "~7m40s (13:36:10 predict.json written -> 13:43:50 authoritative mix-test exit code captured), including deps.get + cargo build + two full mix test runs (the second run solely to capture an authoritative exit code the first, nohup'd run did not record directly)"
+  },
+  "reversibility_confirmed": {
+    "confirmed": true,
+    "how": [
+      "Both worktrees created via `git worktree add` are fully removable with `git worktree remove` and leave the canonical /Users/sac/ex4pm and /Users/sac/wasm4pm checkouts completely untouched -- verified via `git worktree list` on both repos before and during the episode.",
+      "start_server was REFUSED (precondition unmet), so no server process, PID file, or log file was ever created; `lsof -iTCP:8080 -sTCP:LISTEN` returned empty both before and after the episode.",
+      "`pgrep -fl predict-execute-episode-20260903` returned no processes after the episode -- no lingering mix/beam process tied to this episode's worktree.",
+      "materialize_deps (mix deps.get) and build_wasm (cargo build) are both naturally idempotent/re-runnable and wrote only into this episode's own isolated deps/ and target/ directories, never into the shared canonical repos.",
+      "Discovered mid-episode: an EARLIER choice of wasm4pm worktree (the pre-existing, shared /Users/sac/wasm4pm-worktrees/ex4pm-qual-episode-20260903) was found contaminated -- its wasm artifact flipped from absent to present between two checks a few minutes apart, evidencing a concurrent sibling agent of this same workflow building in that same path. This was corrected before executing any action by switching to a brand-new, exclusively-owned wasm4pm worktree; nothing was executed against the contaminated shared path."
+    ]
+  }
+}

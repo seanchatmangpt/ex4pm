@@ -1,0 +1,81 @@
+{
+  "episode_id": "ex4pm-qualification-episode-20260903",
+  "domain": "Ex4pmQualificationDomain",
+  "ex4pm_root": "/Users/sac/ex4pm-worktrees/predict-execute-episode-20260903",
+  "wasm4pm_root": "/Users/sac/wasm4pm-worktrees/predict-execute-episode-wf10-20260903",
+  "solver_admission_trace": [
+    {
+      "solver": "autofde_lab.hub.solver.astar.astar.Astar",
+      "outcome": "UNSUPPORTED",
+      "reason": "ModuleNotFoundError: No module named 'autofde_lab.hub.__autofde_lab_hub_cpp' (C++ hub extension not built in this checkout -- cpp/sdk/* submodules uninitialized; confirmed this session by a real `uv sync` attempt failing at CMake configure for the same reason)."
+    },
+    {
+      "solver": "autofde_lab.hub.solver.simple_greedy.simple_greedy.SimpleGreedy",
+      "outcome": "ADMISSIBLE_BUT_NOT_USED_FOR_PREDICTION",
+      "reason": "SimpleGreedy.check_domain(Ex4pmQualificationDomain()) == True (real call, this session), but this domain's _get_next_state always dispatches a real subprocess -- an online rollout to 'compute' a plan would already execute Step 4 while still inside Step 3 (prediction-only). Not used for that reason."
+    },
+    {
+      "solver": "hand-implemented BFS over domain._applicable (simple greedy fallback, explicitly labeled)",
+      "outcome": "SUCCEEDED"
+    }
+  ],
+  "solver_used": "hand-implemented BFS over domain._applicable (simple greedy fallback, explicitly labeled)",
+  "initial_state": {
+    "deps_materialized": false,
+    "wasm_built": false,
+    "server_running": false,
+    "tests_passing": false,
+    "qualification_complete": false
+  },
+  "predicted_action_sequence": [
+    "materialize_deps",
+    "build_wasm",
+    "start_server",
+    "run_tests"
+  ],
+  "predicted_intermediate_states": [
+    {
+      "deps_materialized": false,
+      "wasm_built": false,
+      "server_running": false,
+      "tests_passing": false,
+      "qualification_complete": false
+    },
+    {
+      "deps_materialized": true,
+      "wasm_built": false,
+      "server_running": false,
+      "tests_passing": false,
+      "qualification_complete": false
+    },
+    {
+      "deps_materialized": true,
+      "wasm_built": true,
+      "server_running": false,
+      "tests_passing": false,
+      "qualification_complete": false
+    },
+    {
+      "deps_materialized": true,
+      "wasm_built": true,
+      "server_running": true,
+      "tests_passing": false,
+      "qualification_complete": false
+    },
+    {
+      "deps_materialized": true,
+      "wasm_built": true,
+      "server_running": true,
+      "tests_passing": true,
+      "qualification_complete": true
+    }
+  ],
+  "predicted_terminal_state": {
+    "deps_materialized": true,
+    "wasm_built": true,
+    "server_running": true,
+    "tests_passing": true,
+    "qualification_complete": true
+  },
+  "predicted_qualification_standing": "ALIVE (qualification_complete=True, all four preconditions met, predicted mix test exit code 0)"
+}
