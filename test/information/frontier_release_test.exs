@@ -102,7 +102,9 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
       %{id: "c2", text: "Capability Y executed"}
     ]
 
-    assert {:ok, release} = FrontierRelease.qualify_release(claims, [evidence("c1")], release_binding())
+    assert {:ok, release} =
+             FrontierRelease.qualify_release(claims, [evidence("c1")], release_binding())
+
     assert Enum.map(release.earned_claims, & &1.id) == ["c1"]
     assert release.withheld_claim_ids == ["c2"]
     assert release.standing == :partial_alive
@@ -118,7 +120,11 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     ]
 
     assert {:ok, release} =
-             FrontierRelease.qualify_release(claims, [evidence("c1"), evidence("c2")], release_binding())
+             FrontierRelease.qualify_release(
+               claims,
+               [evidence("c1"), evidence("c2")],
+               release_binding()
+             )
 
     assert Enum.map(release.earned_claims, & &1.id) == ["c1", "c2"]
     assert release.withheld_claim_ids == []
@@ -130,7 +136,9 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     claims = [%{id: "c1", text: "Capability X executed"}]
     wrong_subject = evidence("c1", %{subject_identity: "repo@wrong"})
 
-    assert {:ok, release} = FrontierRelease.qualify_release(claims, [wrong_subject], release_binding())
+    assert {:ok, release} =
+             FrontierRelease.qualify_release(claims, [wrong_subject], release_binding())
+
     assert release.earned_claims == []
     assert release.withheld_claim_ids == ["c1"]
     assert release.standing == :blocked
@@ -140,7 +148,9 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     claims = [%{id: "c1", text: "Capability X executed"}]
     wrong_verifier = evidence("c1", %{verifier_identity: "verifier:unadmitted"})
 
-    assert {:ok, release} = FrontierRelease.qualify_release(claims, [wrong_verifier], release_binding())
+    assert {:ok, release} =
+             FrontierRelease.qualify_release(claims, [wrong_verifier], release_binding())
+
     assert release.earned_claims == []
     assert release.withheld_claim_ids == ["c1"]
     assert release.standing == :blocked
