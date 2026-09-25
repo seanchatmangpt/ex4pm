@@ -1,9 +1,0 @@
-.git
-.github
-_build
-deps
-.elixir_ls
-.fly
-tmp
-*.beam
-.DS_Store

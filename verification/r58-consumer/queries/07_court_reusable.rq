@@ -1,2 +1,0 @@
-PREFIX esf: <https://ggen.dev/ontology/epistemic-sensor-factory#>
-ASK { esf:ex4pmR58Consumer esf:courtReusable true . }
