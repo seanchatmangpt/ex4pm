@@ -1,0 +1,33 @@
+{
+  "episode_id": "ex4pm-qualification-episode-20260903-server-stale",
+  "scenario_label": "server running, but build/deps stale relative to it",
+  "domain": "Ex4pmQualificationDomain (tools/qualification_domain.py, /Users/sac/ex4pm-worktrees/qualification-domain)",
+  "repo_root": "/Users/sac/ex4pm-worktrees/qualification-domain",
+  "wasm4pm_root": "/Users/sac/wasm4pm (canonical checkout, read-only in this episode -- build_wasm is never run)",
+  "initial_state": {
+    "deps_materialized": true,
+    "wasm_built": true,
+    "server_running": false,
+    "tests_passing": false,
+    "qualification_complete": false
+  },
+  "initial_state_provenance": "This is the real state observed in this worktree at task start (deps/ already populated matching mix.lock -- see tools/episode-20260903-server-stale/construct_initial.json's pre_setup_baseline -- and ~/wasm4pm's wasm artifact already present from an earlier step this session). It is NOT a fresh/fully-prepared state: mix.lock in this worktree carries an uncommitted one-line deletion (the stale 'ranch' entry from the domain-bug fix discovered in the prior E-init-empty episode) relative to the git-committed HEAD, i.e. deps/build here are the 'possibly stale' state named in this episode's scenario label, not a freshly re-synced one.",
+  "solver_admission_trace": [
+    {"solver": "autofde_lab.hub.solver.astar.astar.Astar", "outcome": "UNSUPPORTED", "reason": "Re-verified live this episode: ModuleNotFoundError: No module named 'autofde_lab.hub.__autofde_lab_hub_cpp' -- 'Scikit-decide C++ hub library not found.' The C++ hub extension is still not built in this autofde-lab checkout."},
+    {"solver": "autofde_lab.hub.solver.simple_greedy.simple_greedy.SimpleGreedy", "outcome": "ADMISSIBLE_BUT_REJECTED_FOR_PREDICTION", "reason": "Re-verified live this episode: imports fine, and SimpleGreedy.check_domain(Ex4pmQualificationDomain(...)) returns True. Not used to compute the prediction because this domain's _get_next_state always dispatches a real subprocess (mix phx.server / mix test) -- calling SimpleGreedy's online rollout to 'compute' a plan would already constitute real execution inside what must be a prediction-only step."},
+    {"solver": "hand-implemented BFS over domain._applicable (simple greedy fallback, explicitly labeled)", "outcome": "SUCCEEDED", "note": "Same fallback used in the prior E-init-empty episode: optimistic BFS over the domain's own pure _applicable(state, action) predicate plus each action's name-denoted effect (start_server sets server_running True, run_tests sets tests_passing True). This planner has no model of real command failure -- it does not know in advance that MIX_ENV=prod will fail to compile in this repo (that is real-world information the plan cannot see until execution)."}
+  ],
+  "solver_used": "hand-implemented BFS fallback (explicitly labeled simple-greedy substitute)",
+  "predicted_plan": {
+    "action_sequence": ["start_server", "run_tests"],
+    "action_sequence_rationale": "deps_materialized and wasm_built are already True in this worktree's real starting state, so materialize_deps and build_wasm are both already-satisfied preconditions with nothing to do (and the task explicitly instructs not to run them for this scenario) -- the only two actions with a real effect left are start_server and run_tests, in the order the task specifies (start the server against the current possibly-stale build first).",
+    "intermediate_states": [
+      {"deps_materialized": true, "wasm_built": true, "server_running": false, "tests_passing": false, "qualification_complete": false},
+      {"deps_materialized": true, "wasm_built": true, "server_running": true,  "tests_passing": false, "qualification_complete": false},
+      {"deps_materialized": true, "wasm_built": true, "server_running": true,  "tests_passing": true,  "qualification_complete": true}
+    ],
+    "predicted_terminal_state": {"deps_materialized": true, "wasm_built": true, "server_running": true, "tests_passing": true, "qualification_complete": true},
+    "predicted_qualification_standing": "ALIVE"
+  },
+  "timeline_disclosure": "Honesty note on chronology, not a claim of a cleaner sequence than actually happened: the task instructed constructing this episode's named initial condition BY running start_server first (against the current, un-refreshed deps/build state), and only THEN treating the resulting state as the episode's initial_state. That construction step (see construct_initial.json) was therefore executed once, for real, BEFORE this predict.json file was written. This file's predicted_plan is nonetheless the same deterministic output the hand-fallback BFS above would have produced from initial_state with no foreknowledge of the construction step's real outcome -- it is written to record what the naive planner predicts, not to claim it was computed in a strict pre-action vacuum. The construction step's real result (start_server failing to bind port 8080 due to a real MIX_ENV=prod compile error) is treated below as actual_trajectory step 1, matched against this same optimistic prediction like every other step -- it is not hidden or excluded from the comparison on the grounds that it happened slightly before this file was saved."
+}

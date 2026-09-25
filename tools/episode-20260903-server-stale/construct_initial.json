@@ -1,0 +1,39 @@
+{
+  "note": "pre_setup_baseline is the real state observed BEFORE this construction step -- it is NOT the episode's initial_state (that is final_settled_state below, per the task's literal instruction to start the server first, then observe the real initial state).",
+  "pre_setup_baseline": {
+    "deps_materialized": true,
+    "wasm_built": true,
+    "server_running": false,
+    "tests_passing": false,
+    "qualification_complete": false
+  },
+  "applicable_actions_before": [
+    "start_server",
+    "run_tests"
+  ],
+  "start_server_applicable_before": true,
+  "materialize_deps_run": false,
+  "build_wasm_run": false,
+  "dispatch_mode": "domain-admitted (deps_materialized was already True in this worktree at task start; no applicability bypass was needed to attempt start_server)",
+  "wall_seconds_first_probe": 20.236,
+  "post_first_probe_state": {
+    "deps_materialized": true,
+    "wasm_built": true,
+    "server_running": false,
+    "tests_passing": false,
+    "qualification_complete": false
+  },
+  "process_outcome": "the launched `mix phx.server` process (pid 9313) did NOT bind port 8080 within the 20s wait_seconds window and was independently re-checked ~18s later: it had exited on its own with a real compile error, reproducing the exact failure this session had already found (see task instructions) -- MIX_ENV=prod forces a full recompile that includes a dev-only Mix task module (`lib/mix/tasks/ex4pm.engine.gen.adapter.ex`) referencing `Igniter.Mix.Task`, which is not loaded in a prod compile.",
+  "server_log_full": "==> ex4pm_engine\nCompiling 121 files (.ex)\n    error: module Igniter.Mix.Task is not loaded and could not be found\n    │\n 14 │   use Igniter.Mix.Task\n    │   ^^^^^^^^^^^^^^^^^^^^\n    │\n    └─ lib/mix/tasks/ex4pm.engine.gen.adapter.ex:14: Mix.Tasks.Ex4pm.Engine.Gen.Adapter (module)\n\n\n== Compilation error in file lib/mix/tasks/ex4pm.engine.gen.adapter.ex ==\n** (CompileError) lib/mix/tasks/ex4pm.engine.gen.adapter.ex: cannot compile module Mix.Tasks.Ex4pm.Engine.Gen.Adapter (errors have been logged)\n    (elixir 1.19.5) expanding macro: Kernel.use/1\n    lib/mix/tasks/ex4pm.engine.gen.adapter.ex:14: Mix.Tasks.Ex4pm.Engine.Gen.Adapter (module)\n",
+  "port_8080_check_after_exit": "CLOSED (nc -z -w1 127.0.0.1 8080)",
+  "final_settled_state": {
+    "deps_materialized": true,
+    "wasm_built": true,
+    "server_running": false,
+    "tests_passing": false,
+    "qualification_complete": false
+  },
+  "cleanup_performed": "domain.stop_server() called after confirming the launched process had already exited on its own (os.kill on the dead pid correctly raised ProcessLookupError, caught, ignored); the stale .qualification_server.pid file was removed. The .qualification_server.log file (containing the compile error above) was left on disk as evidence.",
+  "command": "MIX_ENV=prod PHX_SERVER=true PORT=8080 SECRET_KEY_BASE=<random 64 hex> mix phx.server (background, cwd=/Users/sac/ex4pm-worktrees/qualification-domain)",
+  "conclusion": "The named initial condition ('server running, but build/deps stale relative to it') could NOT be constructed as a true server_running=True state: the real, unconditional dev-only Igniter.Mix.Task reference makes this ex4pm worktree's MIX_ENV=prod compile fail deterministically, exactly as this session had already found and as the task anticipated. Per the task's explicit instruction, this failure IS reported as the real initial state rather than worked around (e.g. by patching the offending file, switching to MIX_ENV=dev, or stubbing the module) -- none of those were done."
+}

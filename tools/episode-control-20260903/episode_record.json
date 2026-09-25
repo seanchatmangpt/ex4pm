@@ -1,0 +1,119 @@
+{
+  "episode_id": "ex4pm-qualification-control-episode-2026-09-03-04",
+  "sequence_note": "4th predict-execute-observe episode against Ex4pmQualificationDomain this session/workflow. Prior 3: (1) ex4pm-qualification-episode-20260903 in an isolated fresh worktree (all-False initial state, hit the mix.lock stale-`ranch`-entry bug, deps_materialized never became True -- this is 'E-init-empty'); (2) ex4pm-qual-episode-20260903-01 in THIS worktree (deps materialized, wasm absent, server absent -- ran build_wasm+start_server+run_tests); (3) ex4pm-qualification-e1-episode-2026-09-03-01, also in THIS worktree (after fixing the ranch mix.lock entry via `mix deps.unlock --unused`, deps+wasm already True -- ran start_server+run_tests). This 4th episode reuses the exact same qualification-domain worktree as (2) and (3), whose real, persistent, on-disk state already carries deps_materialized=True and wasm_built=True forward from those prior episodes.",
+  "assigned_initial_condition": "all prerequisites present, control episode",
+  "domain": "Ex4pmQualificationDomain (/Users/sac/ex4pm-worktrees/qualification-domain/tools/qualification_domain.py, the EXISTING already-working domain from this session -- reused as-is, not re-derived, not reconstructed)",
+  "worktree": "/Users/sac/ex4pm-worktrees/qualification-domain (branch qualification-domain-20260903, from ex4pm origin HEAD e1eb78a785568aadc41b2df68c2feeed66f35a4e) -- reused directly per task instruction, NOT a fresh isolated worktree",
+  "environment": {
+    "EX4PM_ROOT": "/Users/sac/ex4pm-worktrees/qualification-domain",
+    "WASM4PM_ROOT": "domain default (~/wasm4pm, the shared canonical checkout) -- left unset because wasm_built must already be True for this condition, and the shared checkout's real target/ artifact already satisfies that",
+    "AUTOFDE_LAB_ROOT": "/Users/sac/chatman-ecosystem/platform-console/services/autofde-lab (its .venv, python3.13, wrapt 2.4.0, used for every real command in this episode -- the system python3.14/wrapt2.1.2 fails to import autofde_lab at all: AttributeError: module 'wrapt' has no attribute 'lru_cache')"
+  },
+  "shared_worktree_concurrency_note": "This worktree was, for real, concurrently in use by at least two other sibling episode-agents while this episode ran: a `mix test` process (PID 10687, started ~14:12) was already running when this episode began and was allowed to finish (serialized, not killed or raced) before this episode's own start_server; a second concurrent `mix test` (PID 16397, started ~14:15, immediately after this episode's own start_server call) was likewise allowed to finish before this episode's own run_tests. Verified via `ps aux` / `lsof -iTCP:8080` before each of this episode's own real actions that no other mix/beam process was active at the moment of execution -- this episode's two real actions (start_server, run_tests) were each run in genuine isolation from concurrent processes, even though the worktree itself is shared. tools/.qualification_server.log and the mix.lock ranch-entry fix (see below) are real artifacts of prior/sibling episodes in this same shared worktree, not fabricated by this episode.",
+  "initial_state": {
+    "deps_materialized": true,
+    "wasm_built": true,
+    "server_running": false,
+    "tests_passing": false,
+    "qualification_complete": false
+  },
+  "initial_state_provenance": "Real, freshly re-observed via Ex4pmQualificationDomain().get_initial_state() at episode start (not assumed/carried over as a claim) -- deps_materialized=True and wasm_built=True are both genuinely satisfied on disk in this shared worktree (76/76 mix.lock packages populated under deps/, confirmed no stale `ranch` entry remains in mix.lock -- that bug was already fixed by prior episode e1's real `mix deps.unlock --unused` + `mix deps.get`; wasm artifact present and non-empty at ~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm). tests_passing is always False on fresh domain-instance construction per the domain's own `_get_initial_state_` docstring (absence of a prior run is not evidence of a passing one), even though sibling episodes had already run `mix test` successfully moments earlier -- a real, noted domain-model limitation (test-pass state is not persisted/shared across domain instances), not a bug introduced by this episode.",
+  "solver_admission_trace": [
+    {
+      "solver": "autofde_lab.hub.solver.astar.astar.Astar",
+      "outcome": "UNSUPPORTED",
+      "reason": "ModuleNotFoundError: No module named 'autofde_lab.hub.__autofde_lab_hub_cpp' -- C++ hub extension not built in the autofde-lab checkout used this episode. Re-verified live this episode (4th independent confirmation across all 4 episodes this session)."
+    },
+    {
+      "solver": "autofde_lab.hub.solver.simple_greedy.simple_greedy.SimpleGreedy",
+      "outcome": "ADMITTED_FOR_PREDICTION_ONLY",
+      "reason": "check_domain()==True; solve() + _get_next_action(state) (domain=None, per the fix discovered in prior episode (2) -- passing an explicit domain re-applies autocast and corrupts a NamedTuple state) rolled out cleanly against an IdealizedD side-effect-free shadow domain (STRIPS-assumed transitions: an action's own target field flips True, nothing else changes). Never invoked against the real domain -- its real _get_next_state has genuine side effects (subprocess dispatch), so using it directly would collapse prediction into execution."
+    }
+  ],
+  "solver_used": "autofde_lab.hub.solver.simple_greedy.simple_greedy.SimpleGreedy (real, registered solver -- rolled out against an IdealizedD prediction-only shadow domain for the plan; real Ex4pmQualificationDomain used only for the actual execution steps below)",
+  "predicted_plan": {
+    "action_sequence": ["start_server", "run_tests"],
+    "intermediate_states": [
+      {"deps_materialized": true, "wasm_built": true, "server_running": false, "tests_passing": false, "qualification_complete": false},
+      {"deps_materialized": true, "wasm_built": true, "server_running": true,  "tests_passing": false, "qualification_complete": false},
+      {"deps_materialized": true, "wasm_built": true, "server_running": true,  "tests_passing": true,  "qualification_complete": true}
+    ],
+    "predicted_terminal_state": {"deps_materialized": true, "wasm_built": true, "server_running": true, "tests_passing": true, "qualification_complete": true},
+    "predicted_qualification_standing": "ALIVE / QUALIFIED",
+    "written_before_any_real_action": true,
+    "file": "prediction.json (this episode's scratchpad copy: /private/tmp/claude-501/-Users-sac-chatman-ecosystem/297a2635-43cd-4309-8564-5777c18834e5/scratchpad/ex4pm_episode_control/prediction.json)"
+  },
+  "actual_trajectory": [
+    {
+      "step": 1,
+      "action": "start_server",
+      "was_applicable_precondition": true,
+      "command": "MIX_ENV=prod PHX_SERVER=true PORT=8080 SECRET_KEY_BASE=<64hex> mix phx.server (real subprocess, waited up to 15s for a real TCP bind on 127.0.0.1:8080)",
+      "wall_seconds": 15.178681135177612,
+      "observed_before": {"deps_materialized": true, "wasm_built": true, "server_running": false, "tests_passing": false, "qualification_complete": false},
+      "observed_after":  {"deps_materialized": true, "wasm_built": true, "server_running": false, "tests_passing": false, "qualification_complete": false},
+      "real_failure_evidence": "tools/.qualification_server.log: 'error: module Igniter.Mix.Task is not loaded and could not be found' / '** (CompileError) lib/mix/tasks/ex4pm.engine.gen.adapter.ex: cannot compile module Mix.Tasks.Ex4pm.Engine.Gen.Adapter' -- igniter is a dev/test-only hex dependency not compiled under MIX_ENV=prod, yet referenced unconditionally (`use Igniter.Mix.Task`) by a lib/ Mix task module. 4th independent, identical reproduction of this exact structural bug across all 4 episodes this session that have attempted start_server under MIX_ENV=prod.",
+      "post_action_verification": "ps aux showed no beam.smp/mix-phx.server process and `lsof -iTCP:8080` showed no listener immediately after -- the launched process crashed on its own compile error; nothing was left running."
+    },
+    {
+      "step": 2,
+      "action": "run_tests",
+      "was_applicable_precondition": true,
+      "command": "mix test --color=false (real subprocess, exit-code captured directly)",
+      "wall_seconds": 72.90967512130737,
+      "observed_before": {"deps_materialized": true, "wasm_built": true, "server_running": false, "tests_passing": false, "qualification_complete": false},
+      "observed_after":  {"deps_materialized": true, "wasm_built": true, "server_running": false, "tests_passing": true,  "qualification_complete": false},
+      "corroborating_second_run": {
+        "purpose": "capture full real stdout/stderr for the receipt (the domain's own run_tests action only threads the boolean returncode==0 through, not the text)",
+        "returncode": 0,
+        "wall_seconds": 80.21042037010193,
+        "real_stdout_tail_excerpt": "==> ex4pm_engine ... Finished in 68.3 seconds (51.3s async, 17.0s sync) / 2 doctests, 3 properties, 243 tests, 0 failures ==> ex4pm_domain ... 21 tests, 0 failures ==> ex4pm_stream ... 8 tests, 0 failures ==> ex4pm_runtime ... 19 tests, 0 failures ==> ex4pm ... 47 tests, 0 failures (17 excluded) ==> ex4pm_cli ... 2 tests, 0 failures ==> ex4pm_information ... 13 tests, 0 failures ==> ex4pm_qualification ... 9 tests, 0 failures ==> ex4pm_web ... 12 tests, 0 failures",
+        "saved_full_output": "/private/tmp/claude-501/-Users-sac-chatman-ecosystem/297a2635-43cd-4309-8564-5777c18834e5/scratchpad/ex4pm_episode_control/mix_test_capture.json"
+      }
+    }
+  ],
+  "terminal_standing": {
+    "real_mix_test_exit_code": 0,
+    "mix_test_summary": "every ExUnit segment across all umbrella apps reported 0 failures (ex4pm_core through ex4pm_engine's Chicago/wasm4pm + CPM/RUL benchmark suites, ex4pm_domain, ex4pm_stream, ex4pm_runtime, ex4pm, ex4pm_cli, ex4pm_information, ex4pm_qualification, ex4pm_web) -- same authoritative source as prior episodes (real process exit code, never a parsed string match)",
+    "real_final_state": {"deps_materialized": true, "wasm_built": true, "server_running": false, "tests_passing": true, "qualification_complete": false},
+    "domain_qualification_complete": false,
+    "standing": "NOT QUALIFIED per the domain's coarse 4-field conjunction, despite the real software genuinely passing every test -- reconciliation: deps_materialized, wasm_built, and tests_passing are all real and True; server_running is real and False solely because of the structural Igniter.Mix.Task/MIX_ENV=prod compile bug, now independently reproduced 4/4 times across every episode this session that has attempted start_server. This is a real, deterministic ex4pm codebase defect (not a domain-model artifact like the ranch mix.lock issue), and not something this episode worked around."
+  },
+  "transition_comparison": [
+    {
+      "step": 0,
+      "kind": "initial_state",
+      "verdict": "MATCH",
+      "detail": "real observed initial state (T,T,F,F,F) matched the assigned 'all prerequisites present' condition exactly -- no setup action was needed or taken."
+    },
+    {
+      "step": 1,
+      "kind": "start_server",
+      "verdict": "MISMATCH",
+      "detail": "predicted server_running: False->True (STRIPS-idealized, side-effect-free shadow-domain prediction); observed: stayed False. Root cause: a real, deterministic compile failure under MIX_ENV=prod (Igniter.Mix.Task, a dev/test-only dependency, referenced unconditionally by a lib/ Mix task module) -- a genuine unmodeled real-world precondition/defect, not a flaky or transient failure. Classification: wrong action-effect assumption in the idealized planning model (the model assumes start_server always succeeds once deps_materialized holds), not a domain._applicable() precondition-checking bug -- the action WAS genuinely applicable per the domain's own (correct) precondition and was genuinely attempted for real; it just cannot succeed against this real codebase as currently written."
+    },
+    {
+      "step": 2,
+      "kind": "run_tests",
+      "verdict": "MISMATCH",
+      "detail": "predicted terminal state: all four True (qualification_complete=True, 'ALIVE'). Real: tests_passing matched the prediction exactly (False->True, real `mix test` exit code 0, corroborated by a second full-output capture); server_running and qualification_complete diverged from prediction, but purely as a carried-over consequence of Step 1's real failure -- run_tests' own isolated effect model (tests_passing flips on a real passing exit code) was itself correct and exactly matched."
+    }
+  ],
+  "cost": {
+    "start_server_wall_seconds": 15.178681135177612,
+    "run_tests_wall_seconds": 72.90967512130737,
+    "run_tests_corroborating_capture_wall_seconds": 80.21042037010193,
+    "total_core_actions_wall_seconds": 88.09,
+    "total_episode_wall_clock_incl_serialization_waits": "~7m (14:12:44 first observed sibling-process check -> 14:19:42 final reversibility check), most of which was this episode voluntarily waiting for two concurrent sibling `mix test` processes (PID 10687, PID 16397) in the shared worktree to finish before dispatching its own real actions, rather than racing them"
+  },
+  "reversibility_confirmed": {
+    "confirmed": true,
+    "how": [
+      "start_server's launched `mix phx.server` process crashed on its own real compile error within the 15s wait window -- `ps aux` and `lsof -iTCP:8080` both confirmed, immediately after the action, no lingering beam.smp/mix process and no bound listener on 8080.",
+      "run_tests (mix test) is naturally idempotent and read/compile-only against test artifacts under this worktree's own gitignored _build/test and deps/ -- no tracked-file mutation.",
+      "git status --short in the worktree immediately after this episode shows exactly the same 3 entries present before this episode began (`mix.lock` -1 line from prior episode e1's real ranch-entry fix, an unrelated pre-existing modified .tex file, and the untracked tools/ directory carrying the domain module + logs) -- this episode introduced zero new tracked-file mutations.",
+      "the canonical checkouts /Users/sac/ex4pm and /Users/sac/wasm4pm were never touched -- all real commands ran with EX4PM_ROOT pinned to the isolated qualification-domain worktree and WASM4PM_ROOT resolving to the shared but read-only-for-this-episode ~/wasm4pm checkout (only read via a filesystem stat, never written to).",
+      "this worktree (`git worktree remove --force qualification-domain`, from the ex4pm repo) remains fully removable/disposable independent of anything this episode did."
+    ]
+  }
+}

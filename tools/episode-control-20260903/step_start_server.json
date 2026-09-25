@@ -1,0 +1,19 @@
+{
+  "action": "start_server",
+  "was_applicable_precondition": true,
+  "before": {
+    "deps_materialized": true,
+    "wasm_built": true,
+    "server_running": false,
+    "tests_passing": false,
+    "qualification_complete": false
+  },
+  "after": {
+    "deps_materialized": true,
+    "wasm_built": true,
+    "server_running": false,
+    "tests_passing": false,
+    "qualification_complete": false
+  },
+  "wall_seconds": 15.178681135177612
+}

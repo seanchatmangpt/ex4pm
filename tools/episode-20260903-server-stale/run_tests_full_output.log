@@ -1,0 +1,213 @@
+==> ex4pm_core
+Running ExUnit with seed: 67073, max_cases: 32
+
+................................................................................................
+Finished in 0.6 seconds (0.6s async, 0.00s sync)
+2 properties, 94 tests, 0 failures
+==> ex4pm_contracts
+Running ExUnit with seed: 67073, max_cases: 32
+
+.
+Finished in 0.06 seconds (0.06s async, 0.00s sync)
+1 test, 0 failures
+==> ex4pm_evidence
+Running ExUnit with seed: 67073, max_cases: 32
+
+.........................
+Finished in 0.1 seconds (0.1s async, 0.01s sync)
+25 tests, 0 failures
+==> ex4pm_engine
+Running ExUnit with seed: 67073, max_cases: 32
+
+..................................................................................................................................................................................................................
+========================================================================
+  BENCHMARK 2: Normative Conformance Vector (Real Violations Detected)
+========================================================================
+  Evaluation Time:          0.15 ms
+  Fitness Score:            0.0%
+  Precision Score:          100.0%
+  Policy Conformance:       100.0%
+  Lifecycle Conformance:    100.0%
+  Causal Conformance:       100.0%
+  Violations Count:         8
+  Standing Outcome:         alive
+========================================================================
+
+.
+========================================================================
+  BENCHMARK 1: StreamingEngine Ingest & Mining Throughput
+========================================================================
+  Total Events Processed:   697362
+  Total Processing Time:    1171.76 ms
+  Peak Streaming Rate:      595140 events / sec
+  Discovered Activities:    146
+  Discovered Categories:    146
+  Unique Interacting Objs:  60
+========================================================================
+
+.
+========================================================================
+  BENCHMARK 5: Critical Path Method (CPM) DAG Scheduler
+========================================================================
+  Total Tasks Scheduled:    500
+  Total Schedule Duration:  17131 ms
+  Critical Path Task Count: 496
+  CPM Calculation Time:     1.69 ms
+========================================================================
+
+.
+========================================================================
+  BENCHMARK 3: OCPQ Multi-Object Invariant Evaluation Stress
+========================================================================
+  Total Events Evaluated:   2000
+  Total Objects Bound:      2000
+  Evaluation Time:          848.11 ms
+  Root Bindings Resolved:   1000
+  Violations Count:         0
+  Invariant Satisfied?:     true
+========================================================================
+
+.
+========================================================================
+  BENCHMARK 6: Causal Discovery & Markov State Dynamics
+========================================================================
+  Traces Ingested:          1,000 traces (6,000 events)
+  Causal Induction Time:    1.63 ms
+  Strong Causal Edges:      0
+  Markov Fitting Time:      1.4 ms
+  Markov State Count:       9
+========================================================================
+
+.
+========================================================================
+  BENCHMARK 4: Kaplan-Meier Survival Analysis & RUL Forecasting
+========================================================================
+  Sample Size:              10000 cases
+  Model Fit Time:           28.98 ms
+  Median Process Duration:  19834 ms
+  Survival Curve Points:    8655
+  1,000 RUL Predictions:    0.3 ms (3367003.0 preds/sec)
+========================================================================
+
+.
+========================================================================
+  BENCHMARK 7: Bayesian Network Belief Propagation
+========================================================================
+  Inference Time:           0.034 ms
+  Query:                    P(Reject | SecurityCheck = failed)
+  Distribution True:        0.9241
+  Distribution False:       0.0759
+========================================================================
+
+................................
+Finished in 74.4 seconds (57.6s async, 16.7s sync)
+2 doctests, 3 properties, 243 tests, 0 failures
+==> ex4pm_domain
+Running ExUnit with seed: 67073, max_cases: 32
+
+.....................
+Finished in 0.4 seconds (0.3s async, 0.1s sync)
+21 tests, 0 failures
+==> ex4pm_stream
+Running ExUnit with seed: 67073, max_cases: 32
+
+........
+Finished in 0.1 seconds (0.00s async, 0.1s sync)
+8 tests, 0 failures
+==> ex4pm_runtime
+Running ExUnit with seed: 67073, max_cases: 32
+
+...................
+Finished in 0.4 seconds (0.1s async, 0.3s sync)
+19 tests, 0 failures
+==> ex4pm
+Running ExUnit with seed: 67073, max_cases: 32
+Excluding tags: [:chicago]
+
+...............................................
+Finished in 6.9 seconds (0.6s async, 6.3s sync)
+47 tests, 0 failures (17 excluded)
+==> ex4pm_cli
+Running ExUnit with seed: 67073, max_cases: 32
+Excluding tags: [:chicago]
+
+..
+Finished in 0.02 seconds (0.02s async, 0.00s sync)
+2 tests, 0 failures
+==> ex4pm_information
+Running ExUnit with seed: 67073, max_cases: 32
+Excluding tags: [:chicago]
+
+.............
+Finished in 0.1 seconds (0.1s async, 0.02s sync)
+13 tests, 0 failures
+==> ex4pm_qualification
+Running ExUnit with seed: 67073, max_cases: 32
+Excluding tags: [:chicago]
+
+.........
+Finished in 0.06 seconds (0.04s async, 0.02s sync)
+9 tests, 0 failures
+==> ex4pm_web
+Running ExUnit with seed: 67073, max_cases: 32
+Excluding tags: [:chicago]
+
+............
+Finished in 0.2 seconds (0.08s async, 0.1s sync)
+12 tests, 0 failures
+    warning: unused alias ChoiceGraph
+    │
+  9 │   alias Ex4pmEngine.POWL.ChoiceGraph
+    │   ~
+    │
+    └─ test/powl/language_test.exs:9:3
+
+    warning: unused alias InductiveMiner
+    │
+ 10 │   alias Ex4pmEngine.Miner.{InductiveMiner, OCPOWL}
+    │   ~
+    │
+    └─ test/adversarial/powl_reactor_falsification_test.exs:10:3
+
+    warning: variable "forward_model" is unused (if the variable is not meant to be used, prefix it with an underscore)
+    │
+ 47 │       forward_model =
+    │       ~~~~~~~~~~~~~
+    │
+    └─ test/reactors/negative_conformance_rollback_test.exs:47:7: Ex4pmEngine.Reactors.NegativeConformanceRollbackTest."test Fortune 5 Negative Verification: Fault Injection, Non-Conformance, & LIFO Rollback Conformance terminal fault triggers forward non-conformance and proves 100% LIFO undo rollback conformance"/1
+
+    warning: unused alias Conformance
+    │
+  9 │   alias Ex4pmEvidence.Conformance
+    │   ~
+    │
+    └─ test/reactors/negative_conformance_rollback_test.exs:9:3
+
+    warning: unused alias ChoiceGraph
+    │
+  9 │   alias Ex4pmEngine.POWL.{ChoiceGraph, Language}
+    │   ~
+    │
+    └─ test/inductive_miner_test.exs:9:3
+
+    warning: unused alias Shuffle
+    │
+ 16 │   alias Ex4pmEngine.POWL.{ChoiceGraph, Language, Shuffle}
+    │   ~
+    │
+    └─ test/powl/paper_figures_test.exs:16:3
+
+    warning: the Inspect protocol has already been consolidated, an implementation for Ex4pm.Integration.LiveAshPipelineTest.LiveIncidentResource has no effect. If you want to implement protocols after compilation or during tests, check the "Consolidation" section in the Protocol module documentation
+    │
+ 12 │   defmodule LiveIncidentResource do
+    │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ test/integration/live_ash_pipeline_test.exs:12: Ex4pm.Integration.LiveAshPipelineTest.LiveIncidentResource (module)
+
+    warning: the Inspect protocol has already been consolidated, an implementation for Ex4pm.Integration.Vision2030IntegrationTest.VisionPaymentResource has no effect. If you want to implement protocols after compilation or during tests, check the "Consolidation" section in the Protocol module documentation
+    │
+  9 │   defmodule VisionPaymentResource do
+    │   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    │
+    └─ test/integration/vision_2030_integration_test.exs:9: Ex4pm.Integration.Vision2030IntegrationTest.VisionPaymentResource (module)
+

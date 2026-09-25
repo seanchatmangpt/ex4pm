@@ -1,0 +1,14 @@
+==> ex4pm_engine
+Compiling 121 files (.ex)
+    error: module Igniter.Mix.Task is not loaded and could not be found
+    │
+ 14 │   use Igniter.Mix.Task
+    │   ^^^^^^^^^^^^^^^^^^^^
+    │
+    └─ lib/mix/tasks/ex4pm.engine.gen.adapter.ex:14: Mix.Tasks.Ex4pm.Engine.Gen.Adapter (module)
+
+
+== Compilation error in file lib/mix/tasks/ex4pm.engine.gen.adapter.ex ==
+** (CompileError) lib/mix/tasks/ex4pm.engine.gen.adapter.ex: cannot compile module Mix.Tasks.Ex4pm.Engine.Gen.Adapter (errors have been logged)
+    (elixir 1.19.5) expanding macro: Kernel.use/1
+    lib/mix/tasks/ex4pm.engine.gen.adapter.ex:14: Mix.Tasks.Ex4pm.Engine.Gen.Adapter (module)
