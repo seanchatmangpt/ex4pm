@@ -70,7 +70,7 @@ jobs:
             mismatches =
               Enum.reject(files, fn path ->
                 source = File.read!(path)
-                formatted = source |> Code.format_string!(file: path) |> IO.iodata_to_binary()
+                formatted = IO.iodata_to_binary([Code.format_string!(source, file: path), "\n"])
                 source == formatted
               end)
 

@@ -22,7 +22,7 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     }
   end
 
-  defp binding do
+  defp release_binding do
     %{
       subject_identity: "repo@0123456789abcdef",
       verifier_identity: "verifier:v1"
@@ -33,8 +33,8 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     Map.merge(
       %{
         claim_id: claim_id,
-        subject_identity: binding().subject_identity,
-        verifier_identity: binding().verifier_identity,
+        subject_identity: release_binding().subject_identity,
+        verifier_identity: release_binding().verifier_identity,
         evidence_ref: "receipt:#{claim_id}",
         replay_ref: "replay:#{claim_id}",
         standing: "ALIVE"
@@ -102,12 +102,14 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
       %{id: "c2", text: "Capability Y executed"}
     ]
 
-    assert {:ok, release} = FrontierRelease.qualify_release(claims, [evidence("c1")], binding())
+    assert {:ok, release} =
+             FrontierRelease.qualify_release(claims, [evidence("c1")], release_binding())
+
     assert Enum.map(release.earned_claims, & &1.id) == ["c1"]
     assert release.withheld_claim_ids == ["c2"]
     assert release.standing == :partial_alive
-    assert release.admitted_subject_identity == binding().subject_identity
-    assert release.admitted_verifier_identity == binding().verifier_identity
+    assert release.admitted_subject_identity == release_binding().subject_identity
+    assert release.admitted_verifier_identity == release_binding().verifier_identity
     assert release.publication_authority == :none
   end
 
@@ -118,7 +120,11 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     ]
 
     assert {:ok, release} =
-             FrontierRelease.qualify_release(claims, [evidence("c1"), evidence("c2")], binding())
+             FrontierRelease.qualify_release(
+               claims,
+               [evidence("c1"), evidence("c2")],
+               release_binding()
+             )
 
     assert Enum.map(release.earned_claims, & &1.id) == ["c1", "c2"]
     assert release.withheld_claim_ids == []
@@ -130,7 +136,9 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     claims = [%{id: "c1", text: "Capability X executed"}]
     wrong_subject = evidence("c1", %{subject_identity: "repo@wrong"})
 
-    assert {:ok, release} = FrontierRelease.qualify_release(claims, [wrong_subject], binding())
+    assert {:ok, release} =
+             FrontierRelease.qualify_release(claims, [wrong_subject], release_binding())
+
     assert release.earned_claims == []
     assert release.withheld_claim_ids == ["c1"]
     assert release.standing == :blocked
@@ -140,7 +148,9 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     claims = [%{id: "c1", text: "Capability X executed"}]
     wrong_verifier = evidence("c1", %{verifier_identity: "verifier:unadmitted"})
 
-    assert {:ok, release} = FrontierRelease.qualify_release(claims, [wrong_verifier], binding())
+    assert {:ok, release} =
+             FrontierRelease.qualify_release(claims, [wrong_verifier], release_binding())
+
     assert release.earned_claims == []
     assert release.withheld_claim_ids == ["c1"]
     assert release.standing == :blocked
@@ -153,7 +163,7 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
              FrontierRelease.qualify_release(
                claims,
                [evidence("c1", %{standing: "PARTIAL_ALIVE"})],
-               binding()
+               release_binding()
              )
 
     assert release.earned_claims == []
@@ -167,7 +177,7 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     partial = evidence("c1", %{standing: "PARTIAL_ALIVE", evidence_ref: "receipt:partial"})
 
     for receipts <- [[alive, partial], [partial, alive]] do
-      assert {:ok, release} = FrontierRelease.qualify_release(claims, receipts, binding())
+      assert {:ok, release} = FrontierRelease.qualify_release(claims, receipts, release_binding())
       assert Enum.map(release.earned_claims, & &1.id) == ["c1"]
       assert release.withheld_claim_ids == []
       assert release.standing == :alive
@@ -182,7 +192,7 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
              FrontierRelease.qualify_release(
                claims,
                [evidence("c1", %{standing: "MAGIC"})],
-               binding()
+               release_binding()
              )
   end
 
@@ -191,7 +201,7 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     incomplete = [%{claim_id: "c1", standing: "ALIVE"}]
 
     assert {:error, {:refused, :missing_or_invalid_field, _}} =
-             FrontierRelease.qualify_release(claims, incomplete, binding())
+             FrontierRelease.qualify_release(claims, incomplete, release_binding())
   end
 
   test "release qualification without exact binding is refused" do
@@ -208,7 +218,7 @@ defmodule Ex4pm.Information.FrontierReleaseTest do
     ]
 
     assert {:error, {:refused, :duplicate_working_claim_id, _}} =
-             FrontierRelease.qualify_release(claims, [evidence("c1")], binding())
+             FrontierRelease.qualify_release(claims, [evidence("c1")], release_binding())
   end
 
   test "forward lifecycle trace conforms" do
