@@ -33,10 +33,22 @@ defmodule Ex4pm.Gall.Portable do
   Cross-language consumers instead verify this envelope's canonical JSON
   SHA-256 so Rust/WASM/BEAM can independently recompute the same identity.
 
+  Canonical form is RFC 8785 (JCS) restricted to a subset whose serialization
+  is identical in every conforming runtime: ASCII strings and object names,
+  booleans, null, arrays, objects, and integers exactly representable as
+  IEEE-754 doubles. Strings are serialized by this module (not by Jason) so
+  control characters use JCS's lowercase `\\u00xx` escapes.
+
+  Every non-portable input is refused with a typed error: floats, integers
+  outside the I-JSON exact range, non-ASCII or invalid-UTF-8 strings,
+  non-string object keys, and distinct keys that collide once stringified
+  (e.g. `:a` and `"a"`), which would otherwise be silently dropped.
+
   The envelope grants no authority and carries no execution standing.
   """
 
   @schema "ex4pm.gall.portable/v26.9.19"
+  @canonicalization "RFC8785/JCS-IJSON-ASCII-INTEGER-SUBSET"
   @sha ~r/\A[0-9a-f]{40}\z/
   @digest ~r/\Asha256:[0-9a-f]{64}\z/
 
@@ -52,50 +64,52 @@ defmodule Ex4pm.Gall.Portable do
     with :ok <- repository(repository),
          :ok <- producer_sha(producer_sha),
          :ok <- digest_value(:corpus_digest, corpus_digest),
-         payload = json_value(payload),
+         {:ok, payload} <- normalize(payload),
          :ok <- jcs_subset(payload) do
       body = %{
         "schema" => @schema,
-        "kind" => to_string(kind),
+        "kind" => label(kind),
         "producer" => %{"repository" => repository, "sha" => producer_sha},
         "corpus_digest" => corpus_digest,
         "payload" => payload,
         "payload_digest" => digest(payload),
-        "evidence_class" => to_string(evidence_class),
-        "canonicalization" => "RFC8785/JCS-IJSON-ASCII-INTEGER-SUBSET",
+        "evidence_class" => label(evidence_class),
+        "canonicalization" => @canonicalization,
         "authority" => "NONE"
       }
 
-      {:ok, Map.put(body, "artifact_digest", digest(body))}
+      with :ok <- jcs_subset(body) do
+        {:ok, Map.put(body, "artifact_digest", digest(body))}
+      end
     end
   end
 
   @spec verify(map()) :: {:ok, map()} | {:error, term()}
   def verify(artifact) when is_map(artifact) do
-    artifact = json_value(artifact)
-
-    with @schema <- artifact["schema"] || {:error, :schema_mismatch},
-         "NONE" <- artifact["authority"] || {:error, :authority_expanded},
-         %{"repository" => repository, "sha" => producer_sha} <-
-           artifact["producer"] || {:error, :producer_missing},
+    with {:ok, artifact} <- normalize(artifact),
+         :ok <- jcs_subset(artifact),
+         :ok <- equal(:schema, artifact["schema"], @schema),
+         :ok <- authority(artifact["authority"]),
+         {:ok, repository, producer_sha} <- producer(artifact["producer"]),
          :ok <- repository(repository),
          :ok <- producer_sha(producer_sha),
          :ok <- digest_value(:corpus_digest, artifact["corpus_digest"]),
          :ok <- digest_value(:payload_digest, artifact["payload_digest"]),
          :ok <- digest_value(:artifact_digest, artifact["artifact_digest"]),
-         :ok <- equal(:canonicalization, artifact["canonicalization"], "RFC8785/JCS-IJSON-ASCII-INTEGER-SUBSET"),
-         :ok <- jcs_subset(artifact["payload"]),
-         true <-
-           digest(artifact["payload"]) == artifact["payload_digest"] ||
-             {:error, :payload_digest_mismatch},
-         body = Map.delete(artifact, "artifact_digest"),
-         true <-
-           digest(body) == artifact["artifact_digest"] ||
-             {:error, :artifact_digest_mismatch} do
+         :ok <- equal(:canonicalization, artifact["canonicalization"], @canonicalization),
+         :ok <-
+           matches(
+             :payload_digest_mismatch,
+             digest(artifact["payload"]),
+             artifact["payload_digest"]
+           ),
+         :ok <-
+           matches(
+             :artifact_digest_mismatch,
+             digest(Map.delete(artifact, "artifact_digest")),
+             artifact["artifact_digest"]
+           ) do
       {:ok, artifact}
-    else
-      {:error, _reason} = error -> error
-      _ -> {:error, :invalid_portable_artifact}
     end
   end
 
@@ -103,23 +117,23 @@ defmodule Ex4pm.Gall.Portable do
 
   @spec digest(term()) :: String.t()
   def digest(value) do
-    "sha256:" <>
-      (:crypto.hash(:sha256, canonical_json(json_value(value)))
-       |> Base.encode16(case: :lower))
+    "sha256:" <> (:crypto.hash(:sha256, canonical_json(value)) |> Base.encode16(case: :lower))
   end
 
   @doc """
   Canonical JSON used by every portable GALL digest.
 
-  Object keys are UTF-8 strings sorted lexicographically; arrays preserve
-  semantic order; tuples become arrays; non-boolean atoms become strings.
+  Object keys are sorted lexicographically (byte order equals JCS UTF-16
+  order on the ASCII subset); arrays preserve semantic order; tuples become
+  arrays; non-boolean atoms become strings. Raises `ArgumentError` on any
+  input outside the portable subset.
   """
   @spec canonical_json(term()) :: String.t()
   def canonical_json(value) do
-    value = json_value(value)
-
-    case jcs_subset(value) do
-      :ok -> canonical_jcs_subset(value)
+    with {:ok, value} <- normalize(value),
+         :ok <- jcs_subset(value) do
+      canonical_jcs_subset(value)
+    else
       {:error, reason} -> raise ArgumentError, "non-portable JCS input: #{inspect(reason)}"
     end
   end
@@ -129,7 +143,7 @@ defmodule Ex4pm.Gall.Portable do
       value
       |> Enum.sort_by(&elem(&1, 0))
       |> Enum.map_join(",", fn {key, item} ->
-        Jason.encode!(key) <> ":" <> canonical_jcs_subset(item)
+        jcs_string(key) <> ":" <> canonical_jcs_subset(item)
       end)
 
     "{" <> entries <> "}"
@@ -141,14 +155,45 @@ defmodule Ex4pm.Gall.Portable do
   defp canonical_jcs_subset(true), do: "true"
   defp canonical_jcs_subset(false), do: "false"
   defp canonical_jcs_subset(nil), do: "null"
-  defp canonical_jcs_subset(value) when is_binary(value), do: Jason.encode!(value)
+  defp canonical_jcs_subset(value) when is_binary(value), do: jcs_string(value)
   defp canonical_jcs_subset(value) when is_integer(value), do: Integer.to_string(value)
 
-  # RFC 8785 is the cross-language canonicalization law. This protocol uses
-  # a deliberately smaller domain whose serialization is identical under JCS:
-  # ASCII object names/strings, booleans, null, arrays/objects, and integers
-  # exactly representable as IEEE-754 doubles. Floats are refused rather than
-  # relying on runtime-specific number rendering.
+  # RFC 8785 section 3.2.2.2 (ECMAScript JSON.stringify string serialization)
+  # restricted to ASCII: escape `"` and `\`, use the short escapes for
+  # \b \t \n \f \r, lowercase `\u00xx` for the remaining C0 controls, and
+  # emit every other byte (including `/` and DEL) verbatim.
+  defp jcs_string(value) do
+    if plain_ascii?(value) do
+      "\"" <> value <> "\""
+    else
+      "\"" <> escape_ascii(value) <> "\""
+    end
+  end
+
+  # Fast path: printable ASCII without `"` or `\\` needs no escaping.
+  defp plain_ascii?(<<>>), do: true
+
+  defp plain_ascii?(<<b, rest::binary>>) when b >= 0x20 and b != ?" and b != ?\\,
+    do: plain_ascii?(rest)
+
+  defp plain_ascii?(_), do: false
+
+  defp escape_ascii(value) do
+    for <<byte <- value>>, into: "" do
+      case byte do
+        ?" -> "\\\""
+        ?\\ -> "\\\\"
+        ?\b -> "\\b"
+        ?\t -> "\\t"
+        ?\n -> "\\n"
+        ?\f -> "\\f"
+        ?\r -> "\\r"
+        b when b < 0x20 -> "\\u00" <> String.downcase(Base.encode16(<<b>>))
+        b -> <<b>>
+      end
+    end
+  end
+
   defp jcs_subset(value) when is_map(value) do
     Enum.reduce_while(value, :ok, fn
       {key, item}, :ok when is_binary(key) ->
@@ -175,33 +220,80 @@ defmodule Ex4pm.Gall.Portable do
 
   defp jcs_subset(value) when is_binary(value), do: ascii(:string, value)
   defp jcs_subset(value) when is_integer(value) and abs(value) <= 9_007_199_254_740_991, do: :ok
-  defp jcs_subset(value) when is_integer(value), do: {:error, {:integer_outside_ijson_exact_range, value}}
-  defp jcs_subset(value) when is_float(value), do: {:error, {:float_not_in_portable_subset, value}}
+
+  defp jcs_subset(value) when is_integer(value),
+    do: {:error, {:integer_outside_ijson_exact_range, value}}
+
+  defp jcs_subset(value) when is_float(value),
+    do: {:error, {:float_not_in_portable_subset, value}}
+
   defp jcs_subset(value) when value in [true, false, nil], do: :ok
   defp jcs_subset(value), do: {:error, {:unsupported_json_value, value}}
 
-  defp ascii(_field, value) when is_binary(value) do
-    if String.to_charlist(value) |> Enum.all?(&(&1 <= 0x7F)),
-      do: :ok,
-      else: {:error, {:non_ascii_portable_string, value}}
+  # Byte-level check: never raises on invalid UTF-8 (String.to_charlist does).
+  defp ascii(field, value) when is_binary(value) do
+    if ascii_bytes?(value), do: :ok, else: {:error, {:non_ascii_portable_value, field, value}}
   end
+
+  defp ascii_bytes?(<<>>), do: true
+  defp ascii_bytes?(<<b, rest::binary>>) when b <= 0x7F, do: ascii_bytes?(rest)
+  defp ascii_bytes?(_), do: false
 
   defp equal(_field, value, value), do: :ok
   defp equal(field, actual, expected), do: {:error, {:identity_mismatch, field, expected, actual}}
 
+  defp matches(_reason, value, value), do: :ok
+  defp matches(reason, _actual, _expected), do: {:error, reason}
+
+  defp authority("NONE"), do: :ok
+  defp authority(other), do: {:error, {:authority_expanded, other}}
+
+  defp producer(%{"repository" => repository, "sha" => sha}), do: {:ok, repository, sha}
+  defp producer(_), do: {:error, :producer_missing}
+
+  defp label(value) when is_atom(value) and value not in [nil, true, false],
+    do: Atom.to_string(value)
+
+  defp label(value), do: value
+
+  @doc false
+  # Converts an Elixir term into the JSON data model, refusing (instead of
+  # silently merging) distinct keys that stringify to the same object name.
+  def normalize(value) do
+    {:ok, json_value(value)}
+  catch
+    {:non_portable, reason} -> {:error, reason}
+  end
+
+  defp json_value(value) when is_struct(value),
+    do: throw({:non_portable, {:unsupported_json_value, value}})
+
   defp json_value(value) when is_map(value) do
-    value
-    |> Enum.map(fn {key, item} -> {to_string(key), json_value(item)} end)
-    |> Map.new()
+    out = Map.new(value, fn {key, item} -> {object_key(key), json_value(item)} end)
+
+    if map_size(out) == map_size(value) do
+      out
+    else
+      keys =
+        value
+        |> Map.keys()
+        |> Enum.group_by(&object_key/1)
+        |> Enum.find(fn {_, ks} -> length(ks) > 1 end)
+
+      throw({:non_portable, {:duplicate_object_key_after_stringification, keys}})
+    end
   end
 
   defp json_value(value) when is_list(value), do: Enum.map(value, &json_value/1)
   defp json_value(value) when is_tuple(value), do: value |> Tuple.to_list() |> json_value()
-  defp json_value(true), do: true
-  defp json_value(false), do: false
-  defp json_value(nil), do: nil
+  defp json_value(value) when value in [true, false, nil], do: value
   defp json_value(value) when is_atom(value), do: Atom.to_string(value)
   defp json_value(value), do: value
+
+  defp object_key(key) when is_binary(key), do: key
+  defp object_key(key) when is_atom(key), do: Atom.to_string(key)
+  defp object_key(key) when is_integer(key), do: Integer.to_string(key)
+  defp object_key(key), do: throw({:non_portable, {:non_string_object_key, key}})
 
   defp repository(value) when is_binary(value) do
     case String.split(value, "/", parts: 3) do
@@ -326,28 +418,36 @@ defmodule Ex4pm.Gall.Powl do
     end
   end
 
+  @doc """
+  WF-net ingress. `flow` may connect transitions directly or through places;
+  the admitted order is reachability in the whole flow graph restricted to
+  transition pairs, so `a -> p1 -> b` orders `a` before `b` exactly as a
+  direct `a -> b` arc does. Duplicate transitions and malformed arcs are
+  refused rather than silently merged or dropped.
+  """
   def from_wfnet(%{transitions: transitions, flow: flow} = net)
       when is_list(transitions) and is_list(flow) do
-    transitions = Enum.map(transitions, &to_string/1) |> Enum.sort()
-
-    order =
-      flow
-      |> Enum.flat_map(fn {left, right} ->
-        if left in transitions and right in transitions do
-          [{left, right}]
-        else
-          []
-        end
-      end)
-      |> transitive_closure()
-      |> Enum.sort()
-
-    spec = %{type: :partial_order, children: transitions, order: order}
+    transitions = Enum.map(transitions, &to_string/1)
 
     with :ok <- validate_wfnet(net),
-         {:ok, normalized} <- normalize(spec),
-         :ok <- validate(normalized) do
-      {:ok, receipt(normalized, :wfnet)}
+         :ok <- unique_transitions(transitions),
+         {:ok, arcs} <- wfnet_arcs(flow) do
+      transition_set = MapSet.new(transitions)
+
+      order =
+        arcs
+        |> transitive_closure()
+        |> Enum.filter(fn {left, right} ->
+          MapSet.member?(transition_set, left) and MapSet.member?(transition_set, right)
+        end)
+        |> Enum.sort()
+
+      spec = %{type: :partial_order, children: Enum.sort(transitions), order: order}
+
+      with {:ok, normalized} <- normalize(spec),
+           :ok <- validate(normalized) do
+        {:ok, receipt(normalized, :wfnet)}
+      end
     end
   end
 
@@ -411,13 +511,9 @@ defmodule Ex4pm.Gall.Powl do
   end
 
   defp normalize(%{type: :partial_order, children: children} = spec) do
-    with {:ok, normalized} <- normalize_children(children) do
-      {:ok,
-       %{
-         type: :partial_order,
-         children: normalized,
-         order: Enum.map(Map.get(spec, :order, []), fn {a, b} -> {to_string(a), to_string(b)} end)
-       }}
+    with {:ok, normalized} <- normalize_children(children),
+         {:ok, order} <- normalize_order(Map.get(spec, :order, [])) do
+      {:ok, %{type: :partial_order, children: normalized, order: order}}
     end
   end
 
@@ -453,6 +549,22 @@ defmodule Ex4pm.Gall.Powl do
 
   defp normalize_children(_), do: {:error, :empty_children}
 
+  defp normalize_order(order) when is_list(order) do
+    Enum.reduce_while(order, {:ok, []}, fn
+      {a, b}, {:ok, acc} when (is_binary(a) or is_atom(a)) and (is_binary(b) or is_atom(b)) ->
+        {:cont, {:ok, [{to_string(a), to_string(b)} | acc]}}
+
+      edge, _ ->
+        {:halt, {:error, {:invalid_partial_order_edge, edge}}}
+    end)
+    |> case do
+      {:ok, edges} -> {:ok, Enum.reverse(edges)}
+      error -> error
+    end
+  end
+
+  defp normalize_order(order), do: {:error, {:invalid_partial_order_edge, order}}
+
   defp validate(%{type: type}) when type not in @types,
     do: {:error, {:unsupported_powl_construct, type}}
 
@@ -460,18 +572,52 @@ defmodule Ex4pm.Gall.Powl do
     tasks = MapSet.new(flatten_tasks(children))
 
     cond do
-      Enum.any?(order, fn {a, b} -> not MapSet.member?(tasks, a) or not MapSet.member?(tasks, b) end) ->
+      Enum.any?(order, fn {a, b} ->
+        not MapSet.member?(tasks, a) or not MapSet.member?(tasks, b)
+      end) ->
         {:error, :partial_order_unknown_task}
 
       cyclic?(order) ->
         {:error, :cyclic_partial_order}
 
       true ->
-        :ok
+        validate_all(children)
     end
   end
 
-  defp validate(_), do: :ok
+  defp validate(%{type: type, children: children}) when type in [:sequence, :choice],
+    do: validate_all(children)
+
+  defp validate(%{type: :loop, body: body, redo: redo}), do: validate_all([body, redo])
+  defp validate(%{type: :hierarchy, child: child}), do: validate(child)
+  defp validate(%{type: :task}), do: :ok
+
+  defp validate_all(items) do
+    Enum.reduce_while(items, :ok, fn item, :ok ->
+      case validate(item) do
+        :ok -> {:cont, :ok}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp unique_transitions(transitions) do
+    case transitions -- Enum.uniq(transitions) do
+      [] -> :ok
+      [dup | _] -> {:error, {:duplicate_wfnet_transition, dup}}
+    end
+  end
+
+  defp wfnet_arcs(flow) do
+    Enum.reduce_while(flow, {:ok, []}, fn
+      {left, right}, {:ok, acc}
+      when (is_binary(left) or is_atom(left)) and (is_binary(right) or is_atom(right)) ->
+        {:cont, {:ok, [{to_string(left), to_string(right)} | acc]}}
+
+      arc, _ ->
+        {:halt, {:error, {:invalid_wfnet_arc, arc}}}
+    end)
+  end
 
   defp validate_wfnet(%{transitions: transitions}) when transitions != [], do: :ok
   defp validate_wfnet(_), do: {:error, :invalid_wfnet}
@@ -483,26 +629,64 @@ defmodule Ex4pm.Gall.Powl do
   defp flatten_tasks(%{children: children}), do: flatten_tasks(children)
   defp flatten_tasks(item) when is_binary(item), do: [item]
 
+  # Kahn's algorithm: O(V + E), no closure materialization.
   defp cyclic?(edges) do
-    closure = transitive_closure(edges)
-    Enum.any?(closure, fn {a, b} -> a == b end)
-  end
+    edges = Enum.uniq(edges)
+    nodes = edges |> Enum.flat_map(fn {a, b} -> [a, b] end) |> Enum.uniq()
 
-  defp transitive_closure(edges) do
-    edges = MapSet.new(edges)
-
-    next =
-      Enum.reduce(edges, edges, fn {a, b}, acc ->
-        Enum.reduce(edges, acc, fn
-          {^b, c}, inner -> MapSet.put(inner, {a, c})
-          _, inner -> inner
-        end)
+    indegree =
+      Enum.reduce(edges, Map.new(nodes, &{&1, 0}), fn {_, b}, acc ->
+        Map.update!(acc, b, &(&1 + 1))
       end)
 
-    if MapSet.size(next) == MapSet.size(edges) do
-      next |> MapSet.to_list() |> Enum.sort()
+    adjacency = Enum.reduce(edges, %{}, fn {a, b}, acc -> Map.update(acc, a, [b], &[b | &1]) end)
+    ready = for {node, 0} <- indegree, do: node
+    kahn(ready, adjacency, indegree, 0) < length(nodes)
+  end
+
+  defp kahn([], _adjacency, _indegree, removed), do: removed
+
+  defp kahn([node | ready], adjacency, indegree, removed) do
+    {ready, indegree} =
+      adjacency
+      |> Map.get(node, [])
+      |> Enum.reduce({ready, indegree}, fn next, {ready, indegree} ->
+        degree = Map.fetch!(indegree, next) - 1
+        indegree = Map.put(indegree, next, degree)
+        if degree == 0, do: {[next | ready], indegree}, else: {ready, indegree}
+      end)
+
+    kahn(ready, adjacency, indegree, removed + 1)
+  end
+
+  # Reachability closure by one DFS per source node: O(V * (V + E)) instead
+  # of iterated pairwise joins, so WF-nets routed through places stay cheap.
+  defp transitive_closure(edges) do
+    adjacency =
+      Enum.reduce(edges, %{}, fn {a, b}, acc -> Map.update(acc, a, [b], &[b | &1]) end)
+
+    adjacency
+    |> Map.keys()
+    |> Enum.flat_map(fn source ->
+      source
+      |> reachable(adjacency)
+      |> Enum.map(&{source, &1})
+    end)
+    |> Enum.sort()
+  end
+
+  defp reachable(source, adjacency) do
+    do_reachable(Map.get(adjacency, source, []), adjacency, MapSet.new())
+    |> MapSet.to_list()
+  end
+
+  defp do_reachable([], _adjacency, seen), do: seen
+
+  defp do_reachable([node | rest], adjacency, seen) do
+    if MapSet.member?(seen, node) do
+      do_reachable(rest, adjacency, seen)
     else
-      transitive_closure(MapSet.to_list(next))
+      do_reachable(Map.get(adjacency, node, []) ++ rest, adjacency, MapSet.put(seen, node))
     end
   end
 end
@@ -513,11 +697,12 @@ defmodule Ex4pm.Gall.Ocpq do
   alias Ex4pm.Gall
 
   def evaluate(%{events: events}, query) when is_list(events) and is_map(query) do
-    with :ok <- validate_query(query) do
+    with :ok <- validate_events(events),
+         :ok <- validate_query(query) do
       matches =
         events
         |> Enum.filter(&matches?(&1, query, events))
-        |> Enum.map(&binding/1)
+        |> Enum.map(&event_binding/1)
         |> Enum.sort_by(&Gall.digest/1)
 
       violations =
@@ -538,8 +723,26 @@ defmodule Ex4pm.Gall.Ocpq do
 
   def evaluate(_, _), do: {:error, :invalid_ocel}
 
+  defp validate_events(events) do
+    case Enum.find(events, &(not valid_event?(&1))) do
+      nil -> :ok
+      event -> {:error, {:invalid_ocel_event, event}}
+    end
+  end
+
+  defp valid_event?(%{objects: objects} = event) when is_list(objects) do
+    Map.has_key?(event, :id) and
+      Enum.all?(objects, &match?({_id, _type, _qualifier}, &1))
+  end
+
+  defp valid_event?(%{} = event),
+    do: Map.has_key?(event, :id) and not Map.has_key?(event, :objects)
+
+  defp valid_event?(_), do: false
+
   defp validate_query(query) do
-    supported = Map.keys(query) -- [:activity, :object_type, :qualifier, :after_activity, :require_match]
+    supported =
+      Map.keys(query) -- [:activity, :object_type, :qualifier, :after_activity, :require_match]
 
     if supported == [] do
       :ok
@@ -553,11 +756,15 @@ defmodule Ex4pm.Gall.Ocpq do
 
     object_ok =
       is_nil(query[:object_type]) or
-        Enum.any?(event[:objects] || [], fn {_id, type, _qualifier} -> type == query[:object_type] end)
+        Enum.any?(event[:objects] || [], fn {_id, type, _qualifier} ->
+          type == query[:object_type]
+        end)
 
     qualifier_ok =
       is_nil(query[:qualifier]) or
-        Enum.any?(event[:objects] || [], fn {_id, _type, qualifier} -> qualifier == query[:qualifier] end)
+        Enum.any?(event[:objects] || [], fn {_id, _type, qualifier} ->
+          qualifier == query[:qualifier]
+        end)
 
     after_ok =
       is_nil(query[:after_activity]) or
@@ -571,7 +778,7 @@ defmodule Ex4pm.Gall.Ocpq do
     activity_ok and object_ok and qualifier_ok and after_ok
   end
 
-  defp binding(event) do
+  defp event_binding(event) do
     %{
       event_id: event[:id],
       activity: event[:activity],
@@ -586,7 +793,21 @@ defmodule Ex4pm.Gall.Discovery do
 
   alias Ex4pm.Gall
 
-  def discover(traces, rules \ []) when is_list(traces) and is_list(rules) do
+  def discover(traces, rules \\ [])
+
+  def discover(traces, rules) when is_list(traces) and is_list(rules) do
+    case Enum.find(traces, &(not valid_trace?(&1))) do
+      nil -> do_discover(traces, rules)
+      trace -> {:error, {:invalid_trace, trace}}
+    end
+  end
+
+  def discover(_traces, _rules), do: {:error, :invalid_discovery_input}
+
+  defp valid_trace?(trace) when is_list(trace), do: Enum.all?(trace, &is_binary/1)
+  defp valid_trace?(_), do: false
+
+  defp do_discover(traces, rules) do
     edges =
       traces
       |> Enum.flat_map(fn trace -> Enum.zip(trace, Enum.drop(trace, 1)) end)
@@ -648,15 +869,18 @@ defmodule Ex4pm.Gall.Compliance do
 
   def train(rows) when is_list(rows) and rows != [] do
     labels = Enum.map(rows, &Map.fetch!(&1, :label))
-    majority =
+
+    {majority, majority_count} =
       labels
       |> Enum.frequencies()
       |> Enum.min_by(fn {label, count} -> {-count, to_string(label)} end)
-      |> elem(0)
 
     model = %{
       kind: :majority_baseline,
       majority_label: majority,
+      # Integer basis points: the portable envelope refuses floats, so the
+      # prediction must stay inside the cross-language JCS subset.
+      majority_share_bp: div(majority_count * 10_000, length(labels)),
       training_subjects: rows |> Enum.map(&Map.fetch!(&1, :subject_id)) |> Enum.sort(),
       training_digest: Gall.digest(rows)
     }
@@ -669,7 +893,7 @@ defmodule Ex4pm.Gall.Compliance do
       subject_id: subject_id,
       features_digest: Gall.digest(features),
       predicted_label: model.majority_label,
-      score: 1.0,
+      score_bp: model.majority_share_bp,
       model_digest: model.model_digest,
       standing: :candidate
     }
@@ -702,37 +926,34 @@ defmodule Ex4pm.Gall.Compliance do
 end
 
 defmodule Ex4pm.Gall.Compute do
-  @moduledoc "GALL-020 typed deterministic process-compute dispatcher."
+  @moduledoc """
+  GALL-020 typed deterministic process-compute dispatcher.
+
+  `select/2` binds a capability to an input under a selection digest and
+  authority `:none`. `execute/1` recomputes that digest before running, so a
+  stale, forged or re-targeted selection is refused instead of producing a
+  receipt that names a subject it did not compute. Executors are named
+  functions (module attributes cannot carry closures), and malformed input
+  is refused with a typed error rather than crashing the dispatcher.
+  """
 
   alias Ex4pm.Gall
   alias Ex4pm.Gall.{Compliance, Discovery, Ocpq, Powl}
 
-  @capabilities %{
-    powl_semantic: %{version: "v26.9.18", executor: &Powl.from_semantic/1},
-    powl_wfnet: %{version: "v26.9.18", executor: &Powl.from_wfnet/1},
-    ocpq: %{version: "v26.9.18", executor: fn %{ocel: ocel, query: query} -> Ocpq.evaluate(ocel, query) end},
-    discover: %{version: "v26.9.18", executor: fn %{traces: traces, rules: rules} -> Discovery.discover(traces, rules) end},
-    compliance_predict: %{
-      version: "v26.9.18",
-      executor: fn %{model: model, subject_id: subject_id, features: features} ->
-        {:ok, Compliance.predict(model, subject_id, features)}
-      end
-    }
-  }
+  @version "v26.9.18"
+  @capabilities [:powl_semantic, :powl_wfnet, :ocpq, :discover, :compliance_predict]
 
   def capabilities do
-    Map.new(@capabilities, fn {name, spec} ->
-      {name, Map.drop(spec, [:executor])}
-    end)
+    Map.new(@capabilities, &{&1, %{version: @version}})
   end
 
   def select(capability, input) when is_atom(capability) do
-    if Map.has_key?(@capabilities, capability) do
+    if capability in @capabilities do
       {:ok,
        %{
          capability: capability,
          input: input,
-         selection_digest: Gall.digest({capability, input}),
+         selection_digest: selection_digest(capability, input),
          authority: :none
        }}
     else
@@ -740,31 +961,59 @@ defmodule Ex4pm.Gall.Compute do
     end
   end
 
-  def execute(%{capability: capability, input: input, selection_digest: selection_digest}) do
-    case @capabilities[capability] do
-      nil ->
+  def select(capability, _input), do: {:error, {:unsupported_process_capability, capability}}
+
+  def execute(%{capability: capability, input: input, selection_digest: digest} = selection) do
+    cond do
+      capability not in @capabilities ->
         {:error, {:unsupported_process_capability, capability}}
 
-      %{version: version, executor: executor} ->
-        case executor.(input) do
+      Map.get(selection, :authority, :none) != :none ->
+        {:error, {:authority_expanded, Map.get(selection, :authority)}}
+
+      digest != selection_digest(capability, input) ->
+        {:error, :selection_digest_mismatch}
+
+      true ->
+        case run(capability, input) do
           {:ok, result} ->
-            receipt = %{
-              capability: capability,
-              algorithm_version: version,
-              selection_digest: selection_digest,
-              result: result,
-              result_digest: Gall.digest(result),
-              model_required: false
-            }
+            {:ok,
+             %{
+               capability: capability,
+               algorithm_version: @version,
+               selection_digest: digest,
+               result: result,
+               result_digest: Gall.digest(result),
+               model_required: false
+             }}
 
-            {:ok, receipt}
-
-          error ->
+          {:error, _} = error ->
             error
         end
     end
   end
 
+  def execute(_), do: {:error, :invalid_selection}
+
   def execute_model_authored_result(_result),
     do: {:error, :refused_model_authored_computation_result}
+
+  defp selection_digest(capability, input), do: Gall.digest({capability, input})
+
+  defp run(:powl_semantic, input) when is_map(input), do: Powl.from_semantic(input)
+  defp run(:powl_wfnet, input) when is_map(input), do: Powl.from_wfnet(input)
+
+  defp run(:ocpq, %{ocel: ocel, query: query}), do: Ocpq.evaluate(ocel, query)
+
+  defp run(:discover, %{traces: traces, rules: rules}) when is_list(traces) and is_list(rules),
+    do: Discovery.discover(traces, rules)
+
+  defp run(:compliance_predict, %{
+         model: %{model_digest: _} = model,
+         subject_id: subject_id,
+         features: features
+       }),
+       do: {:ok, Compliance.predict(model, subject_id, features)}
+
+  defp run(capability, _input), do: {:error, {:invalid_capability_input, capability}}
 end

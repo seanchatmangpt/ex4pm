@@ -1,0 +1,39 @@
+{
+  "elixir": "1.19.5",
+  "loadavg": "142.87 149.08 160.23",
+  "otp": "28",
+  "results": {
+    "canonical_json_10k": {
+      "median_us": 24756,
+      "p90_us": 36969,
+      "min_us": 11914,
+      "bound_us": 800000
+    },
+    "discover_1000_traces": {
+      "median_us": 914,
+      "p90_us": 1046,
+      "min_us": 803,
+      "bound_us": 100000
+    },
+    "ocpq_2000_events": {
+      "median_us": 4633,
+      "p90_us": 6954,
+      "min_us": 4311,
+      "bound_us": 300000
+    },
+    "portable_build_verify": {
+      "median_us": 181293,
+      "p90_us": 327778,
+      "min_us": 104509,
+      "bound_us": 1500000
+    },
+    "wfnet_200_via_places": {
+      "median_us": 181393,
+      "p90_us": 256984,
+      "min_us": 135978,
+      "bound_us": 1500000
+    }
+  },
+  "runs": 31,
+  "schema": "ex4pm.gall.bench/v26.9.26"
+}
