@@ -14,6 +14,23 @@ defmodule Ex4pm.GallBench do
 
   @sha "5abf57f91e85628a605a1dacace2a50e43fabb8b"
 
+  @root Path.expand("../..", __DIR__)
+  @sources ["lib/ex4pm/gall.ex", "test/support/gall_bench.ex"]
+
+  @doc """
+  sha256 of each measured source file, keyed by repo-relative path. A bench
+  receipt binds these so it names the exact code it measured (a commit
+  cannot contain its own hash; the file digests are the in-tree identity).
+  """
+  def source_digests do
+    Map.new(@sources, fn path ->
+      {path,
+       "sha256:" <>
+         (:crypto.hash(:sha256, File.read!(Path.join(@root, path)))
+          |> Base.encode16(case: :lower))}
+    end)
+  end
+
   def bounds_us do
     %{
       wfnet_200_via_places: 1_500_000,

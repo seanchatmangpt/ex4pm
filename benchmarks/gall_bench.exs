@@ -15,6 +15,23 @@ defmodule Ex4pm.GallBench.Script do
     _ -> "unknown"
   end
 
+  # Commit the measured tree descends from: GALL_BENCH_PARENT_SHA when set
+  # (scratch trees without .git), else `git rev-parse HEAD`.
+  defp parent_commit do
+    case System.get_env("GALL_BENCH_PARENT_SHA") do
+      sha when is_binary(sha) and sha != "" ->
+        sha
+
+      _ ->
+        case System.cmd("git", ["rev-parse", "HEAD"], stderr_to_stdout: true) do
+          {out, 0} -> String.trim(out)
+          _ -> "unknown"
+        end
+    end
+  rescue
+    _ -> "unknown"
+  end
+
   def main(argv) do
     {opts, _, _} = OptionParser.parse(argv, strict: [json: :string, runs: :integer])
     runs = Keyword.get(opts, :runs, 31)
@@ -40,6 +57,10 @@ defmodule Ex4pm.GallBench.Script do
         "elixir" => System.version(),
         "runs" => runs,
         "loadavg" => loadavg(),
+        "subject" => %{
+          "parent_commit" => parent_commit(),
+          "source_digests" => Ex4pm.GallBench.source_digests()
+        },
         "results" => results
       }
 

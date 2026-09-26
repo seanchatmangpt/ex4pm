@@ -25,6 +25,18 @@ defmodule Ex4pm.GallBenchTest do
     names = GallBench.workloads() |> Keyword.keys() |> Enum.map(&to_string/1) |> Enum.sort()
     assert receipt["results"] |> Map.keys() |> Enum.sort() == names
 
+    # The receipt names the code it measured: the workload source must be the
+    # one on disk (otherwise the numbers describe different workloads), and
+    # the measured algorithm source and parent commit are recorded.
+    subject = receipt["subject"]
+    assert is_map(subject), "bench receipt names no measured subject"
+    assert subject["parent_commit"] =~ ~r/\A[0-9a-f]{40}\z/
+    digests = GallBench.source_digests()
+    recorded = subject["source_digests"]
+    assert Map.keys(recorded) |> Enum.sort() == Map.keys(digests) |> Enum.sort()
+    assert recorded["test/support/gall_bench.ex"] == digests["test/support/gall_bench.ex"]
+    assert recorded["lib/ex4pm/gall.ex"] =~ ~r/\Asha256:[0-9a-f]{64}\z/
+
     # min_us is the least load-sensitive statistic on a shared host
     for {name, %{"min_us" => min, "median_us" => median, "bound_us" => bound}} <-
           receipt["results"] do

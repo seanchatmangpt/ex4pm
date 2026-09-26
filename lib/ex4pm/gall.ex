@@ -14,6 +14,18 @@ defmodule Ex4pm.Gall do
        |> Base.encode16(case: :lower))
   end
 
+  @doc """
+  Type-faithful digest: unlike `digest/1`, atom and string keys, tuples and
+  lists, and atom and string values stay distinct, so two terms that a
+  capability would compute differently never share an identity. Used for
+  model content addresses and compute selections.
+  """
+  def typed_digest(value) do
+    "sha256:" <>
+      (:crypto.hash(:sha256, :erlang.term_to_binary(value, [:deterministic]))
+       |> Base.encode16(case: :lower))
+  end
+
   def canonical(value) when is_map(value) do
     value
     |> Enum.map(fn {key, item} -> {to_string(key), canonical(item)} end)
@@ -114,6 +126,16 @@ defmodule Ex4pm.Gall.Portable do
   end
 
   def verify(_), do: {:error, :invalid_portable_artifact}
+
+  @doc """
+  `:ok` when `value` is inside the portable JCS subset (after the same
+  normalization `build/3` applies), else the typed refusal `build/3` would
+  return. Lets callers refuse non-portable input before computing.
+  """
+  @spec check(term()) :: :ok | {:error, term()}
+  def check(value) do
+    with {:ok, value} <- normalize(value), do: jcs_subset(value)
+  end
 
   @spec digest(term()) :: String.t()
   def digest(value) do
@@ -1286,8 +1308,12 @@ defmodule Ex4pm.Gall.Ocpq do
     * `after_activity` - some event with this activity and a strictly
       smaller integer `sequence` relates at least one object that the bound
       event also relates (object-centric: unrelated objects never satisfy it)
-    * `require_match`  - default true: an empty binding set is a
-      `:missing_required_binding` violation, never a vacuous pass
+    * `require_match`  - boolean, default true: an empty binding set is a
+      `:missing_required_binding` violation, never a vacuous pass; any
+      non-boolean value is refused
+
+  Two different events may not share an id (identical re-delivery is kept
+  and visible as duplicate bindings).
 
   Events need an `id`; `sequence`, when present, must be an integer; objects
   are `{object_id, object_type, qualifier}` triples. Each verdict binds the
@@ -1336,8 +1362,21 @@ defmodule Ex4pm.Gall.Ocpq do
 
   defp validate_events(events) do
     case Enum.find(events, &(not valid_event?(&1))) do
-      nil -> :ok
+      nil -> unique_event_ids(events)
       event -> {:error, {:invalid_ocel_event, event}}
+    end
+  end
+
+  # Event identity is the binding key. Re-delivery of the identical event is
+  # kept visible (duplicate bindings); two *different* events under one id
+  # make a binding ambiguous, so that log is refused rather than read.
+  defp unique_event_ids(events) do
+    events
+    |> Enum.group_by(& &1.id)
+    |> Enum.find(fn {_id, group} -> group |> Enum.uniq() |> length() > 1 end)
+    |> case do
+      nil -> :ok
+      {id, _} -> {:error, {:conflicting_ocel_event_id, id}}
     end
   end
 
@@ -1358,8 +1397,13 @@ defmodule Ex4pm.Gall.Ocpq do
 
   defp validate_query(query) do
     case Map.keys(query) -- @operators do
-      [] -> :ok
-      [unsupported | _] -> {:error, {:unsupported_ocpq_operator, unsupported}}
+      [] ->
+        if Map.get(query, :require_match, true) in [true, false],
+          do: :ok,
+          else: {:error, {:invalid_ocpq_require_match, Map.get(query, :require_match)}}
+
+      [unsupported | _] ->
+        {:error, {:unsupported_ocpq_operator, unsupported}}
     end
   end
 
@@ -1748,9 +1792,14 @@ defmodule Ex4pm.Gall.Compliance do
         if kind == :one_rule, do: [:feature, :table], else: []
 
     cond do
-      not Enum.all?(required, &Map.has_key?(model, &1)) -> {:error, :invalid_model}
-      Gall.digest(Map.delete(model, :model_digest)) != digest -> {:error, :model_digest_mismatch}
-      true -> :ok
+      not Enum.all?(required, &Map.has_key?(model, &1)) ->
+        {:error, :invalid_model}
+
+      Gall.typed_digest(Map.delete(model, :model_digest)) != digest ->
+        {:error, :model_digest_mismatch}
+
+      true ->
+        :ok
     end
   end
 
@@ -1955,7 +2004,7 @@ defmodule Ex4pm.Gall.Compliance do
 
   defp build(_rows, kind), do: {:error, {:unsupported_model_kind, kind}}
 
-  defp seal(model), do: Map.put(model, :model_digest, Gall.digest(model))
+  defp seal(model), do: Map.put(model, :model_digest, Gall.typed_digest(model))
 
   defp score(%{kind: :one_rule, feature: key, table: table} = model, features)
        when not is_nil(key) do
@@ -2054,10 +2103,20 @@ defmodule Ex4pm.Gall.Compute do
   dispatch; malformed input is a typed refusal, never a crash. The receipt's
   `receipt_digest` covers capability, algorithm version, selection and
   result, so replacing the algorithm version changes receipt identity.
+
+  Input and result must lie in the Portable JCS subset (no floats, ASCII
+  strings, collision-free keys), so every receipt can cross
+  `Ex4pm.Gall.Portable`; anything else is refused as
+  `{:non_portable_compute, :input | :result, reason}` before or after
+  compute. Receipts carry deterministic, digest-bound `cost` (canonical
+  input/result bytes), so replay is byte-identical; wall-clock latency is
+  measured by the GALL benchmark receipt, not stored in compute receipts.
+  The selection digest is type-faithful (`Ex4pm.Gall.typed_digest/1`), so an
+  input re-keyed from atoms to strings is a different selection.
   """
 
   alias Ex4pm.Gall
-  alias Ex4pm.Gall.{Compliance, Discovery, Ocpq, Powl}
+  alias Ex4pm.Gall.{Compliance, Discovery, Ocpq, Portable, Powl}
 
   @version "v26.9.18"
   @capabilities [:powl_semantic, :powl_wfnet, :ocpq, :discover, :compliance_predict]
@@ -2105,44 +2164,58 @@ defmodule Ex4pm.Gall.Compute do
         {:error, {:invalid_capability_input, capability}}
 
       true ->
-        case run(capability, input) do
-          {:ok, result} ->
-            body = %{
-              capability: capability,
-              algorithm_version: @version,
-              selection_digest: digest,
-              result: result,
-              result_digest: Gall.digest(result),
-              model_required: false
-            }
-
-            {:ok,
-             Map.put(
-               body,
-               :receipt_digest,
-               Gall.digest(
-                 Map.take(body, [
-                   :capability,
-                   :algorithm_version,
-                   :selection_digest,
-                   :result_digest
-                 ])
-               )
-             )}
-
-          {:error, _} = error ->
-            error
+        with :ok <- portable(:input, input),
+             {:ok, result} <- run(capability, input),
+             :ok <- portable(:result, result) do
+          {:ok, receipt(capability, digest, input, result)}
         end
     end
   end
 
   def execute(_), do: {:error, :invalid_selection}
 
+  # The receipt must cross the Portable envelope in every runtime, so input
+  # and result are held to the portable JCS subset before and after compute.
+  defp portable(side, value) do
+    case Portable.check(value) do
+      :ok -> :ok
+      {:error, reason} -> {:error, {:non_portable_compute, side, reason}}
+    end
+  end
+
+  # `receipt_digest` binds capability, algorithm version, selection, result
+  # and `cost`. Cost is deterministic (canonical input/result byte sizes), so
+  # replaying a selection yields a byte-identical receipt; wall-clock latency
+  # is not receipt content (see Ex4pm.GallBench for measured latency).
+  defp receipt(capability, digest, input, result) do
+    body = %{
+      capability: capability,
+      algorithm_version: @version,
+      selection_digest: digest,
+      result: result,
+      result_digest: Gall.digest(result),
+      cost: %{
+        input_bytes: byte_size(Portable.canonical_json(input)),
+        result_bytes: byte_size(Portable.canonical_json(result))
+      },
+      model_required: false
+    }
+
+    Map.put(
+      body,
+      :receipt_digest,
+      Gall.digest(
+        Map.take(body, [:capability, :algorithm_version, :selection_digest, :result_digest, :cost])
+      )
+    )
+  end
+
   def execute_model_authored_result(_result),
     do: {:error, :refused_model_authored_computation_result}
 
   @doc false
-  def selection_digest(capability, version, input), do: Gall.digest({capability, version, input})
+  def selection_digest(capability, version, input),
+    do: Gall.typed_digest({capability, version, input})
 
   defp valid_input?(:powl_semantic, input), do: is_map(input)
   defp valid_input?(:powl_wfnet, %{transitions: t, flow: f}), do: is_list(t) and is_list(f)

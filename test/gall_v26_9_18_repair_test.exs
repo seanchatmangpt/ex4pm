@@ -217,7 +217,9 @@ defmodule Ex4pm.GallRepairTest do
       {:ok, selection} =
         Compute.select(:ocpq, %{ocel: %{events: [event]}, query: %{activity: "a"}})
 
-      assert {:error, {:invalid_ocel_event, _}} = Compute.execute(selection)
+      # The dispatcher refuses the non-portable input before compute.
+      assert {:error, {:non_portable_compute, :input, {:float_not_in_portable_subset, 1.5}}} =
+               Compute.execute(selection)
     end
   end
 

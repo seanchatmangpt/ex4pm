@@ -1,39 +1,46 @@
 {
   "elixir": "1.19.5",
-  "loadavg": "122.49 121.75 111.89",
+  "loadavg": "175.51 166.94 198.97",
   "otp": "28",
   "results": {
     "canonical_json_10k": {
-      "median_us": 14312,
-      "p90_us": 20876,
-      "min_us": 9481,
+      "median_us": 17449,
+      "p90_us": 30322,
+      "min_us": 10211,
       "bound_us": 800000
     },
     "discover_1000_traces": {
-      "median_us": 1255,
-      "p90_us": 1396,
-      "min_us": 1119,
+      "median_us": 1197,
+      "p90_us": 1264,
+      "min_us": 1110,
       "bound_us": 100000
     },
     "ocpq_2000_events": {
-      "median_us": 9794,
-      "p90_us": 14355,
-      "min_us": 8257,
+      "median_us": 9958,
+      "p90_us": 14932,
+      "min_us": 8416,
       "bound_us": 300000
     },
     "portable_build_verify": {
-      "median_us": 1052,
-      "p90_us": 1133,
-      "min_us": 941,
+      "median_us": 1071,
+      "p90_us": 1148,
+      "min_us": 1026,
       "bound_us": 1500000
     },
     "wfnet_200_via_places": {
-      "median_us": 109138,
-      "p90_us": 132528,
-      "min_us": 82093,
+      "median_us": 157193,
+      "p90_us": 253827,
+      "min_us": 108342,
       "bound_us": 1500000
     }
   },
   "runs": 31,
-  "schema": "ex4pm.gall.bench/v26.9.26"
+  "schema": "ex4pm.gall.bench/v26.9.26",
+  "subject": {
+    "parent_commit": "7c9d2f9a64a78bc5e0eac8195cb2df63a5a8f3ad",
+    "source_digests": {
+      "lib/ex4pm/gall.ex": "sha256:c3f23db841112644ff85dfc680e6e43b04c1671870b739a0279e24ed9b40c0e7",
+      "test/support/gall_bench.ex": "sha256:c60b8da068e77a2493bc3c7873298e840db623ccdaf6fda7df8d579aa90c437d"
+    }
+  }
 }
