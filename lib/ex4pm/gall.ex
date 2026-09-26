@@ -318,7 +318,13 @@ defmodule Ex4pm.Gall.Portable do
 end
 
 defmodule Ex4pm.Gall.Corpus do
-  @moduledoc "GALL-015 executable process reference corpus."
+  @moduledoc """
+  GALL-015 executable process reference corpus.
+
+  Control-flow fixtures carry both a `semantic` intent and an equivalent
+  `wfnet` (places explicit, `silent` transitions for routing), so GALL-016's
+  dual ingress is exercised on the same corpus, not on ad hoc inputs.
+  """
 
   alias Ex4pm.Gall
 
@@ -326,24 +332,62 @@ defmodule Ex4pm.Gall.Corpus do
     %{
       id: "sequence",
       semantic: %{type: :sequence, children: ["a", "b", "c"]},
+      wfnet: %{
+        transitions: ["a", "b", "c"],
+        flow: [{"i", "a"}, {"a", "p1"}, {"p1", "b"}, {"b", "p2"}, {"p2", "c"}, {"c", "o"}]
+      },
       traces: [["a", "b", "c"]],
       expected: %{relations: [{"a", "b"}, {"a", "c"}, {"b", "c"}]}
     },
     %{
       id: "parallel",
       semantic: %{type: :partial_order, children: ["a", "b"], order: []},
+      wfnet: %{
+        transitions: ["split", "a", "b", "join"],
+        silent: ["split", "join"],
+        flow: [
+          {"i", "split"},
+          {"split", "p1"},
+          {"split", "p2"},
+          {"p1", "a"},
+          {"p2", "b"},
+          {"a", "q1"},
+          {"b", "q2"},
+          {"q1", "join"},
+          {"q2", "join"},
+          {"join", "o"}
+        ]
+      },
       traces: [["a", "b"], ["b", "a"]],
       expected: %{concurrent: [{"a", "b"}]}
     },
     %{
       id: "choice",
       semantic: %{type: :choice, children: ["a", "b"]},
+      wfnet: %{
+        transitions: ["a", "b"],
+        flow: [{"i", "a"}, {"i", "b"}, {"a", "o"}, {"b", "o"}]
+      },
       traces: [["a"], ["b"]],
       expected: %{choice: true}
     },
     %{
       id: "loop",
       semantic: %{type: :loop, body: "a", redo: "b"},
+      wfnet: %{
+        transitions: ["enter", "a", "b", "exit"],
+        silent: ["enter", "exit"],
+        flow: [
+          {"i", "enter"},
+          {"enter", "p"},
+          {"p", "a"},
+          {"a", "q"},
+          {"q", "b"},
+          {"b", "p"},
+          {"q", "exit"},
+          {"exit", "o"}
+        ]
+      },
       traces: [["a"], ["a", "b", "a"]],
       expected: %{loop: true}
     },
@@ -405,7 +449,29 @@ defmodule Ex4pm.Gall.Corpus do
 end
 
 defmodule Ex4pm.Gall.Powl do
-  @moduledoc "GALL-016 canonical POWL-like reference algebra with dual ingress."
+  @moduledoc """
+  GALL-016 canonical POWL-like reference algebra with dual ingress.
+
+  Semantic ingress compiles an explicit construct tree. WF-net ingress
+  follows Petri-net semantics:
+
+    * a marked graph (every place has at most one producer and one consumer)
+      that is acyclic is a partial order: reachability restricted to visible
+      transitions; a total order over them is emitted as a sequence;
+    * any other net is reduced by block-structured rules until a single
+      transition remains between one source and one sink place:
+      redundant place, sequence (place with one producer and one consumer),
+      XOR choice (transitions with identical pre- and post-sets),
+      AND concurrency (single-transition branches between one split and one
+      join) and loop (body `p -> t -> q`, redo `q -> r -> p` with an entry
+      into `p` and an exit from `q`);
+    * a net that does not reduce is refused with
+      `{:wfnet_not_block_structured, remaining}`, never re-read as a
+      partial order. A place with two consumers is a choice, not concurrency.
+
+  Transitions listed in `silent` are tau (routing only). Silent branches of a
+  choice or loop are refused as unsupported constructs.
+  """
 
   alias Ex4pm.Gall
 
@@ -418,36 +484,26 @@ defmodule Ex4pm.Gall.Powl do
     end
   end
 
+  def from_semantic(_), do: {:error, :invalid_powl}
+
   @doc """
-  WF-net ingress. `flow` may connect transitions directly or through places;
-  the admitted order is reachability in the whole flow graph restricted to
-  transition pairs, so `a -> p1 -> b` orders `a` before `b` exactly as a
-  direct `a -> b` arc does. Duplicate transitions and malformed arcs are
-  refused rather than silently merged or dropped.
+  WF-net ingress. `flow` may connect transitions directly (an implicit place
+  is inserted) or through places (any flow node that is not a transition).
+  Duplicate transitions, non-label transitions, place-to-place arcs and
+  malformed arcs are refused before any computation.
   """
   def from_wfnet(%{transitions: transitions, flow: flow} = net)
       when is_list(transitions) and is_list(flow) do
-    transitions = Enum.map(transitions, &to_string/1)
-
     with :ok <- validate_wfnet(net),
+         {:ok, transitions} <- labels(transitions, :invalid_wfnet_transition),
          :ok <- unique_transitions(transitions),
-         {:ok, arcs} <- wfnet_arcs(flow) do
-      transition_set = MapSet.new(transitions)
-
-      order =
-        arcs
-        |> transitive_closure()
-        |> Enum.filter(fn {left, right} ->
-          MapSet.member?(transition_set, left) and MapSet.member?(transition_set, right)
-        end)
-        |> Enum.sort()
-
-      spec = %{type: :partial_order, children: Enum.sort(transitions), order: order}
-
-      with {:ok, normalized} <- normalize(spec),
-           :ok <- validate(normalized) do
-        {:ok, receipt(normalized, :wfnet)}
-      end
+         {:ok, silent} <- silent_transitions(Map.get(net, :silent, []), transitions),
+         {:ok, arcs} <- wfnet_arcs(flow),
+         {:ok, graph} <- build_net(transitions, arcs),
+         {:ok, spec} <- wfnet_spec(graph, transitions, silent, arcs),
+         {:ok, normalized} <- normalize(spec),
+         :ok <- validate(normalized) do
+      {:ok, receipt(normalized, :wfnet)}
     end
   end
 
@@ -455,40 +511,138 @@ defmodule Ex4pm.Gall.Powl do
 
   def semantic_properties(%{model: model}), do: semantic_properties(model)
 
-  def semantic_properties(%{type: :task, id: id}), do: %{tasks: [id], relations: [], type: :task}
+  def semantic_properties(%{type: :task, id: id} = model),
+    do: %{tasks: [id], relations: [], type: :task, structure: structure(model)}
 
-  def semantic_properties(%{type: :sequence, children: children}) do
-    tasks = flatten_tasks(children)
-
-    relations =
-      for {left, i} <- Enum.with_index(tasks),
-          {right, j} <- Enum.with_index(tasks),
-          i < j,
-          do: {left, right}
-
-    %{tasks: tasks, relations: Enum.sort(relations), type: :sequence}
+  def semantic_properties(%{type: :sequence, children: children} = model) do
+    %{
+      tasks: flatten_tasks(children),
+      relations: relations(model),
+      type: :sequence,
+      structure: structure(model)
+    }
   end
 
-  def semantic_properties(%{type: :partial_order, children: children, order: order}) do
-    %{tasks: flatten_tasks(children), relations: transitive_closure(order), type: :partial_order}
+  def semantic_properties(%{type: type} = model)
+      when type in [:partial_order, :choice, :loop] do
+    %{
+      tasks: model |> flatten_tasks() |> Enum.sort(),
+      relations: relations(model),
+      type: type,
+      structure: structure(model)
+    }
   end
 
-  def semantic_properties(%{type: :choice, children: children}) do
-    %{tasks: flatten_tasks(children), relations: [], type: :choice}
+  def semantic_properties(%{type: :hierarchy, id: id, child: child} = model) do
+    child
+    |> semantic_properties()
+    |> Map.merge(%{type: :hierarchy, hierarchy: [id], structure: structure(model)})
   end
 
-  def semantic_properties(%{type: :loop, body: body, redo: redo}) do
-    %{tasks: flatten_tasks([body, redo]), relations: [], type: :loop}
-  end
-
-  def semantic_properties(%{type: :hierarchy, id: id, child: child}) do
-    child_props = semantic_properties(child)
-    Map.merge(child_props, %{type: :hierarchy, hierarchy: [id]})
-  end
-
+  @doc "Equivalence of required semantic properties, independent of encoding order."
   def equivalent?(left, right) do
     semantic_properties(left) == semantic_properties(right)
   end
+
+  # Ordering relations implied by the construct tree (transitively closed).
+  defp relations(%{type: :task}), do: []
+
+  defp relations(%{type: :sequence, children: children}) do
+    inner = Enum.flat_map(children, &relations/1)
+
+    cross =
+      for {left, i} <- Enum.with_index(children),
+          {right, j} <- Enum.with_index(children),
+          i < j,
+          a <- flatten_tasks(left),
+          b <- flatten_tasks(right),
+          do: {a, b}
+
+    Enum.uniq(inner ++ cross) |> Enum.sort()
+  end
+
+  defp relations(%{type: :partial_order, children: children, order: order}) do
+    (Enum.flat_map(children, &relations/1) ++ transitive_closure(order))
+    |> Enum.uniq()
+    |> Enum.sort()
+  end
+
+  defp relations(%{type: :choice, children: children}),
+    do: children |> Enum.flat_map(&relations/1) |> Enum.uniq() |> Enum.sort()
+
+  defp relations(%{type: :loop, body: body, redo: redo}),
+    do: (relations(body) ++ relations(redo)) |> Enum.uniq() |> Enum.sort()
+
+  defp relations(%{type: :hierarchy, child: child}), do: relations(child)
+
+  @doc """
+  Canonical construct tree: nested sequences/choices/concurrency are
+  flattened, commutative operands sorted, single-operand operators elided,
+  and a partial order that totally orders task children is a sequence.
+  Two encodings are equivalent exactly when their structures are equal.
+  """
+  def structure(%{model: model}), do: structure(model)
+  def structure(%{type: :task, id: id}), do: {:task, id}
+
+  def structure(%{type: :sequence, children: children}) do
+    children
+    |> Enum.map(&structure/1)
+    |> Enum.flat_map(fn
+      {:sequence, items} -> items
+      item -> [item]
+    end)
+    |> single_or(:sequence)
+  end
+
+  def structure(%{type: :choice, children: children}) do
+    children
+    |> Enum.map(&structure/1)
+    |> Enum.flat_map(fn
+      {:choice, items} -> items
+      item -> [item]
+    end)
+    |> Enum.sort()
+    |> single_or(:choice)
+  end
+
+  def structure(%{type: :partial_order, children: children, order: order}) do
+    items = Enum.map(children, &structure/1)
+    closure = transitive_closure(order)
+    n = length(items)
+
+    cond do
+      closure == [] ->
+        items
+        |> Enum.flat_map(fn
+          {:partial_order, nested, []} -> nested
+          item -> [item]
+        end)
+        |> Enum.sort()
+        |> case do
+          [one] -> one
+          many -> {:partial_order, many, []}
+        end
+
+      Enum.all?(items, &match?({:task, _}, &1)) and length(closure) == div(n * (n - 1), 2) ->
+        successors = Enum.frequencies_by(closure, &elem(&1, 0))
+
+        items
+        |> Enum.sort_by(fn {:task, id} -> {-Map.get(successors, id, 0), id} end)
+        |> then(&{:sequence, &1})
+
+      true ->
+        {:partial_order, Enum.sort(items), closure}
+    end
+  end
+
+  def structure(%{type: :loop, body: body, redo: redo}),
+    do: {:loop, structure(body), structure(redo)}
+
+  def structure(%{type: :hierarchy, id: id, child: child}),
+    do: {:hierarchy, id, structure(child)}
+
+  defp single_or([one], _type), do: one
+  defp single_or(items, type), do: {type, items}
 
   defp receipt(model, ingress) do
     %{
@@ -601,6 +755,36 @@ defmodule Ex4pm.Gall.Powl do
     end)
   end
 
+  # ---------------------------------------------------------------- WF-net
+
+  defp labels(values, reason) do
+    Enum.reduce_while(values, {:ok, []}, fn
+      value, {:ok, acc} when is_binary(value) ->
+        {:cont, {:ok, [value | acc]}}
+
+      value, {:ok, acc} when is_atom(value) and value not in [nil, true, false] ->
+        {:cont, {:ok, [Atom.to_string(value) | acc]}}
+
+      value, _ ->
+        {:halt, {:error, {reason, value}}}
+    end)
+    |> case do
+      {:ok, values} -> {:ok, Enum.reverse(values)}
+      error -> error
+    end
+  end
+
+  defp silent_transitions(silent, transitions) when is_list(silent) do
+    with {:ok, silent} <- labels(silent, :invalid_wfnet_silent_transition) do
+      case Enum.find(silent, &(&1 not in transitions)) do
+        nil -> {:ok, MapSet.new(silent)}
+        unknown -> {:error, {:unknown_silent_transition, unknown}}
+      end
+    end
+  end
+
+  defp silent_transitions(silent, _), do: {:error, {:invalid_wfnet_silent_transition, silent}}
+
   defp unique_transitions(transitions) do
     case transitions -- Enum.uniq(transitions) do
       [] -> :ok
@@ -610,17 +794,416 @@ defmodule Ex4pm.Gall.Powl do
 
   defp wfnet_arcs(flow) do
     Enum.reduce_while(flow, {:ok, []}, fn
-      {left, right}, {:ok, acc}
-      when (is_binary(left) or is_atom(left)) and (is_binary(right) or is_atom(right)) ->
-        {:cont, {:ok, [{to_string(left), to_string(right)} | acc]}}
+      {left, right} = arc, {:ok, acc} ->
+        case labels([left, right], :invalid_wfnet_arc) do
+          {:ok, [l, r]} -> {:cont, {:ok, [{l, r} | acc]}}
+          {:error, _} -> {:halt, {:error, {:invalid_wfnet_arc, arc}}}
+        end
 
       arc, _ ->
         {:halt, {:error, {:invalid_wfnet_arc, arc}}}
     end)
+    |> case do
+      {:ok, arcs} -> {:ok, arcs |> Enum.reverse() |> Enum.uniq()}
+      error -> error
+    end
   end
 
   defp validate_wfnet(%{transitions: transitions}) when transitions != [], do: :ok
   defp validate_wfnet(_), do: {:error, :invalid_wfnet}
+
+  # Bipartite net: t_pre/t_post map transitions to place sets, p_pre/p_post
+  # map places to transition sets. Transition-to-transition arcs get an
+  # implicit place {:implicit, t1, t2}; place-to-place arcs are refused.
+  defp build_net(transitions, arcs) do
+    tset = MapSet.new(transitions)
+    empty = Map.new(transitions, &{&1, MapSet.new()})
+
+    Enum.reduce_while(arcs, {:ok, %{t_pre: empty, t_post: empty, p_pre: %{}, p_post: %{}}}, fn
+      {left, right}, {:ok, net} ->
+        case {MapSet.member?(tset, left), MapSet.member?(tset, right)} do
+          {true, true} ->
+            {:cont,
+             {:ok,
+              net
+              |> connect_tp(left, {:implicit, left, right})
+              |> connect_pt({:implicit, left, right}, right)}}
+
+          {true, false} ->
+            {:cont, {:ok, connect_tp(net, left, right)}}
+
+          {false, true} ->
+            {:cont, {:ok, connect_pt(net, left, right)}}
+
+          {false, false} ->
+            {:halt, {:error, {:wfnet_place_to_place_arc, {left, right}}}}
+        end
+    end)
+  end
+
+  defp connect_tp(net, t, p) do
+    net
+    |> update_in([:t_post, t], &MapSet.put(&1, p))
+    |> ensure_place(p)
+    |> update_in([:p_pre, p], &MapSet.put(&1, t))
+  end
+
+  defp connect_pt(net, p, t) do
+    net
+    |> update_in([:t_pre, t], &MapSet.put(&1, p))
+    |> ensure_place(p)
+    |> update_in([:p_post, p], &MapSet.put(&1, t))
+  end
+
+  defp ensure_place(net, p) do
+    %{
+      net
+      | p_pre: Map.put_new(net.p_pre, p, MapSet.new()),
+        p_post: Map.put_new(net.p_post, p, MapSet.new())
+    }
+  end
+
+  defp wfnet_spec(net, transitions, silent, arcs) do
+    visible = Enum.reject(transitions, &MapSet.member?(silent, &1))
+
+    cond do
+      visible == [] -> {:error, :wfnet_no_visible_transition}
+      marked_graph?(net) and not cyclic?(arcs) -> {:ok, marked_graph_spec(arcs, visible)}
+      true -> reduce_wfnet(net, silent)
+    end
+  end
+
+  defp marked_graph?(net) do
+    Enum.all?(net.p_pre, fn {_, ts} -> MapSet.size(ts) <= 1 end) and
+      Enum.all?(net.p_post, fn {_, ts} -> MapSet.size(ts) <= 1 end)
+  end
+
+  # Acyclic marked graph: reachability restricted to visible transitions.
+  defp marked_graph_spec(arcs, visible) do
+    vset = MapSet.new(visible)
+
+    order =
+      arcs
+      |> transitive_closure()
+      |> Enum.filter(fn {l, r} -> MapSet.member?(vset, l) and MapSet.member?(vset, r) end)
+
+    n = length(visible)
+
+    if n >= 2 and length(order) == div(n * (n - 1), 2) do
+      successors = Enum.frequencies_by(order, &elem(&1, 0))
+      children = Enum.sort_by(visible, &{-Map.get(successors, &1, 0), &1})
+      %{type: :sequence, children: children}
+    else
+      %{type: :partial_order, children: Enum.sort(visible), order: order}
+    end
+  end
+
+  defp reduce_wfnet(net, silent) do
+    models =
+      Map.new(net.t_pre, fn {t, _} ->
+        {t, if(MapSet.member?(silent, t), do: nil, else: %{type: :task, id: t})}
+      end)
+
+    state =
+      net
+      |> Map.put(:model, models)
+      |> close_boundary(:t_pre, :start)
+      |> close_boundary(:t_post, :end)
+
+    sources = for {p, ts} <- state.p_pre, MapSet.size(ts) == 0, do: p
+    sinks = for {p, ts} <- state.p_post, MapSet.size(ts) == 0, do: p
+
+    cond do
+      length(sources) != 1 ->
+        {:error, {:wfnet_not_workflow_net, {:source_places, length(sources)}}}
+
+      length(sinks) != 1 ->
+        {:error, {:wfnet_not_workflow_net, {:sink_places, length(sinks)}}}
+
+      true ->
+        reduce_loop(state)
+    end
+  end
+
+  # Transitions with an empty preset (postset) get a private boundary place;
+  # two or more are joined by a silent AND-split (AND-join), matching the
+  # marked-graph reading that unconnected transitions are concurrent.
+  defp close_boundary(state, t_side, tag) do
+    open = for {t, ps} <- state[t_side], MapSet.size(ps) == 0, do: t
+
+    case open do
+      [] ->
+        state
+
+      [t] ->
+        attach_boundary(state, t, {tag, t}, tag)
+
+      many ->
+        router = {tag, :router}
+        outer = {tag, :outer}
+        state = put_in(state, [:model, router], nil)
+
+        state = %{
+          state
+          | t_pre: Map.put(state.t_pre, router, MapSet.new()),
+            t_post: Map.put(state.t_post, router, MapSet.new())
+        }
+
+        state =
+          Enum.reduce(many, state, fn t, acc ->
+            p = {tag, t}
+
+            case tag do
+              :start -> acc |> connect_tp(router, p) |> connect_pt(p, t)
+              :end -> acc |> connect_tp(t, p) |> connect_pt(p, router)
+            end
+          end)
+
+        attach_boundary(state, router, outer, tag)
+    end
+  end
+
+  defp attach_boundary(state, t, p, :start), do: connect_pt(state, p, t)
+  defp attach_boundary(state, t, p, :end), do: connect_tp(state, t, p)
+
+  defp reduce_loop(state) do
+    case reduce_step(state) do
+      {:ok, next} -> reduce_loop(next)
+      {:error, _} = error -> error
+      :irreducible -> finish(state)
+    end
+  end
+
+  defp finish(state) do
+    case Map.keys(state.t_pre) do
+      [t] ->
+        if map_size(state.p_pre) == 2 and MapSet.size(state.t_pre[t]) == 1 and
+             MapSet.size(state.t_post[t]) == 1 do
+          case state.model[t] do
+            nil -> {:error, :wfnet_no_visible_transition}
+            model -> {:ok, model}
+          end
+        else
+          {:error, {:wfnet_not_block_structured, 1}}
+        end
+
+      many ->
+        {:error, {:wfnet_not_block_structured, length(many)}}
+    end
+  end
+
+  defp reduce_step(state) do
+    Enum.find_value(
+      [&redundant_place/1, &series/1, &xor_choice/1, &and_concurrency/1, &loop/1],
+      :irreducible,
+      fn rule -> rule.(state) end
+    )
+  end
+
+  defp single(set) do
+    case MapSet.to_list(set) do
+      [one] -> one
+      _ -> nil
+    end
+  end
+
+  # Two places with identical producer and consumer sets carry the same token.
+  defp redundant_place(state) do
+    state.p_pre
+    |> Enum.filter(fn {p, pre} -> MapSet.size(pre) > 0 and MapSet.size(state.p_post[p]) > 0 end)
+    |> Enum.group_by(fn {p, pre} -> {pre, state.p_post[p]} end, &elem(&1, 0))
+    |> Enum.find_value(fn {_, places} ->
+      case Enum.sort(places) do
+        [_keep, drop | _] -> {:ok, remove_place(state, drop)}
+        _ -> nil
+      end
+    end)
+  end
+
+  defp series(state) do
+    state.p_pre
+    |> Enum.sort()
+    |> Enum.find_value(fn {p, pre} ->
+      with t1 when not is_nil(t1) <- single(pre),
+           t2 when not is_nil(t2) <- single(state.p_post[p]),
+           true <- t1 != t2,
+           true <- state.t_post[t1] == MapSet.new([p]),
+           true <- state.t_pre[t2] == MapSet.new([p]) do
+        model = seq(state.model[t1], state.model[t2])
+
+        {:ok,
+         state
+         |> remove_place(p)
+         |> rewire_post(t2, t1)
+         |> remove_transition(t2)
+         |> put_in([:model, t1], model)}
+      else
+        _ -> nil
+      end
+    end)
+  end
+
+  defp xor_choice(state) do
+    state.t_pre
+    |> Enum.filter(fn {t, pre} -> MapSet.size(pre) > 0 and MapSet.size(state.t_post[t]) > 0 end)
+    |> Enum.group_by(fn {t, pre} -> {pre, state.t_post[t]} end, &elem(&1, 0))
+    |> Enum.sort()
+    |> Enum.find_value(fn {_, ts} ->
+      case Enum.sort(ts) do
+        [t1, t2 | _] ->
+          if is_nil(state.model[t1]) or is_nil(state.model[t2]) do
+            {:error, {:unsupported_wfnet_construct, :silent_choice_branch}}
+          else
+            model = combine(:choice, state.model[t1], state.model[t2])
+            {:ok, state |> remove_transition(t2) |> put_in([:model, t1], model)}
+          end
+
+        _ ->
+          nil
+      end
+    end)
+  end
+
+  # Single-transition branches p_i -> t_i -> q_i sharing one split producer
+  # and one join consumer are concurrent.
+  defp and_concurrency(state) do
+    state.t_pre
+    |> Enum.flat_map(fn {t, pre} ->
+      with p when not is_nil(p) <- single(pre),
+           q when not is_nil(q) <- single(state.t_post[t]),
+           true <- p != q,
+           split when not is_nil(split) <- single(state.p_pre[p]),
+           join when not is_nil(join) <- single(state.p_post[q]),
+           true <- state.p_post[p] == MapSet.new([t]),
+           true <- state.p_pre[q] == MapSet.new([t]),
+           true <- split != t and join != t do
+        [{{split, join}, t}]
+      else
+        _ -> []
+      end
+    end)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Enum.sort()
+    |> Enum.find_value(fn {_, ts} ->
+      case Enum.sort(ts) do
+        [t1, t2 | _] ->
+          p2 = single(state.t_pre[t2])
+          q2 = single(state.t_post[t2])
+          model = combine(:partial_order, state.model[t1], state.model[t2])
+
+          {:ok,
+           state
+           |> remove_transition(t2)
+           |> remove_place(p2)
+           |> remove_place(q2)
+           |> put_in([:model, t1], model)}
+
+        _ ->
+          nil
+      end
+    end)
+  end
+
+  defp loop(state) do
+    state.t_pre
+    |> Enum.sort()
+    |> Enum.find_value(fn {tb, pre} ->
+      with p when not is_nil(p) <- single(pre),
+           q when not is_nil(q) <- single(state.t_post[tb]),
+           true <- p != q,
+           true <- state.p_post[p] == MapSet.new([tb]),
+           true <- state.p_pre[q] == MapSet.new([tb]),
+           tr when not is_nil(tr) <-
+             Enum.find(Enum.sort(state.p_post[q]), fn tr ->
+               tr != tb and state.t_pre[tr] == MapSet.new([q]) and
+                 state.t_post[tr] == MapSet.new([p])
+             end),
+           true <- MapSet.size(MapSet.delete(state.p_pre[p], tr)) > 0,
+           true <- MapSet.size(MapSet.delete(state.p_post[q], tr)) > 0 do
+        if is_nil(state.model[tb]) or is_nil(state.model[tr]) do
+          {:error, {:unsupported_wfnet_construct, :silent_loop_operand}}
+        else
+          model = %{type: :loop, body: state.model[tb], redo: state.model[tr]}
+          {:ok, state |> remove_transition(tr) |> put_in([:model, tb], model)}
+        end
+      else
+        _ -> nil
+      end
+    end)
+  end
+
+  defp seq(nil, right), do: right
+  defp seq(left, nil), do: left
+
+  defp seq(left, right),
+    do: %{type: :sequence, children: operands(:sequence, left) ++ operands(:sequence, right)}
+
+  defp combine(:choice, left, right),
+    do: %{type: :choice, children: Enum.sort(operands(:choice, left) ++ operands(:choice, right))}
+
+  defp combine(:partial_order, nil, right), do: right
+  defp combine(:partial_order, left, nil), do: left
+
+  defp combine(:partial_order, left, right) do
+    %{
+      type: :partial_order,
+      children: Enum.sort(operands(:partial_order, left) ++ operands(:partial_order, right)),
+      order: []
+    }
+  end
+
+  defp operands(:partial_order, %{type: :partial_order, order: [], children: children}),
+    do: children
+
+  defp operands(:partial_order, model), do: [model]
+  defp operands(type, %{type: type, children: children}), do: children
+  defp operands(_type, model), do: [model]
+
+  defp remove_place(state, p) do
+    t_pre =
+      Enum.reduce(state.p_post[p], state.t_pre, fn t, acc ->
+        Map.update!(acc, t, &MapSet.delete(&1, p))
+      end)
+
+    t_post =
+      Enum.reduce(state.p_pre[p], state.t_post, fn t, acc ->
+        Map.update!(acc, t, &MapSet.delete(&1, p))
+      end)
+
+    %{
+      state
+      | t_pre: t_pre,
+        t_post: t_post,
+        p_pre: Map.delete(state.p_pre, p),
+        p_post: Map.delete(state.p_post, p)
+    }
+  end
+
+  defp remove_transition(state, t) do
+    p_post =
+      Enum.reduce(state.t_pre[t], state.p_post, fn p, acc ->
+        Map.update!(acc, p, &MapSet.delete(&1, t))
+      end)
+
+    p_pre =
+      Enum.reduce(state.t_post[t], state.p_pre, fn p, acc ->
+        Map.update!(acc, p, &MapSet.delete(&1, t))
+      end)
+
+    %{
+      state
+      | p_pre: p_pre,
+        p_post: p_post,
+        t_pre: Map.delete(state.t_pre, t),
+        t_post: Map.delete(state.t_post, t),
+        model: Map.delete(state.model, t)
+    }
+  end
+
+  # t_from's output places become t_to's output places.
+  defp rewire_post(state, t_from, t_to) do
+    Enum.reduce(state.t_post[t_from], state, fn p, acc -> acc |> connect_tp(t_to, p) end)
+  end
 
   defp flatten_tasks(items) when is_list(items), do: Enum.flat_map(items, &flatten_tasks/1)
   defp flatten_tasks(%{type: :task, id: id}), do: [id]
@@ -692,16 +1275,41 @@ defmodule Ex4pm.Gall.Powl do
 end
 
 defmodule Ex4pm.Gall.Ocpq do
-  @moduledoc "GALL-017 object-centric process-query reference evaluator."
+  @moduledoc """
+  GALL-017 object-centric process-query reference evaluator.
+
+  Query AST (a map; any other key is refused as an unsupported operator):
+
+    * `activity`       - the bound event's activity equals the value
+    * `object_type`    - the bound event relates an object of this type
+    * `qualifier`      - the bound event relates an object with this qualifier
+    * `after_activity` - some event with this activity and a strictly
+      smaller integer `sequence` relates at least one object that the bound
+      event also relates (object-centric: unrelated objects never satisfy it)
+    * `require_match`  - default true: an empty binding set is a
+      `:missing_required_binding` violation, never a vacuous pass
+
+  Events need an `id`; `sequence`, when present, must be an integer; objects
+  are `{object_id, object_type, qualifier}` triples. Each verdict binds the
+  evaluator identity, the query digest and an event-order-invariant log
+  digest into `result_digest`.
+  """
 
   alias Ex4pm.Gall
+
+  @evaluator "ex4pm.gall.ocpq/v26.9.18"
+  @operators [:activity, :object_type, :qualifier, :after_activity, :require_match]
+
+  def evaluator, do: @evaluator
 
   def evaluate(%{events: events}, query) when is_list(events) and is_map(query) do
     with :ok <- validate_events(events),
          :ok <- validate_query(query) do
+      first = first_by_object(events, query[:after_activity])
+
       matches =
         events
-        |> Enum.filter(&matches?(&1, query, events))
+        |> Enum.filter(&matches?(&1, query, first))
         |> Enum.map(&event_binding/1)
         |> Enum.sort_by(&Gall.digest/1)
 
@@ -712,6 +1320,9 @@ defmodule Ex4pm.Gall.Ocpq do
         end
 
       result = %{
+        evaluator: @evaluator,
+        query_digest: Gall.digest(query),
+        log_digest: events |> Enum.map(&Gall.digest/1) |> Enum.sort() |> Gall.digest(),
         bindings: matches,
         violations: violations,
         standing: if(violations == [], do: :pass, else: :violation)
@@ -730,53 +1341,73 @@ defmodule Ex4pm.Gall.Ocpq do
     end
   end
 
-  defp valid_event?(%{objects: objects} = event) when is_list(objects) do
-    Map.has_key?(event, :id) and
-      Enum.all?(objects, &match?({_id, _type, _qualifier}, &1))
+  defp valid_event?(%{} = event) do
+    Map.has_key?(event, :id) and valid_sequence?(Map.get(event, :sequence)) and
+      valid_objects?(Map.get(event, :objects, []))
   end
-
-  defp valid_event?(%{} = event),
-    do: Map.has_key?(event, :id) and not Map.has_key?(event, :objects)
 
   defp valid_event?(_), do: false
 
-  defp validate_query(query) do
-    supported =
-      Map.keys(query) -- [:activity, :object_type, :qualifier, :after_activity, :require_match]
+  defp valid_sequence?(nil), do: true
+  defp valid_sequence?(sequence), do: is_integer(sequence)
 
-    if supported == [] do
-      :ok
-    else
-      {:error, {:unsupported_ocpq_operator, hd(supported)}}
+  defp valid_objects?(objects) when is_list(objects),
+    do: Enum.all?(objects, &match?({_id, _type, _qualifier}, &1))
+
+  defp valid_objects?(_), do: false
+
+  defp validate_query(query) do
+    case Map.keys(query) -- @operators do
+      [] -> :ok
+      [unsupported | _] -> {:error, {:unsupported_ocpq_operator, unsupported}}
     end
   end
 
-  defp matches?(event, query, events) do
+  # object_id => smallest integer sequence of an `activity` event relating
+  # it: one O(events) pass instead of a scan per candidate event.
+  defp first_by_object(_events, nil), do: %{}
+
+  defp first_by_object(events, activity) do
+    for %{activity: ^activity, sequence: sequence} = event when is_integer(sequence) <- events,
+        {object_id, _type, _qualifier} <- Map.get(event, :objects, []),
+        reduce: %{} do
+      acc -> Map.update(acc, object_id, sequence, &min(&1, sequence))
+    end
+  end
+
+  defp matches?(event, query, first_by_object) do
+    objects = event[:objects] || []
+
     activity_ok = is_nil(query[:activity]) or event[:activity] == query[:activity]
 
     object_ok =
       is_nil(query[:object_type]) or
-        Enum.any?(event[:objects] || [], fn {_id, type, _qualifier} ->
-          type == query[:object_type]
-        end)
+        Enum.any?(objects, fn {_id, type, _qualifier} -> type == query[:object_type] end)
 
     qualifier_ok =
       is_nil(query[:qualifier]) or
-        Enum.any?(event[:objects] || [], fn {_id, _type, qualifier} ->
-          qualifier == query[:qualifier]
-        end)
+        Enum.any?(objects, fn {_id, _type, qualifier} -> qualifier == query[:qualifier] end)
 
     after_ok =
       is_nil(query[:after_activity]) or
-        Enum.any?(events, fn prior ->
-          prior[:activity] == query[:after_activity] and
-            is_integer(prior[:sequence]) and
-            is_integer(event[:sequence]) and
-            prior[:sequence] < event[:sequence]
-        end)
+        after_related?(event, objects, first_by_object)
 
     activity_ok and object_ok and qualifier_ok and after_ok
   end
+
+  # A prior event (strictly smaller integer sequence) with the activity that
+  # relates at least one object the bound event also relates.
+  defp after_related?(%{sequence: sequence}, objects, first_by_object)
+       when is_integer(sequence) do
+    Enum.any?(objects, fn {object_id, _type, _qualifier} ->
+      case Map.fetch(first_by_object, object_id) do
+        {:ok, first} -> first < sequence
+        :error -> false
+      end
+    end)
+  end
+
+  defp after_related?(_event, _objects, _first_by_object), do: false
 
   defp event_binding(event) do
     %{
@@ -789,9 +1420,37 @@ defmodule Ex4pm.Gall.Ocpq do
 end
 
 defmodule Ex4pm.Gall.Discovery do
-  @moduledoc "GALL-018 rule-constrained deterministic discovery."
+  @moduledoc """
+  GALL-018 rule-constrained deterministic discovery.
+
+  Observations yield a candidate set, never a single forced model:
+
+    * `:dfg`         - every observed directly-follows edge;
+    * `:concurrency` - when both `a -> b` and `b -> a` are observed the log
+      underdetermines cycle vs. concurrency; this candidate drops those edge
+      pairs and records them as concurrent, and the ambiguity is reported;
+    * `:rule_constrained` - the observed edges minus forbidden edges.
+
+  Rules are immutable inputs. Each candidate is checked structurally against
+  them; unlawful candidates are moved to `eliminated` with their violations.
+  Observed rule violations are reported separately as `deviations` and never
+  rewrite a rule. Lawful candidates with non-zero fitness are ranked by
+  `{-fitness_bp, kind}`; with none left the result is `:blocked`.
+
+  Rules:
+
+    * `{:forbid_edge, a, b}` - the candidate has no `a -> b` edge;
+    * `{:require_edge, a, b}` - the candidate has an `a -> b` edge;
+    * `{:before, a, b}` - Declare precedence: every occurrence of `b` has an
+      earlier `a` in the same trace (on a candidate: `b` is unreachable from
+      the start activities without passing through `a`).
+
+  An unsupported rule blocks the run (the envelope cannot be evaluated).
+  """
 
   alias Ex4pm.Gall
+
+  @algorithm "ex4pm.gall.discovery/v26.9.18"
 
   def discover(traces, rules \\ [])
 
@@ -808,133 +1467,593 @@ defmodule Ex4pm.Gall.Discovery do
   defp valid_trace?(_), do: false
 
   defp do_discover(traces, rules) do
-    edges =
-      traces
-      |> Enum.flat_map(fn trace -> Enum.zip(trace, Enum.drop(trace, 1)) end)
-      |> Enum.frequencies()
-      |> Enum.sort()
-
-    deviations = Enum.flat_map(rules, &rule_deviation(&1, edges, traces))
-
-    candidate = %{
-      type: :dfg,
-      edges: edges,
-      standing: :candidate,
+    subject = %{
+      algorithm: @algorithm,
       rule_digest: Gall.digest(rules),
       observation_digest: Gall.digest(traces)
     }
 
-    if Enum.any?(deviations, &(&1.severity == :hard)) do
-      {:ok, %{candidates: [], deviations: deviations, standing: :blocked}}
-    else
-      {:ok, %{candidates: [candidate], deviations: deviations, standing: :candidate}}
+    base = Map.put(subject, :discovery_digest, Gall.digest(subject))
+
+    case Enum.filter(rules, &(not supported_rule?(&1))) do
+      [] ->
+        rank(traces, rules, base)
+
+      unsupported ->
+        deviations = Enum.map(unsupported, &%{type: :unsupported_rule, rule: &1, severity: :hard})
+
+        {:ok,
+         Map.merge(base, %{
+           candidates: [],
+           eliminated: [],
+           ambiguity: [],
+           deviations: deviations,
+           standing: :blocked
+         })}
     end
   end
 
-  defp rule_deviation({:forbid_edge, a, b}, edges, _traces) do
-    if Enum.any?(edges, fn {{left, right}, _} -> left == a and right == b end) do
-      [%{type: :forbidden_edge_observed, edge: {a, b}, severity: :hard}]
-    else
-      []
-    end
-  end
+  defp supported_rule?({kind, a, b})
+       when kind in [:forbid_edge, :require_edge, :before] and is_binary(a) and is_binary(b),
+       do: true
 
-  defp rule_deviation({:require_edge, a, b}, edges, _traces) do
-    if Enum.any?(edges, fn {{left, right}, _} -> left == a and right == b end) do
-      []
-    else
-      [%{type: :required_edge_missing, edge: {a, b}, severity: :hard}]
-    end
-  end
+  defp supported_rule?(_), do: false
 
-  defp rule_deviation({:before, a, b}, _edges, traces) do
-    violated =
-      Enum.any?(traces, fn trace ->
-        ia = Enum.find_index(trace, &(&1 == a))
-        ib = Enum.find_index(trace, &(&1 == b))
-        not is_nil(ia) and not is_nil(ib) and ia >= ib
+  defp rank(traces, rules, base) do
+    frequencies =
+      traces
+      |> Enum.flat_map(fn trace -> Enum.zip(trace, Enum.drop(trace, 1)) end)
+      |> Enum.frequencies()
+
+    observed = frequencies |> Map.keys() |> Enum.sort()
+    starts = traces |> Enum.flat_map(&Enum.take(&1, 1)) |> Enum.uniq() |> Enum.sort()
+
+    bidirectional =
+      for {a, b} <- observed, a < b, Map.has_key?(frequencies, {b, a}), do: {a, b}
+
+    forbidden = for {:forbid_edge, a, b} <- rules, do: {a, b}
+
+    raw = [
+      {:dfg, observed, []},
+      {:concurrency,
+       Enum.reject(observed, fn {a, b} -> {a, b} in bidirectional or {b, a} in bidirectional end),
+       bidirectional},
+      {:rule_constrained, observed -- forbidden, []}
+    ]
+
+    candidates =
+      raw
+      |> Enum.uniq_by(fn {_kind, edges, concurrent} -> {edges, concurrent} end)
+      |> Enum.map(fn {kind, edges, concurrent} ->
+        candidate(kind, edges, concurrent, starts, frequencies, traces, base)
       end)
 
-    if violated, do: [%{type: :ordering_violation, pair: {a, b}, severity: :hard}], else: []
+    {lawful, eliminated} =
+      Enum.reduce(candidates, {[], []}, fn candidate, {ok, out} ->
+        case Enum.flat_map(rules, &structural_violation(&1, candidate, starts)) do
+          [] ->
+            {[candidate | ok], out}
+
+          violations ->
+            {ok,
+             [
+               %{
+                 kind: candidate.kind,
+                 candidate_digest: candidate.candidate_digest,
+                 violations: violations
+               }
+               | out
+             ]}
+        end
+      end)
+
+    {supported, unsupported} = Enum.split_with(lawful, &(&1.fitness_bp > 0))
+
+    eliminated =
+      Enum.reverse(eliminated) ++
+        Enum.map(unsupported, fn c ->
+          %{
+            kind: c.kind,
+            candidate_digest: c.candidate_digest,
+            violations: [%{type: :no_fitting_trace}]
+          }
+        end)
+
+    ranked = Enum.sort_by(supported, &{-&1.fitness_bp, Atom.to_string(&1.kind)})
+
+    ambiguity =
+      case bidirectional do
+        [] ->
+          []
+
+        pairs ->
+          [%{type: :underdetermined, pairs: pairs, interpretations: [:cycle, :concurrency]}]
+      end
+
+    {:ok,
+     Map.merge(base, %{
+       candidates: ranked,
+       eliminated: eliminated,
+       ambiguity: ambiguity,
+       deviations: Enum.flat_map(rules, &observed_deviation(&1, observed, traces)),
+       standing: if(ranked == [], do: :blocked, else: :candidate)
+     })}
   end
 
-  defp rule_deviation(rule, _edges, _traces),
-    do: [%{type: :unsupported_rule, rule: rule, severity: :hard}]
+  defp candidate(kind, edges, concurrent, starts, frequencies, traces, base) do
+    allowed = MapSet.new(edges ++ concurrent ++ Enum.map(concurrent, fn {a, b} -> {b, a} end))
+
+    fitting =
+      Enum.count(traces, fn trace ->
+        trace |> Enum.zip(Enum.drop(trace, 1)) |> Enum.all?(&MapSet.member?(allowed, &1))
+      end)
+
+    body = %{
+      type: :dfg,
+      kind: kind,
+      edges: Enum.map(edges, &{&1, Map.get(frequencies, &1, 0)}),
+      concurrent: concurrent,
+      start_activities: starts,
+      fitness_bp: if(traces == [], do: 0, else: div(fitting * 10_000, length(traces))),
+      standing: :candidate,
+      rule_digest: base.rule_digest,
+      observation_digest: base.observation_digest
+    }
+
+    Map.put(body, :candidate_digest, Gall.digest(body))
+  end
+
+  defp edge_set(candidate), do: MapSet.new(candidate.edges, &elem(&1, 0))
+
+  defp structural_violation({:forbid_edge, a, b}, candidate, _starts) do
+    if MapSet.member?(edge_set(candidate), {a, b}),
+      do: [%{type: :forbidden_edge_in_candidate, edge: {a, b}}],
+      else: []
+  end
+
+  defp structural_violation({:require_edge, a, b}, candidate, _starts) do
+    if MapSet.member?(edge_set(candidate), {a, b}),
+      do: [],
+      else: [%{type: :required_edge_absent_in_candidate, edge: {a, b}}]
+  end
+
+  defp structural_violation({:before, a, b}, candidate, starts) do
+    adjacency =
+      candidate
+      |> edge_set()
+      |> MapSet.to_list()
+      |> Kernel.++(Enum.flat_map(candidate.concurrent, fn {x, y} -> [{x, y}, {y, x}] end))
+      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+
+    if b in reachable_avoiding(Enum.reject(starts, &(&1 == a)), adjacency, a),
+      do: [%{type: :precedence_bypass_in_candidate, pair: {a, b}}],
+      else: []
+  end
+
+  defp reachable_avoiding(frontier, adjacency, avoid) do
+    do_reach(frontier, adjacency, avoid, MapSet.new())
+  end
+
+  defp do_reach([], _adjacency, _avoid, seen), do: seen
+
+  defp do_reach([node | rest], adjacency, avoid, seen) do
+    if node == avoid or MapSet.member?(seen, node) do
+      do_reach(rest, adjacency, avoid, seen)
+    else
+      do_reach(Map.get(adjacency, node, []) ++ rest, adjacency, avoid, MapSet.put(seen, node))
+    end
+  end
+
+  defp observed_deviation({:forbid_edge, a, b}, observed, _traces) do
+    if {a, b} in observed,
+      do: [%{type: :forbidden_edge_observed, edge: {a, b}, severity: :hard}],
+      else: []
+  end
+
+  defp observed_deviation({:require_edge, a, b}, observed, _traces) do
+    if {a, b} in observed,
+      do: [],
+      else: [%{type: :required_edge_missing, edge: {a, b}, severity: :hard}]
+  end
+
+  defp observed_deviation({:before, a, b}, _observed, traces) do
+    if Enum.any?(traces, &precedence_violated?(&1, a, b)),
+      do: [%{type: :ordering_violation, pair: {a, b}, severity: :hard}],
+      else: []
+  end
+
+  # Declare precedence(a, b): every b is preceded by some earlier a.
+  defp precedence_violated?(trace, a, b) do
+    Enum.reduce_while(trace, false, fn
+      ^a, _seen_a -> {:halt, false}
+      ^b, _ -> {:halt, true}
+      _, acc -> {:cont, acc}
+    end)
+  end
 end
 
 defmodule Ex4pm.Gall.Compliance do
-  @moduledoc "GALL-019 deterministic candidate-only compliance baseline."
+  @moduledoc """
+  GALL-019 deterministic candidate-only compliance reference predictor.
+
+  Rows are `%{subject_id: binary, label: scalar, features: %{key => scalar}}`
+  with optional integer `features_at` / `label_at`. Two model kinds:
+
+    * `:majority_baseline` - predicts the training majority label;
+    * `:one_rule` - Holte's 1R: the single feature whose value table has the
+      best training accuracy (ties by feature name), falling back to the
+      majority for unseen values.
+
+  `evaluate/1` splits by subject, trains both, selects on validation
+  accuracy (ties keep the simpler baseline), and reports held-out test
+  metrics for both: accuracy, class distribution, confusion, per-label
+  precision/recall/FP/FN and score-bin calibration, all integer basis points.
+
+  Leakage falsifiers refuse before training: a feature named like the label,
+  a feature equal to the label on every row, `features_at >= label_at`, and a
+  subject present in more than one split. Models are content-addressed and
+  `predict/4` recomputes the model digest, so a model edited under its
+  original digest is refused. Predictions are candidates with authority
+  `:none`; a score below `threshold_bp` abstains.
+  """
 
   alias Ex4pm.Gall
 
-  def train(rows) when is_list(rows) and rows != [] do
-    labels = Enum.map(rows, &Map.fetch!(&1, :label))
+  @label_keys [:label, "label"]
 
-    {majority, majority_count} =
+  def train(rows, opts \\ [])
+
+  def train(rows, opts) when is_list(rows) and rows != [] do
+    with :ok <- validate_rows(rows),
+         :ok <- leakage(rows) do
+      build(rows, Keyword.get(opts, :kind, :majority_baseline))
+    end
+  end
+
+  def train(_rows, _opts), do: {:error, :empty_training_set}
+
+  def predict(model, subject_id, features, opts \\ [])
+
+  def predict(model, subject_id, features, opts)
+      when is_binary(subject_id) and is_map(features) do
+    threshold = Keyword.get(opts, :threshold_bp, 0)
+
+    with :ok <- verify_model(model),
+         :ok <- valid_threshold(threshold) do
+      {label, score} = score(model, features)
+
+      body = %{
+        subject_id: subject_id,
+        features_digest: Gall.digest(features),
+        predicted_label: if(score >= threshold, do: label, else: :abstain),
+        score_bp: score,
+        threshold_bp: threshold,
+        model_kind: model.kind,
+        model_digest: model.model_digest,
+        standing: :candidate,
+        authority: :none
+      }
+
+      {:ok, Map.put(body, :prediction_digest, Gall.digest(body))}
+    end
+  end
+
+  def predict(_model, _subject_id, _features, _opts), do: {:error, :invalid_prediction_input}
+
+  @doc "Recomputes the content address; `:ok` only for an untampered model."
+  def verify_model(%{kind: kind, model_digest: digest} = model)
+      when kind in [:majority_baseline, :one_rule] do
+    required =
+      [:majority_label, :majority_share_bp, :training_digest, :training_subjects] ++
+        if kind == :one_rule, do: [:feature, :table], else: []
+
+    cond do
+      not Enum.all?(required, &Map.has_key?(model, &1)) -> {:error, :invalid_model}
+      Gall.digest(Map.delete(model, :model_digest)) != digest -> {:error, :model_digest_mismatch}
+      true -> :ok
+    end
+  end
+
+  def verify_model(_), do: {:error, :invalid_model}
+
+  def split_by_subject(rows) when is_list(rows) do
+    if Enum.all?(rows, &(is_map(&1) and Map.has_key?(&1, :subject_id))) do
+      grouped = rows |> Enum.group_by(& &1.subject_id) |> Enum.sort()
+
+      if length(grouped) < 3 do
+        {:error, :insufficient_subjects}
+      else
+        n = length(grouped)
+        train_n = max(1, div(n * 6, 10))
+        val_n = max(1, div(n * 2, 10))
+        {train, rest} = Enum.split(grouped, train_n)
+        {validation, test} = Enum.split(rest, val_n)
+
+        {validation, test} =
+          if test == [] do
+            [last | validation] = Enum.reverse(validation)
+            {Enum.reverse(validation), [last]}
+          else
+            {validation, test}
+          end
+
+        {:ok, unpack(train), unpack(validation), unpack(test)}
+      end
+    else
+      {:error, :invalid_training_row}
+    end
+  end
+
+  def split_by_subject(_), do: {:error, :invalid_training_row}
+
+  def evaluate(rows) when is_list(rows) do
+    with :ok <- validate_rows(rows),
+         {:ok, train, validation, test} <- split_by_subject(rows) do
+      evaluate(train, validation, test)
+    end
+  end
+
+  def evaluate(_), do: {:error, :invalid_training_row}
+
+  def evaluate(train, validation, test) do
+    with :ok <- disjoint_subjects(train, validation, test),
+         {:ok, baseline} <- train(train, kind: :majority_baseline),
+         {:ok, one_rule} <- train(train, kind: :one_rule),
+         :ok <- validate_rows(validation),
+         :ok <- validate_rows(test) do
+      baseline_val = metrics(baseline, validation)
+      one_rule_val = metrics(one_rule, validation)
+
+      selected =
+        if one_rule_val.accuracy_bp > baseline_val.accuracy_bp, do: one_rule, else: baseline
+
+      body = %{
+        split: %{
+          train_subjects: subjects(train),
+          validation_subjects: subjects(validation),
+          test_subjects: subjects(test)
+        },
+        baseline: %{model: baseline, validation: baseline_val, test: metrics(baseline, test)},
+        one_rule: %{model: one_rule, validation: one_rule_val, test: metrics(one_rule, test)},
+        selected_kind: selected.kind,
+        selected_model_digest: selected.model_digest,
+        standing: :candidate,
+        authority: :none
+      }
+
+      {:ok, Map.put(body, :evaluation_digest, Gall.digest(body))}
+    end
+  end
+
+  # ------------------------------------------------------------ internals
+
+  defp unpack(groups), do: Enum.flat_map(groups, &elem(&1, 1))
+
+  defp subjects(rows), do: rows |> Enum.map(& &1.subject_id) |> Enum.uniq() |> Enum.sort()
+
+  defp validate_rows(rows) when is_list(rows) do
+    case Enum.find(rows, &(not valid_row?(&1))) do
+      nil -> :ok
+      row -> {:error, {:invalid_training_row, row}}
+    end
+  end
+
+  defp validate_rows(rows), do: {:error, {:invalid_training_row, rows}}
+
+  defp valid_row?(%{subject_id: subject, label: label} = row) when is_binary(subject) do
+    scalar?(label) and not is_nil(label) and
+      case Map.get(row, :features, %{}) do
+        features when is_map(features) -> Enum.all?(features, fn {_, v} -> scalar?(v) end)
+        _ -> false
+      end
+  end
+
+  defp valid_row?(_), do: false
+
+  defp scalar?(v), do: is_binary(v) or is_atom(v) or is_integer(v)
+
+  defp features(row), do: Map.get(row, :features, %{})
+
+  defp leakage(rows) do
+    keys =
+      rows |> Enum.flat_map(&Map.keys(features(&1))) |> Enum.uniq() |> Enum.sort_by(&to_string/1)
+
+    cond do
+      key = Enum.find(keys, &(&1 in @label_keys)) ->
+        {:error, {:label_leakage, key}}
+
+      key =
+          Enum.find(keys, fn key ->
+            Enum.all?(rows, fn row -> Map.fetch(features(row), key) == {:ok, row.label} end)
+          end) ->
+        {:error, {:label_leakage, key}}
+
+      row =
+          Enum.find(rows, fn row ->
+            is_integer(row[:features_at]) and is_integer(row[:label_at]) and
+                row.features_at >= row.label_at
+          end) ->
+        {:error, {:temporal_leakage, row.subject_id}}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp disjoint_subjects(train, validation, test) do
+    [a, b, c] =
+      Enum.map([train, validation, test], &MapSet.new(&1, fn row -> row[:subject_id] end))
+
+    shared =
+      MapSet.intersection(a, b)
+      |> MapSet.union(MapSet.intersection(a, c))
+      |> MapSet.union(MapSet.intersection(b, c))
+
+    if MapSet.size(shared) == 0,
+      do: :ok,
+      else: {:error, {:subject_leakage, shared |> MapSet.to_list() |> Enum.sort()}}
+  end
+
+  defp majority(labels) do
+    {label, count} =
       labels
       |> Enum.frequencies()
       |> Enum.min_by(fn {label, count} -> {-count, to_string(label)} end)
 
-    model = %{
-      kind: :majority_baseline,
-      majority_label: majority,
-      # Integer basis points: the portable envelope refuses floats, so the
-      # prediction must stay inside the cross-language JCS subset.
-      majority_share_bp: div(majority_count * 10_000, length(labels)),
-      training_subjects: rows |> Enum.map(&Map.fetch!(&1, :subject_id)) |> Enum.sort(),
+    {label, div(count * 10_000, length(labels))}
+  end
+
+  defp base_model(rows, kind) do
+    {label, share} = majority(Enum.map(rows, & &1.label))
+
+    %{
+      kind: kind,
+      majority_label: label,
+      # Integer basis points: the portable envelope refuses floats.
+      majority_share_bp: share,
+      training_subjects: subjects(rows),
       training_digest: Gall.digest(rows)
     }
-
-    Map.put(model, :model_digest, Gall.digest(model))
   end
 
-  def predict(model, subject_id, features) do
-    %{
-      subject_id: subject_id,
-      features_digest: Gall.digest(features),
-      predicted_label: model.majority_label,
-      score_bp: model.majority_share_bp,
-      model_digest: model.model_digest,
-      standing: :candidate
-    }
-  end
+  defp build(rows, :majority_baseline), do: {:ok, seal(base_model(rows, :majority_baseline))}
 
-  def split_by_subject(rows) do
-    grouped = rows |> Enum.group_by(&Map.fetch!(&1, :subject_id)) |> Enum.sort()
+  defp build(rows, :one_rule) do
+    model = base_model(rows, :one_rule)
 
-    if length(grouped) < 3 do
-      {:error, :insufficient_subjects}
-    else
-      n = length(grouped)
-      train_n = max(1, div(n * 6, 10))
-      val_n = max(1, div(n * 2, 10))
-      {train, rest} = Enum.split(grouped, train_n)
-      {validation, test} = Enum.split(rest, val_n)
+    keys =
+      rows |> Enum.flat_map(&Map.keys(features(&1))) |> Enum.uniq() |> Enum.sort_by(&to_string/1)
 
-      if test == [] do
-        [last | validation] = Enum.reverse(validation)
-        test = [last]
-        validation = Enum.reverse(validation)
-        {:ok, unpack(train), unpack(validation), unpack(test)}
-      else
-        {:ok, unpack(train), unpack(validation), unpack(test)}
-      end
+    best =
+      keys
+      |> Enum.map(fn key ->
+        table =
+          rows
+          |> Enum.group_by(&Map.get(features(&1), key))
+          |> Enum.reject(fn {value, _} -> is_nil(value) end)
+          |> Enum.map(fn {value, group} ->
+            {label, share} = majority(Enum.map(group, & &1.label))
+            %{value: value, label: label, share_bp: share}
+          end)
+          |> Enum.sort_by(&Gall.digest(&1.value))
+
+        candidate = Map.merge(model, %{feature: key, table: table})
+
+        correct =
+          Enum.count(rows, fn row -> elem(score(candidate, features(row)), 0) == row.label end)
+
+        {correct, key, table}
+      end)
+      |> Enum.sort_by(fn {correct, key, _} -> {-correct, to_string(key)} end)
+      |> List.first()
+
+    case best do
+      nil -> {:ok, seal(Map.merge(model, %{feature: nil, table: []}))}
+      {_, key, table} -> {:ok, seal(Map.merge(model, %{feature: key, table: table}))}
     end
   end
 
-  defp unpack(groups), do: Enum.flat_map(groups, &elem(&1, 1))
+  defp build(_rows, kind), do: {:error, {:unsupported_model_kind, kind}}
+
+  defp seal(model), do: Map.put(model, :model_digest, Gall.digest(model))
+
+  defp score(%{kind: :one_rule, feature: key, table: table} = model, features)
+       when not is_nil(key) do
+    value = Map.get(features, key)
+
+    case Enum.find(table, &(&1.value == value)) do
+      %{label: label, share_bp: share} -> {label, share}
+      nil -> {model.majority_label, model.majority_share_bp}
+    end
+  end
+
+  defp score(model, _features), do: {model.majority_label, model.majority_share_bp}
+
+  defp valid_threshold(t) when is_integer(t) and t >= 0 and t <= 10_000, do: :ok
+  defp valid_threshold(t), do: {:error, {:invalid_threshold_bp, t}}
+
+  @bins [{0, 2499}, {2500, 4999}, {5000, 7499}, {7500, 10_000}]
+
+  defp metrics(model, rows) do
+    pairs = Enum.map(rows, fn row -> {row.label, score(model, features(row))} end)
+
+    labels =
+      pairs
+      |> Enum.flat_map(fn {actual, {pred, _}} -> [actual, pred] end)
+      |> Enum.uniq()
+      |> Enum.sort_by(&to_string/1)
+
+    n = length(pairs)
+    bp = fn num, den -> if den == 0, do: 0, else: div(num * 10_000, den) end
+    correct = Enum.count(pairs, fn {actual, {pred, _}} -> actual == pred end)
+
+    confusion =
+      pairs
+      |> Enum.frequencies_by(fn {actual, {pred, _}} -> {actual, pred} end)
+      |> Enum.map(fn {{actual, pred}, count} ->
+        %{actual: actual, predicted: pred, count: count}
+      end)
+      |> Enum.sort_by(&{to_string(&1.actual), to_string(&1.predicted)})
+
+    per_label =
+      Enum.map(labels, fn label ->
+        tp = Enum.count(pairs, fn {a, {p, _}} -> a == label and p == label end)
+        fp = Enum.count(pairs, fn {a, {p, _}} -> a != label and p == label end)
+        fnn = Enum.count(pairs, fn {a, {p, _}} -> a == label and p != label end)
+
+        %{
+          label: label,
+          support: tp + fnn,
+          true_positive: tp,
+          false_positive: fp,
+          false_negative: fnn,
+          precision_bp: bp.(tp, tp + fp),
+          recall_bp: bp.(tp, tp + fnn)
+        }
+      end)
+
+    calibration =
+      Enum.map(@bins, fn {lo, hi} ->
+        bin = Enum.filter(pairs, fn {_, {_, s}} -> s >= lo and s <= hi end)
+        hits = Enum.count(bin, fn {a, {p, _}} -> a == p end)
+        total = Enum.reduce(bin, 0, fn {_, {_, s}}, acc -> acc + s end)
+
+        %{
+          low_bp: lo,
+          high_bp: hi,
+          count: length(bin),
+          mean_score_bp: if(bin == [], do: 0, else: div(total, length(bin))),
+          observed_accuracy_bp: bp.(hits, length(bin))
+        }
+      end)
+
+    %{
+      n: n,
+      accuracy_bp: bp.(correct, n),
+      class_distribution:
+        rows
+        |> Enum.frequencies_by(& &1.label)
+        |> Enum.map(fn {label, count} -> %{label: label, count: count} end)
+        |> Enum.sort_by(&to_string(&1.label)),
+      confusion: confusion,
+      per_label: per_label,
+      calibration: calibration
+    }
+  end
 end
 
 defmodule Ex4pm.Gall.Compute do
   @moduledoc """
   GALL-020 typed deterministic process-compute dispatcher.
 
-  `select/2` binds a capability to an input under a selection digest and
-  authority `:none`. `execute/1` recomputes that digest before running, so a
-  stale, forged or re-targeted selection is refused instead of producing a
-  receipt that names a subject it did not compute. Executors are named
-  functions (module attributes cannot carry closures), and malformed input
-  is refused with a typed error rather than crashing the dispatcher.
+  `select/2` binds a capability and the algorithm version to an input under
+  a selection digest and authority `:none`. `execute/1` recomputes that
+  digest before running, so a stale, forged, re-targeted or version-shifted
+  selection is refused instead of producing a receipt that names a subject
+  it did not compute. Each capability validates its input shape before
+  dispatch; malformed input is a typed refusal, never a crash. The receipt's
+  `receipt_digest` covers capability, algorithm version, selection and
+  result, so replacing the algorithm version changes receipt identity.
   """
 
   alias Ex4pm.Gall
@@ -942,6 +2061,8 @@ defmodule Ex4pm.Gall.Compute do
 
   @version "v26.9.18"
   @capabilities [:powl_semantic, :powl_wfnet, :ocpq, :discover, :compliance_predict]
+
+  def version, do: @version
 
   def capabilities do
     Map.new(@capabilities, &{&1, %{version: @version}})
@@ -952,8 +2073,9 @@ defmodule Ex4pm.Gall.Compute do
       {:ok,
        %{
          capability: capability,
+         algorithm_version: @version,
          input: input,
-         selection_digest: selection_digest(capability, input),
+         selection_digest: selection_digest(capability, @version, input),
          authority: :none
        }}
     else
@@ -964,6 +2086,8 @@ defmodule Ex4pm.Gall.Compute do
   def select(capability, _input), do: {:error, {:unsupported_process_capability, capability}}
 
   def execute(%{capability: capability, input: input, selection_digest: digest} = selection) do
+    version = Map.get(selection, :algorithm_version, @version)
+
     cond do
       capability not in @capabilities ->
         {:error, {:unsupported_process_capability, capability}}
@@ -971,21 +2095,40 @@ defmodule Ex4pm.Gall.Compute do
       Map.get(selection, :authority, :none) != :none ->
         {:error, {:authority_expanded, Map.get(selection, :authority)}}
 
-      digest != selection_digest(capability, input) ->
+      digest != selection_digest(capability, version, input) ->
         {:error, :selection_digest_mismatch}
+
+      version != @version ->
+        {:error, {:algorithm_version_unavailable, version}}
+
+      not valid_input?(capability, input) ->
+        {:error, {:invalid_capability_input, capability}}
 
       true ->
         case run(capability, input) do
           {:ok, result} ->
+            body = %{
+              capability: capability,
+              algorithm_version: @version,
+              selection_digest: digest,
+              result: result,
+              result_digest: Gall.digest(result),
+              model_required: false
+            }
+
             {:ok,
-             %{
-               capability: capability,
-               algorithm_version: @version,
-               selection_digest: digest,
-               result: result,
-               result_digest: Gall.digest(result),
-               model_required: false
-             }}
+             Map.put(
+               body,
+               :receipt_digest,
+               Gall.digest(
+                 Map.take(body, [
+                   :capability,
+                   :algorithm_version,
+                   :selection_digest,
+                   :result_digest
+                 ])
+               )
+             )}
 
           {:error, _} = error ->
             error
@@ -998,22 +2141,30 @@ defmodule Ex4pm.Gall.Compute do
   def execute_model_authored_result(_result),
     do: {:error, :refused_model_authored_computation_result}
 
-  defp selection_digest(capability, input), do: Gall.digest({capability, input})
+  @doc false
+  def selection_digest(capability, version, input), do: Gall.digest({capability, version, input})
 
-  defp run(:powl_semantic, input) when is_map(input), do: Powl.from_semantic(input)
-  defp run(:powl_wfnet, input) when is_map(input), do: Powl.from_wfnet(input)
+  defp valid_input?(:powl_semantic, input), do: is_map(input)
+  defp valid_input?(:powl_wfnet, %{transitions: t, flow: f}), do: is_list(t) and is_list(f)
+  defp valid_input?(:ocpq, %{ocel: %{events: e}, query: q}), do: is_list(e) and is_map(q)
+  defp valid_input?(:discover, %{traces: t, rules: r}), do: is_list(t) and is_list(r)
 
+  defp valid_input?(:compliance_predict, %{model: m, subject_id: s, features: f}),
+    do: is_map(m) and is_binary(s) and is_map(f)
+
+  defp valid_input?(_, _), do: false
+
+  defp run(:powl_semantic, input), do: Powl.from_semantic(input)
+  defp run(:powl_wfnet, input), do: Powl.from_wfnet(input)
   defp run(:ocpq, %{ocel: ocel, query: query}), do: Ocpq.evaluate(ocel, query)
+  defp run(:discover, %{traces: traces, rules: rules}), do: Discovery.discover(traces, rules)
 
-  defp run(:discover, %{traces: traces, rules: rules}) when is_list(traces) and is_list(rules),
-    do: Discovery.discover(traces, rules)
-
-  defp run(:compliance_predict, %{
-         model: %{model_digest: _} = model,
-         subject_id: subject_id,
-         features: features
-       }),
-       do: {:ok, Compliance.predict(model, subject_id, features)}
-
-  defp run(capability, _input), do: {:error, {:invalid_capability_input, capability}}
+  defp run(
+         :compliance_predict,
+         %{model: model, subject_id: subject_id, features: features} = input
+       ),
+       do:
+         Compliance.predict(model, subject_id, features,
+           threshold_bp: Map.get(input, :threshold_bp, 0)
+         )
 end

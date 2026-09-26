@@ -105,8 +105,8 @@ defmodule Ex4pm.GallTest do
     assert MapSet.disjoint?(train_ids, test_ids)
     assert MapSet.disjoint?(validation_ids, test_ids)
 
-    model = Compliance.train(train)
-    prediction = Compliance.predict(model, "held-out", %{x: 1})
+    {:ok, model} = Compliance.train(train)
+    {:ok, prediction} = Compliance.predict(model, "held-out", %{x: 1})
     assert prediction.standing == :candidate
     assert String.starts_with?(prediction.model_digest, "sha256:")
   end

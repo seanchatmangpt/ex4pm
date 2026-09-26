@@ -235,8 +235,10 @@ defmodule Ex4pm.GallHardeningTest do
       assert Powl.semantic_properties(wfnet).relations == [{"a", "b"}, {"a", "c"}, {"b", "c"}]
     end
 
-    test "WF-net loop through a place is refused as a cyclic order" do
-      assert {:error, :cyclic_partial_order} =
+    test "a cyclic net with no source place is refused as not a workflow net" do
+      # Body and redo are indistinguishable without an entry place, so the
+      # net is refused rather than read as a partial order or a loop.
+      assert {:error, {:wfnet_not_workflow_net, {:source_places, 0}}} =
                Powl.from_wfnet(%{
                  transitions: ["a", "b"],
                  flow: [{"a", "p"}, {"p", "b"}, {"b", "q"}, {"q", "a"}]
@@ -349,10 +351,10 @@ defmodule Ex4pm.GallHardeningTest do
           %{subject_id: s, label: l}
         end
 
-      model = Compliance.train(rows)
+      {:ok, model} = Compliance.train(rows)
       assert model.majority_label == :ok
       assert model.majority_share_bp == 6666
-      prediction = Compliance.predict(model, "z", %{x: 1})
+      {:ok, prediction} = Compliance.predict(model, "z", %{x: 1})
       assert prediction.score_bp == 6666
       assert {:ok, _} = Portable.build(:compliance_prediction, prediction, attrs())
     end
@@ -398,8 +400,7 @@ defmodule Ex4pm.GallHardeningTest do
       {:ok, selection} =
         Compute.select(:compliance_predict, %{model: %{}, subject_id: "s", features: %{}})
 
-      assert {:error, {:invalid_capability_input, :compliance_predict}} =
-               Compute.execute(selection)
+      assert {:error, :invalid_model} = Compute.execute(selection)
 
       assert {:error, :invalid_selection} = Compute.execute(%{capability: :ocpq})
       assert {:error, {:unsupported_process_capability, "ocpq"}} = Compute.select("ocpq", %{})
@@ -407,7 +408,9 @@ defmodule Ex4pm.GallHardeningTest do
 
     test "every capability receipt is replayable and crosses the portable envelope" do
       ocel = Corpus.fixture!("object-centric").ocel
-      model = Compliance.train([%{subject_id: "a", label: :ok}, %{subject_id: "b", label: :bad}])
+
+      {:ok, model} =
+        Compliance.train([%{subject_id: "a", label: :ok}, %{subject_id: "b", label: :bad}])
 
       inputs = %{
         powl_semantic: %{type: :sequence, children: ["a", "b"]},
