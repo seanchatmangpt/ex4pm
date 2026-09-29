@@ -1,6 +1,8 @@
 defmodule Ex4pm.Integration.Vision2040IntegrationTest do
   use ExUnit.Case, async: false
 
+  @xaas_ocel_path "/Users/sac/xaas/priv/ocel/ash-actions.ndjson"
+
   alias Ex4pmEngine.QuantumProcess
   alias Ex4pmEngine.ZkOcpn
   alias Ex4pmEngine.Topos
@@ -65,6 +67,12 @@ defmodule Ex4pm.Integration.Vision2040IntegrationTest do
       assert {:ok, result} = SoundnessEngine.verify_reachability(sound_ocpn, "ToposObject")
       assert result.sound? == true
       assert result.terminal_reachable? == true
+    end
+
+    # Reads the live, machine-local xaas operational OCEL corpus by absolute path;
+    # where that corpus is absent (e.g. CI runners) this is a named, visible skip.
+    unless File.regular?(@xaas_ocel_path) do
+      @tag skip: "external xaas OCEL corpus absent: #{@xaas_ocel_path}"
     end
 
     @tag :integration

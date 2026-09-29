@@ -24,12 +24,10 @@ defmodule Ex4pmEngine.Reactors.WasmCapabilitiesReactorTest do
                    "~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm"
                  )
 
-  setup do
-    if File.regular?(@artifact_path) do
-      :ok
-    else
-      :skip
-    end
+  # ExUnit setup callbacks may only return :ok, a keyword, or a map; an absent
+  # artifact is a named, visible module-level skip (not a silent pass).
+  unless File.regular?(@artifact_path) do
+    @moduletag skip: "wasm artifact not built: #{@artifact_path}"
   end
 
   @tag :real_wasm

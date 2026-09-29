@@ -12,6 +12,8 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
   """
   use ExUnit.Case, async: false
 
+  @xaas_ocel_path "/Users/sac/xaas/priv/ocel/ash-actions.ndjson"
+
   alias Ex4pmEngine.OCPN
   alias Ex4pmEngine.OCPN.SoundnessEngine
   alias Ex4pmEngine.OcelToLatex
@@ -106,6 +108,12 @@ defmodule Ex4pm.Integration.AdversarialRemediationTest do
       assert is_list(profile.variant_pareto)
       assert length(profile.variant_pareto) >= 1
       assert profile.shannon_entropy_bits == 4.7764
+    end
+
+    # Reads the live, machine-local xaas operational OCEL corpus by absolute path;
+    # where that corpus is absent (e.g. CI runners) this is a named, visible skip.
+    unless File.regular?(@xaas_ocel_path) do
+      @tag skip: "external xaas OCEL corpus absent: #{@xaas_ocel_path}"
     end
 
     @tag :integration

@@ -220,12 +220,14 @@ defmodule Ex4pmEngine.Reactors.WasmAllCapabilitiesTest do
     std_deviation: %{data: [5.0, 5.0, 5.0]}
   }
 
+  # ExUnit setup callbacks may only return :ok, a keyword, or a map; an absent
+  # artifact is a named, visible module-level skip (not a silent pass).
+  unless File.regular?(@artifact_path) do
+    @moduletag skip: "wasm artifact not built: #{@artifact_path}"
+  end
+
   setup do
-    if File.regular?(@artifact_path) do
-      {:ok, results: run_all!()}
-    else
-      {:skip, "wasm artifact not built"}
-    end
+    {:ok, results: run_all!()}
   end
 
   defp run_all! do

@@ -32,7 +32,8 @@ jobs:
           mix format --check-formatted
           mkdir -p format-capsule
           git diff --binary -- . ':!format-capsule' > format-capsule/format.patch
-          sources=(apps mix.exs .formatter.exs)
+          sources=(mix.exs .formatter.exs)
+          if [ -e apps ]; then sources+=(apps); fi
           for optional in config lib scripts formal; do
             if [ -e "$optional" ]; then sources+=("$optional"); fi
           done
