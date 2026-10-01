@@ -1,0 +1,80 @@
+{
+  "protocol": "ferroplan-wasi-linear-memory-json/1",
+  "description": "fp_call(ptr,len)->u64 packed (out_ptr<<32)|out_len; UTF-8 JSON request {\"op\":...} / response; errors as {error:{code,message,retryable}}",
+  "source": {
+    "repo": "/Users/sac/ferroplan",
+    "crate": "ferroplan-wasm",
+    "version": "0.29.0",
+    "git_sha": "2a2e1d8597d4b1eb70ab9f70bc3a925dcb0622eb"
+  },
+  "build": {
+    "target": "wasm32-wasip1",
+    "command": "cargo build -p ferroplan-wasm --release --target wasm32-wasip1",
+    "wasm_opt": false
+  },
+  "artifact": {
+    "path": "ferroplan_wasm.wasm",
+    "sha256": "088d9c3b0306e36123ddc1ee780ad7e9d4bd2ebb54f9726c43f40a2f6d718233",
+    "size": 3521589
+  },
+  "host_abi": {
+    "imports": [
+      "wasi_snapshot_preview1.random_get",
+      "wasi_snapshot_preview1.environ_get",
+      "wasi_snapshot_preview1.environ_sizes_get",
+      "wasi_snapshot_preview1.clock_time_get",
+      "wasi_snapshot_preview1.fd_close",
+      "wasi_snapshot_preview1.fd_fdstat_get",
+      "wasi_snapshot_preview1.fd_filestat_get",
+      "wasi_snapshot_preview1.fd_prestat_get",
+      "wasi_snapshot_preview1.fd_prestat_dir_name",
+      "wasi_snapshot_preview1.fd_read",
+      "wasi_snapshot_preview1.fd_write",
+      "wasi_snapshot_preview1.path_open",
+      "wasi_snapshot_preview1.proc_exit",
+      "wasi_snapshot_preview1.sched_yield"
+    ]
+  },
+  "required_exports": [
+    "memory",
+    "fp_alloc",
+    "fp_call",
+    "fp_dealloc"
+  ],
+  "ops": [
+    "plan",
+    "plan_production",
+    "htn_plan",
+    "fond_policy",
+    "fond_policy_validate",
+    "hddl_solve",
+    "readiness",
+    "version",
+    "explain",
+    "session_new",
+    "session_fork",
+    "session_free",
+    "session_set_goal",
+    "session_restrict_prefix_claims",
+    "session_restrict_contains",
+    "session_think",
+    "session_valid",
+    "session_step",
+    "session_suffix",
+    "session_advance",
+    "session_drop_plan",
+    "session_has_plan",
+    "session_set_fact",
+    "session_set_timed_fact",
+    "session_observe",
+    "session_goal_met",
+    "session_fact",
+    "session_apply_start",
+    "session_elapse",
+    "session_set_fluent",
+    "session_fluent",
+    "session_plan_valid",
+    "session_world_bytes",
+    "session_mind_bytes"
+  ]
+}
