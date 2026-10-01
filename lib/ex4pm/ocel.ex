@@ -183,6 +183,8 @@ defmodule Ex4pm.OCEL do
     {:error, Refusal.new(:invalid_objects, "objects must be a map or list", subject: other)}
   end
 
+  defp normalize_object(%ObjectRef{} = object, _fallback_id), do: {:ok, object}
+
   defp normalize_object(raw, fallback_id) when is_map(raw) do
     id = value(raw, ["id", :id, "ocel:oid", :"ocel:oid"]) || fallback_id
     type = value(raw, ["type", :type, "ocel:type", :"ocel:type"])
