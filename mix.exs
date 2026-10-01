@@ -219,7 +219,8 @@ defmodule Ex4pm.MixProject do
         # shrink.
         "test --include integration --include stress",
         "ex4pm.powl.court",
-        "ex4pm.sabotage.court"
+        "ex4pm.sabotage.court",
+        "ex4pm.ggen.verify_determinism --all"
       ],
       "test.stress": [
         "test test/benchmarks/stress_benchmark_test.exs test/benchmarks/wasm_engine_benchmark_test.exs --include stress"
