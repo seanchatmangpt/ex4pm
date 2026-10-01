@@ -1,9 +1,8 @@
 # Ferroplan Runtime
 
 ex4pm embeds the ferroplan planner as a WASI WebAssembly module and executes it in-process
-through Wasmex/Wasmtime. This supersedes the earlier design in which ferroplan planning was
-reached only as a remote HTTP route on beam4pm (see the supersession notes in
-`EX4PM-THINNING-BEAM4PM-ENRICHMENT.md` and `BEAM4PM-OPENAPI-GGEN-IGNITER-PLAN.md`).
+through Wasmex/Wasmtime. Ferroplan planning never leaves the process: there is no remote
+route and no network fallback.
 
 Status of this document: the implementation is merged (`Ex4pm.Engine.Ferroplan`,
 `Ex4pmEngine.Wasm.FerroplanTransport`, `priv/ferroplan/{ferroplan_wasm.wasm,MANIFEST.json}`).
@@ -101,7 +100,7 @@ wasm (tag `real_wasm`, consistent with `test/wasm/*edge_cases_test.exs`).
 
 `ash_ex4pm` calls the facade from `AshEx4pm.FerroplanRuntime`. The consumer must pass through
 the facade's standing and refusal values unchanged; it must not upgrade a standing, and it
-must not reintroduce an HTTP fallback to beam4pm for planning.
+must not introduce a network fallback for planning.
 
 ## Rebuild and re-pin
 
@@ -126,5 +125,4 @@ must not reintroduce an HTTP fallback to beam4pm for planning.
 
 ## See Also
 
-`ALGORITHM-REGISTRY-GENERATION.md` · `EX4PM-THINNING-BEAM4PM-ENRICHMENT.md` ·
-`BEAM4PM-OPENAPI-GGEN-IGNITER-PLAN.md`
+`ALGORITHM-REGISTRY-GENERATION.md`

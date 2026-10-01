@@ -14,6 +14,58 @@ silence means unchanged; state it.
 
 ## [Unreleased]
 
+## [26.10.1] - 2026-10-01
+
+Real wasm4pm and ferroplan execution are first-class: the wasm4pm artifact is bundled and served by a
+supervised host with zero config, all 33 algorithms are engine candidates, ferroplan is complete
+(facade, sessions, generated-contract checks) and every call is observable. The remote-runtime engines
+are removed.
+
+### Removed (BREAKING)
+
+- `Ex4pm.Engine.Beam4pm` and `Ex4pm.Engine.Beam4pmA2A` (the HTTP/A2A client engines), the `:beam4pm` engine
+  option, their ggen units/templates/query, the `ex4pmb:` Beam4pm service graph in the ontology, their test
+  servers, and the `:req`/`:a2a`/`:ash_json_api`/`:open_api_spex` direct dependencies that existed only for them.
+  Ferroplan no longer has any remote route: it runs in-process from the bundled artifact. Consumers of the old
+  generated ferroplan routes (e.g. `ash_ex4pm`) must call `Ex4pm.Engine.Ferroplan`.
+
+### Added
+
+- **Zero-config wasm4pm.** `priv/wasm4pm/wasm4pm_ex4pm_bindings.wasm` (2,204,812 bytes, sha256 `92eacdcb…`,
+  0 imports, 70 exports) is bundled and sha-pinned in `priv/wasm4pm/MANIFEST.json` with provenance and
+  `scripts/refresh-wasm4pm-artifact.sh`. `Ex4pmEngine.Wasm.Host` (supervised, `config :ex4pm, :wasm_host`) admits it,
+  restarts on trap and serves adapters without per-call transports (`wasm_default: false` opts out).
+- All 33 AlgoRegistry algorithms are `Ex4pm.Engine` candidates (the 14 Phase-4 statistics were missing), ranked from
+  the generated registry (`ex4pmal:engineRank`). Implicit selection keeps `:beam` for discover/conform/simulate/
+  optimize unless `prefer_wasm: true`, an explicit `engine:`, or an explicit `<algo>_wasm_fun` is given.
+- Public API: `Ex4pm.health/1`, `wasm/1`, `ferroplan/3` (receipted), `statistics/3`, `forecast/2`; `Ex4pm.plan/2`
+  routes PDDL text / `engine: :ferroplan` to ferroplan. CLI `health`, `wasm verify`, `ferroplan`, `forecast`;
+  mix tasks `ex4pm.wasm.verify|doctor`, `ex4pm.ferroplan.verify|version|readiness|plan`, `ex4pm.health`.
+- Ferroplan: ops `hddl_solve`, `fond_policy_validate`, `fond_validate`, `explain` exposed; `hierarchical_plan/3`
+  and `fond_policy/3` take the problem JSON (no domain); `Ex4pm.Engine.Ferroplan.Sessions` runs the 28
+  `session_*` ops (one supervised wasm instance per session, journal recovery, CONSTRUCT-only); the transport
+  accepts non-object JSON responses.
+- `Ex4pm.Engine.CallLog` (telemetry `[:ex4pm,:engine,:call,:stop]` + an OCEL 2.0 event per wasm/ferroplan call),
+  `FerroplanRepairReactor` (proposal only, `actuation: :requires_brce`), `Ex4pm.Stream.DriftSink`, information-plane
+  capabilities `engine.wasm.run`/`engine.ferroplan.run`/`engine.standing`.
+- `mix ex4pm.exposure.court` (in `verify`): every algorithm, wasm export and ferroplan op must have an adapter,
+  engine op, documented public function and real-wasm test; `--require-real` executes them. Lint rule
+  `:skipped_real_exec`; CI builds before testing and compares the artifact sha to its pin.
+- HexDocs module groups, guides (real wasm, planning with ferroplan, choosing an engine), runnable examples.
+
+### Changed
+
+- `RealTransport.default_transport` forwards `:timeout` and size limits (previously ignored).
+- Test helper `Ex4pm.Test.WasmArtifact`; `EX4PM_WASM_REQUIRED=1` fails instead of skipping.
+
+### Public contract
+
+- `Ex4pm.OCEL.validate_envelope/1`, `Ex4pm.Stream.Ingest.ingest_envelope/1,2` and
+  `Ex4pm.Evidence.BRCE.execute/4` — **UNCHANGED**.
+- Engine surface — **CHANGED**: Beam4pm engines removed (above); `Ex4pm.Engine.Ferroplan.hierarchical_plan/3` and
+  `fond_policy/3` signatures changed; `Ex4pm.Engine.execute(:plan, engine: :ferroplan)` now supported.
+- Public API — **ADDED**: `Ex4pm.health/1`, `wasm/1`, `ferroplan/3`, `statistics/3`, `forecast/2`.
+
 ## [26.9.30] - 2026-09-30
 
 Version bump 26.9.24 -> 26.9.30. Adds `Ex4pm.Aloop`, OCEL 2.0 value-time object

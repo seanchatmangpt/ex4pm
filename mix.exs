@@ -15,7 +15,7 @@ defmodule Ex4pm.MixProject do
     Application.put_env(:ash, :default_string_length_count, :codepoints)
   end
 
-  @version "26.9.30"
+  @version "26.10.1"
   @source_url "https://github.com/seanchatmangpt/ex4pm"
 
   def project do
@@ -107,19 +107,6 @@ defmodule Ex4pm.MixProject do
 
       # DfCM engine
       {:wasmex, "~> 0.14"},
-      # Zero-config Ash JSON:API client transport for Ex4pm.Engine.Beam4pm
-      # (docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md) -- deliberately Req,
-      # not wasmex/rustler: pure-Elixir HTTP stack (finch/mint), no native
-      # toolchain, consistent with the "ex4pm thinning" goal this engine
-      # candidate itself exists to serve.
-      {:req, "~> 0.5"},
-      # Additive A2A.Client-based path to beam4pm's newly-mounted A2A agent
-      # (Ex4pm.Engine.Beam4pmA2A) -- alongside, not replacing,
-      # Ex4pm.Engine.Beam4pm's existing hand-rolled JSON:API route-table
-      # client above. Client-side role only needs the `:a2a` package
-      # itself (A2A.Client), not `:ash_a2a` (server-side Spark DSL
-      # extension that beam4pm, not ex4pm, uses to expose its skills).
-      {:a2a, "~> 0.2"},
       {:explorer, "~> 0.12"},
       {:reactor, "~> 1.0"},
       {:postgrex, "~> 0.22.4"},
@@ -143,9 +130,7 @@ defmodule Ex4pm.MixProject do
       {:faker, "~> 0.18", only: :test},
       {:ex_doc, "~> 0.34", only: :dev, runtime: false},
       # Manufacturing-time tool only (`mix ggen_igniter.sync`) -- never a
-      # runtime dependency of generated code, matching beam4pm's own
-      # dependency line exactly (mix.exs there: {:ggen_igniter, "~> 26.8",
-      # only: [:dev, :test], runtime: false}). R0 of docs/PRD-v26.9.10.md.
+      # runtime dependency of generated code.
       {:ggen_igniter, "~> 26.9", only: [:dev, :test], runtime: false},
 
       # ash_admin's own LiveView UI needs Phoenix/LiveView to compile even
@@ -158,22 +143,6 @@ defmodule Ex4pm.MixProject do
       # test/demo_web (Phoenix/LiveView demo harness) only
       {:bandit, "~> 1.5", only: :test},
       {:telemetry_poller, "~> 1.0", only: :test},
-
-      # Real AshJsonApi-backed local "micro beam4pm" (test/support/micro_beam4pm.ex)
-      # for Ex4pm.Engine.Beam4pm's Chicago-style tests -- exercises the REAL
-      # AshJsonApi wire format (route shape, index/get conventions, JSON:API
-      # response envelope) instead of a hand-guessed fake, since beam4pm's own
-      # future json_api exposure (docs/BEAM4PM-OPENAPI-GGEN-IGNITER-PLAN.md)
-      # will use this exact library. Test-only: production never mounts this.
-      {:ash_json_api, "~> 1.7", only: :test},
-      # Real finding, confirmed empirically this session: ash_json_api's
-      # own OpenAPI emission (`AshJsonApi.Router`'s `open_api:` option)
-      # silently 404s without this -- `open_api_spex` is declared optional
-      # in ash_json_api's own mix.exs and is NOT pulled in transitively
-      # just by depending on ash_json_api. Confirms/sharpens the
-      # "UNVERIFIED" flag in docs/BEAM4PM-OPENAPI-GGEN-IGNITER-PLAN.md:
-      # beam4pm's own future mix.exs will need this dep explicitly too.
-      {:open_api_spex, "~> 3.16", only: :test},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:floki, ">= 0.30.0", only: :test}
     ]
@@ -223,8 +192,6 @@ defmodule Ex4pm.MixProject do
         "WASM adapters": ~r/^Ex4pmEngine\.Wasm\./,
         "Other engines": [
           Ex4pm.Engine.Beam,
-          Ex4pm.Engine.Beam4pm,
-          Ex4pm.Engine.Beam4pmA2A,
           Ex4pm.Engine.Ex4pmPlan,
           Ex4pm.Engine.CmcaWasm,
           Ex4pm.Engine.NifCandidate,

@@ -39,7 +39,7 @@ Selection is capability- and evidence-driven. An unavailable edge yields a typed
 
 ```elixir
 def deps do
-  [{:ex4pm, "~> 26.9.30"}]
+  [{:ex4pm, "~> 26.10.1"}]
 end
 ```
 
