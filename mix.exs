@@ -13,7 +13,7 @@ defmodule Ex4pm.MixProject do
     Application.put_env(:ash, :default_string_length_count, :codepoints)
   end
 
-  @version "26.9.24"
+  @version "26.9.30"
   @source_url "https://github.com/seanchatmangpt/ex4pm"
 
   def project do
@@ -195,7 +195,7 @@ defmodule Ex4pm.MixProject do
         "GitHub" => @source_url,
         "Architecture" => @source_url <> "/blob/main/docs/ARCHITECTURE.md"
       },
-      files: ["lib", "priv", "mix.exs"]
+      files: ["lib", "priv", "mix.exs", "README.md", "CHANGELOG.md", "LICENSE"]
     ]
   end
 
