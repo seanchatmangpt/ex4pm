@@ -6,6 +6,8 @@ defmodule Ex4pmEngine.Wasm.Ewma do
   `~/wasm4pm/crates/wasm4pm-ex4pm-bindings/src/phase4_stats.rs` for the
   real Rust implementation this binds.
 
+  # not pack-generated (no epm:AlgorithmBinding yet)
+
   See `Ex4pmEngine.Wasm.Adapter` for the shared six-state standing shape.
   Injected transport key: `:ewma_wasm_fun`.
   """

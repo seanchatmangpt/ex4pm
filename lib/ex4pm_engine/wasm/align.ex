@@ -1,10 +1,8 @@
 defmodule Ex4pmEngine.Wasm.Align do
   @moduledoc """
-  wasm4pm-ex4pm-bindings `align` adapter -- hand-written, not
-  generated. Thin wrapper over an already-implemented, plain
-  (non-wasm_bindgen) pub fn already present in the `wasm4pm`
-  crate. See `~/wasm4pm/crates/wasm4pm` for the real Rust
-  implementation this binds.
+  wasm4pm-ex4pm-bindings `align` adapter — generated from
+  `~/ggen-marketplace/packs/ex4pm-wasm4pm-bindings-pack`, source crate
+  `wasm4pm`.
 
   See `Ex4pmEngine.Wasm.Adapter` for the shared six-state standing shape.
   Injected transport key: `:align_wasm_fun`.
