@@ -264,4 +264,51 @@ defmodule Ex4pmEngine.Wasm.AlgoRegistry do
   @doc "All registered `algorithm_id` atoms, in registry order."
   @spec algorithm_ids() :: [atom()]
   def algorithm_ids, do: Enum.map(@specs, & &1.algorithm_id)
+
+  @engine_ranks [
+    {Ex4pmEngine.Wasm.Discover, 0},
+    {Ex4pmEngine.Wasm.Conform, 1},
+    {Ex4pmEngine.Wasm.Simulate, 2},
+    {Ex4pmEngine.Wasm.Optimize, 3},
+    {Ex4pmEngine.Wasm.PowlMine, 4},
+    {Ex4pmEngine.Wasm.Survival, 5},
+    {Ex4pmEngine.Wasm.Markov, 6},
+    {Ex4pmEngine.Wasm.Bayesian, 7},
+    {Ex4pmEngine.Wasm.OcpqEval, 8},
+    {Ex4pmEngine.Wasm.StripsPlan, 9},
+    {Ex4pmEngine.Wasm.HtnPlan, 10},
+    {Ex4pmEngine.Wasm.CtlCheck, 11},
+    {Ex4pmEngine.Wasm.AllenTemporal, 12},
+    {Ex4pmEngine.Wasm.Align, 13},
+    {Ex4pmEngine.Wasm.EtcPrecision, 14},
+    {Ex4pmEngine.Wasm.Soundness, 15},
+    {Ex4pmEngine.Wasm.Playout, 16},
+    {Ex4pmEngine.Wasm.OcDiscover, 17},
+    {Ex4pmEngine.Wasm.PrologQuery, 18},
+    {Ex4pmEngine.Wasm.Mean, 19},
+    {Ex4pmEngine.Wasm.Median, 20},
+    {Ex4pmEngine.Wasm.Percentile, 21},
+    {Ex4pmEngine.Wasm.StdDeviation, 22},
+    {Ex4pmEngine.Wasm.Standardize, 23},
+    {Ex4pmEngine.Wasm.DotProduct, 24},
+    {Ex4pmEngine.Wasm.EuclideanDistance, 25},
+    {Ex4pmEngine.Wasm.KsStatistic, 26},
+    {Ex4pmEngine.Wasm.KsCriticalValue, 27},
+    {Ex4pmEngine.Wasm.Regression, 28},
+    {Ex4pmEngine.Wasm.Forecast, 29},
+    {Ex4pmEngine.Wasm.HoltForecast, 30},
+    {Ex4pmEngine.Wasm.Ewma, 31},
+    {Ex4pmEngine.Wasm.TrendClassify, 32}
+  ]
+
+  @doc """
+  Adapter modules paired with their explicit `Ex4pm.Engine.Registry`
+  selection rank (from `ex4pmal:engineRank`), ordered by ascending rank.
+  """
+  @spec engine_ranks() :: [{module(), non_neg_integer()}]
+  def engine_ranks, do: @engine_ranks
+
+  @doc "Adapter modules in engine-registry rank order."
+  @spec engine_modules() :: [module()]
+  def engine_modules, do: Enum.map(@engine_ranks, &elem(&1, 0))
 end

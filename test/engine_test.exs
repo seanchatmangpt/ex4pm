@@ -61,7 +61,9 @@ defmodule Ex4pm.EngineTest do
   end
 
   test "registry preserves candidates without confusing inspection with execution" do
-    candidates = Engine.candidates(:discover)
+    # wasm_default: false disables the supervised Host fallback so this asserts the
+    # no-transport (blocked) standing deterministically, with or without a bundled artifact.
+    candidates = Engine.candidates(:discover, wasm_default: false)
 
     assert Enum.map(candidates, & &1.id) == [
              :wasm_discover,
@@ -83,6 +85,20 @@ defmodule Ex4pm.EngineTest do
              :wasm_playout,
              :wasm_oc_discover,
              :wasm_prolog_query,
+             :wasm_mean,
+             :wasm_median,
+             :wasm_percentile,
+             :wasm_std_deviation,
+             :wasm_standardize,
+             :wasm_dot_product,
+             :wasm_euclidean_distance,
+             :wasm_ks_statistic,
+             :wasm_ks_critical_value,
+             :wasm_regression,
+             :wasm_forecast,
+             :wasm_holt_forecast,
+             :wasm_ewma,
+             :wasm_trend_classify,
              :beam,
              :ex4pm_plan,
              :cmca_wasm,
@@ -185,5 +201,25 @@ defmodule Ex4pm.EngineTest do
 
     assert comparison.equivalent
     assert comparison.standing == :partial_alive
+  end
+
+  describe "zero-config wasm fallback does not displace :beam implicitly" do
+    @describetag :real_wasm
+    @describetag skip:
+                   if(Ex4pm.Test.WasmArtifact.available?(),
+                     do: false,
+                     else: "wasm4pm artifact not available (set EX4PM_WASM_ARTIFACT)"
+                   )
+
+    test "implicit :discover selection stays on :beam; prefer_wasm opts in" do
+      assert {:ok, Ex4pm.Engine.Beam} = Engine.select(:discover, [])
+      assert {:ok, Ex4pmEngine.Wasm.Discover} = Engine.select(:discover, prefer_wasm: true)
+      assert {:ok, Ex4pmEngine.Wasm.Discover} = Engine.select(:discover, engine: :wasm_discover)
+    end
+
+    test "explicit transport option still selects the wasm engine implicitly" do
+      assert {:ok, Ex4pmEngine.Wasm.Discover} =
+               Engine.select(:discover, discover_wasm_fun: fn _request, _opts -> :noop end)
+    end
   end
 end

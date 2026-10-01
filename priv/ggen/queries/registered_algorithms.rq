@@ -4,10 +4,11 @@
 PREFIX epm: <http://seanchatmangpt.github.io/packs/ex4pm-wasm4pm-bindings#>
 PREFIX ex4pmal: <https://chatman.ai/ex4pm/algorithm-registry#>
 PREFIX stl: <http://seanchatmangpt.github.io/packs/standing-ladder#>
-SELECT DISTINCT ?algorithm_id ?module_name ?export_name ?replay_export_name ?standing WHERE {
+SELECT DISTINCT ?algorithm_id ?module_name ?export_name ?replay_export_name ?standing ?engine_rank WHERE {
   ?reg a ex4pmal:RegisteredAlgorithm ;
        ex4pmal:binding ?binding ;
-       ex4pmal:standingClaim ?claim .
+       ex4pmal:standingClaim ?claim ;
+       ex4pmal:engineRank ?engine_rank .
   ?binding epm:algorithmId ?algorithm_id ;
            epm:elixirModuleName ?module_name ;
            epm:wasmExportName ?export_name ;

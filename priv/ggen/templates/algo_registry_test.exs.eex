@@ -65,4 +65,30 @@ defmodule Ex4pmEngine.Wasm.AlgoRegistryTest do
     assert AlgoRegistry.algo_specs() |> Enum.map(take) |> Enum.sort_by(& &1.algorithm_id) ==
              RealTransport.algo_specs() |> Enum.map(take) |> Enum.sort_by(& &1.algorithm_id)
   end
+
+  test "engine registry candidate ids are exactly the registered algorithms (+ non-algorithm engines)" do
+    algo_engine_ids = Enum.map(AlgoRegistry.algo_specs(), &:"wasm_#{&1.algorithm_id}")
+    registry_ids = Enum.map(Ex4pm.Engine.Registry.engines(), & &1.id())
+
+    assert Enum.sort(algo_engine_ids -- registry_ids) == []
+    assert Enum.sort(Enum.filter(registry_ids, &String.starts_with?(to_string(&1), "wasm_"))) ==
+             Enum.sort(algo_engine_ids ++ [:wasm_remote])
+
+    assert Enum.map(AlgoRegistry.engine_modules(), & &1.id()) |> Enum.sort() ==
+             Enum.sort(algo_engine_ids)
+
+    ranks = Enum.map(AlgoRegistry.engine_ranks(), &elem(&1, 1))
+    assert ranks == Enum.sort(Enum.uniq(ranks))
+    assert Enum.take(Ex4pm.Engine.Registry.engines(), length(algo_engine_ids)) ==
+             AlgoRegistry.engine_modules()
+  end
+
+  test "every registered algorithm id is an Engine.candidates/1 operation with a supporting engine" do
+    for id <- AlgoRegistry.algorithm_ids() do
+      engine_id = :"wasm_#{id}"
+      candidates = Ex4pm.Engine.candidates(id)
+      assert Enum.any?(candidates, &(&1.id == engine_id and &1.standing != :unsupported)),
+             "no supporting candidate for #{inspect(id)}"
+    end
+  end
 end

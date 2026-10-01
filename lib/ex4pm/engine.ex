@@ -39,69 +39,49 @@ defmodule Ex4pm.Engine.Registry do
   @moduledoc "Preserves the lawful engine graph and performs explicit/evidence-ranked selection."
 
   alias Ex4pm.Core.Capability
-  alias Ex4pm.Engine.{Beam, Beam4pm, CmcaWasm, Ex4pmPlan, Ferroplan, Nif, Remote, Wasm, WasmRemote}
 
-  alias Ex4pmEngine.Wasm.{
-    Align,
-    AllenTemporal,
-    Bayesian,
-    Conform,
-    CtlCheck,
-    Discover,
-    EtcPrecision,
-    HtnPlan,
-    Markov,
-    OcDiscover,
-    OcpqEval,
-    Optimize,
-    Playout,
-    PowlMine,
-    PrologQuery,
-    Simulate,
-    Soundness,
-    StripsPlan,
-    Survival
+  alias Ex4pm.Engine.{
+    Beam,
+    Beam4pm,
+    CmcaWasm,
+    Ex4pmPlan,
+    Ferroplan,
+    Nif,
+    Remote,
+    Wasm,
+    WasmRemote
   }
+
+  alias Ex4pmEngine.Wasm.AlgoRegistry
 
   alias Ex4pm.Refusal
 
-  @engines [
-    Discover,
-    Conform,
-    Simulate,
-    Optimize,
-    PowlMine,
-    Survival,
-    Markov,
-    Bayesian,
-    OcpqEval,
-    StripsPlan,
-    HtnPlan,
-    CtlCheck,
-    AllenTemporal,
-    Align,
-    EtcPrecision,
-    Soundness,
-    Playout,
-    OcDiscover,
-    PrologQuery,
-    Beam,
-    Ex4pmPlan,
-    CmcaWasm,
-    Wasm,
-    Nif,
-    Remote,
-    # Additional candidate only (Phase 1 of
-    # docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md) -- does not change the
-    # implicit/default selection order for any existing operation; only
-    # reachable via an explicit `engine: :beam4pm` opt or its own admitted
-    # operations, none of which any existing candidate above also claims.
-    Beam4pm,
-    WasmRemote,
-    # Native ferroplan engine: explicit-only (`engine: :ferroplan`), no ranked
-    # preference; falls to the default (99) clause below.
-    Ferroplan
-  ]
+  # The WASM-backed algorithm engines are derived from the generated
+  # Ex4pmEngine.Wasm.AlgoRegistry (ontology ex4pmal:engineRank -> ggen), in
+  # ascending rank order; the hand list below holds only the non-algorithm
+  # candidates.
+  @algo_engines AlgoRegistry.engine_modules()
+  @algo_id_ranks Map.new(AlgoRegistry.engine_ranks(), fn {module, rank} -> {module.id(), rank} end)
+
+  @engines @algo_engines ++
+             [
+               Beam,
+               Ex4pmPlan,
+               CmcaWasm,
+               Wasm,
+               Nif,
+               Remote,
+               # Additional candidate only (Phase 1 of
+               # docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md) -- does not change the
+               # implicit/default selection order for any existing operation; only
+               # reachable via an explicit `engine: :beam4pm` opt or its own admitted
+               # operations, none of which any existing candidate above also claims.
+               Beam4pm,
+               WasmRemote,
+               # Native ferroplan engine: explicit-only (`engine: :ferroplan`), no ranked
+               # preference; falls to the default (99) clause below.
+               Ferroplan
+             ]
 
   def engines, do: @engines
 
@@ -137,6 +117,7 @@ defmodule Ex4pm.Engine.Registry do
       nil ->
         candidates
         |> Enum.filter(&(&1.standing in [:alive, :partial_alive]))
+        |> Enum.reject(&beam_colliding_without_opt_in?(&1.id, opts))
         |> Enum.sort_by(fn candidate ->
           {preference(candidate.id), -Ex4pm.Standing.rank(candidate.standing)}
         end)
@@ -177,41 +158,38 @@ defmodule Ex4pm.Engine.Registry do
     end
   end
 
-  # Phase-1 wasm4pm-ex4pm-bindings engines rank above :beam so real WASM
-  # execution is preferred once :alive/:partial_alive; :beam remains the
-  # evidenced fallback (never deleted pre-emptively — see
-  # docs/ARD-v26.9.x.md "Phase-1 wasm4pm bindings").
-  defp preference(:wasm_discover), do: 0
-  defp preference(:wasm_conform), do: 1
-  defp preference(:wasm_simulate), do: 2
-  defp preference(:wasm_optimize), do: 3
-  defp preference(:wasm_powl_mine), do: 4
-  # Phase 2: thin wrappers over already-implemented wasm4pm-workspace
-  # algorithms (miniml/ocpq/wasm4pm-cognition) — same ranking discipline.
-  defp preference(:wasm_survival), do: 5
-  defp preference(:wasm_markov), do: 6
-  defp preference(:wasm_bayesian), do: 7
-  defp preference(:wasm_ocpq_eval), do: 8
-  defp preference(:wasm_strips_plan), do: 9
-  defp preference(:wasm_htn_plan), do: 10
-  defp preference(:wasm_ctl_check), do: 11
-  defp preference(:wasm_allen_temporal), do: 12
-  # Phase 3: unblocked wrappers over the same wasm4pm-workspace algorithms
-  # deferred at Phase-2 time (align/etc_precision/soundness/playout/
-  # oc_discover already-pub upstream; prolog_query real prolog8 Kernel
-  # integration) — same ranking discipline.
-  defp preference(:wasm_align), do: 13
-  defp preference(:wasm_etc_precision), do: 14
-  defp preference(:wasm_soundness), do: 15
-  defp preference(:wasm_playout), do: 16
-  defp preference(:wasm_oc_discover), do: 17
-  defp preference(:wasm_prolog_query), do: 18
-  defp preference(:beam), do: 19
-  defp preference(:ex4pm_plan), do: 20
-  defp preference(:cmca_wasm), do: 21
-  defp preference(:wasm), do: 22
-  defp preference(:nif), do: 23
-  defp preference(:remote), do: 24
+  # discover/conform/simulate/optimize are also served by the evidenced :beam engine and the
+  # wasm result shapes differ. A wasm engine that is available only through the supervised
+  # Host fallback therefore does NOT displace :beam in implicit selection; the caller opts in
+  # with `prefer_wasm: true`, an explicit `engine:`, or an explicit `<algo>_wasm_fun` transport.
+  @beam_colliding_wasm %{
+    wasm_discover: :discover_wasm_fun,
+    wasm_conform: :conform_wasm_fun,
+    wasm_simulate: :simulate_wasm_fun,
+    wasm_optimize: :optimize_wasm_fun
+  }
+
+  defp beam_colliding_without_opt_in?(id, opts) do
+    case Map.fetch(@beam_colliding_wasm, id) do
+      {:ok, fun_key} ->
+        not (Keyword.get(opts, :prefer_wasm, false) or Keyword.has_key?(opts, fun_key))
+
+      :error ->
+        false
+    end
+  end
+
+  # Algorithm engines (ranks 0..32) rank above :beam so real WASM execution is
+  # preferred once :alive/:partial_alive; their ranks come from the generated
+  # AlgoRegistry (ontology ex4pmal:engineRank). :beam remains the evidenced
+  # fallback (never deleted pre-emptively -- see docs/ARD-v26.9.x.md).
+  defp preference(id) when is_map_key(@algo_id_ranks, id), do: Map.fetch!(@algo_id_ranks, id)
+  defp preference(:beam), do: 40
+  defp preference(:ex4pm_plan), do: 41
+  defp preference(:cmca_wasm), do: 42
+  defp preference(:wasm), do: 43
+  defp preference(:nif), do: 44
+  defp preference(:remote), do: 45
   # Phase 1 additive candidate (docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md §6):
   # not ranked into the implicit-selection preference table yet — only reachable
   # via an explicit `engine: :wasm_remote` opt (as is :ferroplan, documented rank 99). Falls to the default (_ -> 99)
