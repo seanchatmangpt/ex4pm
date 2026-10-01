@@ -40,8 +40,15 @@ defmodule Ex4pm.EngineWasmRemoteTest do
   end
 
   describe "unavailable without a configured callback" do
-    test "no :wasm_remote_fun opt yields wasm_remote_unavailable refusal" do
+    test "registry refuses an explicit unconfigured :wasm_remote as unsupported" do
       assert {:error, refusal} = Engine.execute(:simulate, %{probe: true}, engine: :wasm_remote)
+
+      assert refusal.code == :unsupported_engine_operation
+    end
+
+    test "direct execute without :wasm_remote_fun opt yields wasm_remote_unavailable refusal" do
+      assert {:error, refusal} =
+               Ex4pm.Engine.WasmRemote.execute(:simulate, %{probe: true}, [])
 
       assert refusal.code == :wasm_remote_unavailable
     end

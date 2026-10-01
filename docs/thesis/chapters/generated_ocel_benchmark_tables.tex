@@ -4,7 +4,7 @@
 % Reproducibility: run `mix ex4pm.ocel_to_latex <path_to_ocel.ndjson>`
 % ==========================================================================
 
-\subsection{Empirical Execution Benchmark (Full 143 Event Ingestion)}
+\subsection{Empirical Execution Benchmark (Full 4910 Event Ingestion)}
 
 \begin{table}[ht!]
 \centering
@@ -13,20 +13,20 @@
 \toprule
 \textbf{Benchmark Dimension} & \textbf{Observed Measurement} & \textbf{Unit} \\
 \midrule
-\textbf{Total Ingested Events} & \textbf{143} & events \\
-Ingestion Execution Wall Time & 1 & ms \\
-\textbf{Peak Streaming Rate} & \textbf{143.0} & ev/sec \\
-Discovered Unique Activities & 26 & actions \\
-Discovered Object Types & 12 & types \\
+\textbf{Total Ingested Events} & \textbf{4910} & events \\
+Ingestion Execution Wall Time & 28 & ms \\
+\textbf{Peak Streaming Rate} & \textbf{4910.0} & ev/sec \\
+Discovered Unique Activities & 31 & actions \\
+Discovered Object Types & 11 & types \\
 \midrule
-\textbf{Shannon Log Entropy $H(\mathcal{L})$} & \textbf{4.258} & bits \\
-Log-Normal Parameter $\hat{\mu}$ & 0.1571 & -- \\
-Log-Normal Parameter $\hat{\sigma}$ & 0.4694 & -- \\
-Mean Action Duration & 0.67 & ms \\
-P50 (Median) Latency & 0 & ms \\
-P90 Latency & 2 & ms \\
-\textbf{P99 Tail Bottleneck Latency} & \textbf{7} & ms \\
-Maximum Observed Latency & 15 & ms \\
+\textbf{Shannon Log Entropy $H(\mathcal{L})$} & \textbf{2.0915} & bits \\
+Log-Normal Parameter $\hat{\mu}$ & 0.3559 & -- \\
+Log-Normal Parameter $\hat{\sigma}$ & 0.9306 & -- \\
+Mean Action Duration & 4.46 & ms \\
+P50 (Median) Latency & 1 & ms \\
+P90 Latency & 3 & ms \\
+\textbf{P99 Tail Bottleneck Latency} & \textbf{80} & ms \\
+Maximum Observed Latency & 2091 & ms \\
 \bottomrule
 \end{tabular}
 \caption{Information-theoretic entropy and log-normal latency parameters estimated from the full 647k production OCEL 2.0 dataset.}
@@ -42,18 +42,18 @@ Maximum Observed Latency & 15 & ms \\
 \toprule
 \textbf{Discovered Activity} & \textbf{Enterprise Domain} & \textbf{Count} \\
 \midrule
-\texttt{org.read} & Accounts & 20 \\
-\texttt{org.create} & Accounts & 15 \\
-\texttt{book.read} & Enterprise Core & 14 \\
-\texttt{account.read} & Accounts & 11 \\
-\texttt{book.ash\_ai\_update\_embeddings} & Enterprise Core & 11 \\
-\texttt{event\_log.create} & Enterprise Core & 7 \\
-\texttt{incident.read} & Operations & 6 \\
-\texttt{account.open} & Accounts & 5 \\
-\texttt{approval\_sla\_credit\_apply.create} & Governance & 5 \\
-\texttt{book.create} & Enterprise Core & 5 \\
-\texttt{approval\_environment\_promote.read} & Governance & 4 \\
-\texttt{approval\_sla\_credit\_apply.approve} & Governance & 4 \\
+\texttt{epoch.read\_unscoped} & Enterprise Core & 3102 \\
+\texttt{run.read\_unscoped} & Enterprise Core & 676 \\
+\texttt{receipt.seal} & Enterprise Core & 303 \\
+\texttt{internal\_api\_token.by\_hash} & Enterprise Core & 234 \\
+\texttt{receipt.for\_epoch} & Enterprise Core & 122 \\
+\texttt{run.tick} & Enterprise Core & 98 \\
+\texttt{actuation\_receipt.read} & Enterprise Core & 82 \\
+\texttt{actuation\_intent.read} & Enterprise Core & 56 \\
+\texttt{actuation\_intent.transition} & Enterprise Core & 28 \\
+\texttt{run.transition\_state} & Enterprise Core & 24 \\
+\texttt{run.engine\_cycle} & Enterprise Core & 21 \\
+\texttt{webhook\_delivery.read} & Platform & 21 \\
 \bottomrule
 \end{tabular}
 \caption{Top-12 activity execution frequencies extracted directly from the IEEE OCEL 2.0 stream.}
@@ -69,16 +69,16 @@ Maximum Observed Latency & 15 & ms \\
 \toprule
 \textbf{Source Activity} & \textbf{Target Activity} & \textbf{Count} \\
 \midrule
-\texttt{org.create} $\to$ \texttt{org.read} & & 9 \\
-\texttt{book.read} $\to$ \texttt{book.ash\_ai\_update\_embeddings} & & 9 \\
-\texttt{org.read} $\to$ \texttt{org.read} & & 8 \\
-\texttt{org.read} $\to$ \texttt{org.create} & & 7 \\
-\texttt{account.read} $\to$ \texttt{event\_log.create} & & 5 \\
-\texttt{event\_log.create} $\to$ \texttt{account.open} & & 5 \\
-\texttt{approval\_sla\_credit\_apply.create} $\to$ \texttt{account.read} & & 4 \\
-\texttt{book.borrow\_copy} $\to$ \texttt{checkout.borrow} & & 4 \\
-\texttt{book.ash\_ai\_update\_embeddings} $\to$ \texttt{book.borrow\_copy} & & 4 \\
-\texttt{book.ash\_ai\_update\_embeddings} $\to$ \texttt{book.create} & & 4 \\
+\texttt{epoch.read\_unscoped} $\to$ \texttt{epoch.read\_unscoped} & & 3091 \\
+\texttt{run.read\_unscoped} $\to$ \texttt{run.read\_unscoped} & & 540 \\
+\texttt{receipt.seal} $\to$ \texttt{receipt.seal} & & 286 \\
+\texttt{internal\_api\_token.by\_hash} $\to$ \texttt{internal\_api\_token.by\_hash} & & 233 \\
+\texttt{receipt.for\_epoch} $\to$ \texttt{receipt.for\_epoch} & & 106 \\
+\texttt{run.tick} $\to$ \texttt{run.read\_unscoped} & & 97 \\
+\texttt{run.read\_unscoped} $\to$ \texttt{run.tick} & & 84 \\
+\texttt{actuation\_receipt.read} $\to$ \texttt{actuation\_receipt.read} & & 40 \\
+\texttt{actuation\_intent.read} $\to$ \texttt{actuation\_intent.read} & & 28 \\
+\texttt{actuation\_intent.transition} $\to$ \texttt{actuation\_intent.read} & & 27 \\
 \bottomrule
 \end{tabular}
 \caption{Top-10 most frequent directly-follows transitions across the full event log. Stochastic row-normalized probabilities $P_{ij}$ are available in the companion supplementary matrix.}
@@ -94,26 +94,26 @@ Maximum Observed Latency & 15 & ms \\
 \toprule
 \textbf{Activity (Ordered by Frequency)} & \textbf{Event Count} & \textbf{Cumulative Coverage (\%)} \\
 \midrule
-\texttt{org.read} & 20 & 13.99\% \\
-\texttt{org.create} & 15 & 24.48\% \\
-\texttt{book.read} & 14 & 34.27\% \\
-\texttt{account.read} & 11 & 41.96\% \\
-\texttt{book.ash\_ai\_update\_embeddings} & 11 & 49.65\% \\
-\texttt{event\_log.create} & 7 & 54.55\% \\
-\texttt{incident.read} & 6 & 58.74\% \\
-\texttt{account.open} & 5 & 62.24\% \\
-\texttt{approval\_sla\_credit\_apply.create} & 5 & 65.73\% \\
-\texttt{book.create} & 5 & 69.23\% \\
-\texttt{approval\_environment\_promote.read} & 4 & 72.03\% \\
-\texttt{approval\_sla\_credit\_apply.approve} & 4 & 74.83\% \\
-\texttt{book.borrow\_copy} & 4 & 77.62\% \\
-\texttt{checkout.borrow} & 4 & 80.42\% \\
-\texttt{incident.create} & 4 & 83.22\% \\
-\texttt{approval\_environment\_promote.create} & 3 & 85.31\% \\
-\texttt{balance.read} & 3 & 87.41\% \\
-\texttt{book.return\_copy} & 3 & 89.51\% \\
-\texttt{checkout.return} & 3 & 91.61\% \\
-\texttt{hold\_request.oldest\_active\_for\_book} & 3 & 93.71\% \\
+\texttt{epoch.read\_unscoped} & 3102 & 63.18\% \\
+\texttt{run.read\_unscoped} & 676 & 76.95\% \\
+\texttt{receipt.seal} & 303 & 83.12\% \\
+\texttt{internal\_api\_token.by\_hash} & 234 & 87.88\% \\
+\texttt{receipt.for\_epoch} & 122 & 90.37\% \\
+\texttt{run.tick} & 98 & 92.36\% \\
+\texttt{actuation\_receipt.read} & 82 & 94.03\% \\
+\texttt{actuation\_intent.read} & 56 & 95.17\% \\
+\texttt{actuation\_intent.transition} & 28 & 95.74\% \\
+\texttt{run.transition\_state} & 24 & 96.23\% \\
+\texttt{run.engine\_cycle} & 21 & 96.66\% \\
+\texttt{webhook\_delivery.read} & 21 & 97.09\% \\
+\texttt{webhook\_delivery.retry\_failed\_deliveries} & 21 & 97.52\% \\
+\texttt{actuation\_intent.admit} & 14 & 97.8\% \\
+\texttt{actuation\_receipt.checkpoint} & 14 & 98.09\% \\
+\texttt{actuation\_receipt.prepare} & 14 & 98.37\% \\
+\texttt{actuation\_receipt.seal} & 14 & 98.66\% \\
+\texttt{route\_castle\_run.execute} & 14 & 98.94\% \\
+\texttt{run.create} & 12 & 99.19\% \\
+\texttt{epoch.create} & 11 & 99.41\% \\
 \bottomrule
 \end{tabular}
 \caption{Pareto cumulative event coverage across top-20 activities, demonstrating the long-tail concentration in the production event log.}

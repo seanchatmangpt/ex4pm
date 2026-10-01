@@ -1,4 +1,4 @@
-defmodule Ex4pmCore.WS5.ChicagoEnvTest do
+defmodule Ex4pmCore.WS5.ChicagoEnvStageTest do
   use ExUnit.Case, async: true
 
   test "Chicago verifier remains bound to MIX_ENV=test" do
