@@ -1,0 +1,40 @@
+{
+  "protocol": "wasm4pm.ex4pm-bindings/v1",
+  "_comment": "artifact.sha256 is null: the built artifact was observed being rebuilt during authoring (two different digests within minutes), so the coordinator must pin it at integration. While null, RealTransport.start/1,2 refuses with :wasm_digest_unpinned unless called with expected_sha256: :unpinned or Application env :ex4pm :wasm4pm_sha256. host_abi.imports is the SOLE import allowlist (Ex4pmEngine.Wasm.Admission) AND the source of the instantiation stubs (RealTransport); an empty list means the artifact may import nothing. The list was reconciled against the real artifact at ~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm (Wasmex.Module.imports: exactly these 3 imports, all other 84 formerly-stubbed __wbindgen imports are gone). The coordinator empties this list when a zero-import artifact lands.",
+  "artifact": {
+    "path": "~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm",
+    "sha256": null
+  },
+  "host_abi": {
+    "imports": [
+      {
+        "module": "__wbindgen_placeholder__",
+        "name": "__wbindgen_object_drop_ref",
+        "params": [
+          "i32"
+        ],
+        "results": []
+      },
+      {
+        "module": "__wbindgen_placeholder__",
+        "name": "__wbindgen_string_get",
+        "params": [
+          "i32",
+          "i32"
+        ],
+        "results": []
+      },
+      {
+        "module": "__wbindgen_placeholder__",
+        "name": "__wbindgen_string_new",
+        "params": [
+          "i32",
+          "i32"
+        ],
+        "results": [
+          "i32"
+        ]
+      }
+    ]
+  }
+}
