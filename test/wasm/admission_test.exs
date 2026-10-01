@@ -10,8 +10,8 @@ defmodule Ex4pmEngine.Wasm.AdmissionTest do
       below as base64; source in `@fixture_wat`) implementing the ex4pm ABI
       (alloc/free/dealloc, `discover`, `<algo>_replay_v1`) plus deliberately
       misbehaving exports -- always runs;
-    * the real `wasm4pm_ex4pm_bindings.wasm` artifact (override path with
-      `EX4PM_WASM_ARTIFACT`) -- skipped when absent unless
+    * the real `wasm4pm_ex4pm_bindings.wasm` artifact (resolved by
+      `Ex4pm.Test.WasmArtifact.path/0`) -- skipped when absent unless
       `EX4PM_WASM_REQUIRED=1`, which turns absence into a failure.
   """
   use ExUnit.Case, async: true
@@ -19,12 +19,10 @@ defmodule Ex4pmEngine.Wasm.AdmissionTest do
   alias Ex4pm.Refusal
   alias Ex4pmEngine.Wasm.{Admission, RealTransport}
 
-  @artifact_path System.get_env("EX4PM_WASM_ARTIFACT") ||
-                   Path.expand(
-                     "~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm"
-                   )
-  @skip_artifact_tests not (File.regular?(@artifact_path) or
-                              System.get_env("EX4PM_WASM_REQUIRED") == "1")
+  @artifact_path Ex4pm.Test.WasmArtifact.path()
+  # nil when the artifact exists; a skip reason when absent; raises (=> failure)
+  # under EX4PM_WASM_REQUIRED=1.
+  @artifact_skip_reason Ex4pm.Test.WasmArtifact.skip_reason()
 
   # (module (import "env" "host_fn" (func (param i32) (result i32))) ...) -- exports:
   # memory, alloc/free/dealloc_v1, discover_v1 (+replay), badreplay/badutf8/badjson/
@@ -301,9 +299,8 @@ defmodule Ex4pmEngine.Wasm.AdmissionTest do
   end
 
   describe "Admission against the real wasm4pm artifact" do
-    if @skip_artifact_tests do
-      @describetag skip:
-                     "wasm artifact not built: #{@artifact_path} (EX4PM_WASM_REQUIRED=1 to fail)"
+    if @artifact_skip_reason do
+      @describetag skip: @artifact_skip_reason
     end
 
     test "unmodified artifact admits under the manifest allowlist; wrong pin refuses" do

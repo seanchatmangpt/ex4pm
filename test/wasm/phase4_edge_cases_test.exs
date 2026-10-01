@@ -16,18 +16,18 @@ defmodule Ex4pmEngine.Wasm.Phase4EdgeCasesTest do
 
   alias Ex4pmEngine.Wasm.RealTransport
 
-  @artifact_path Path.expand(
-                   "~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm"
-                 )
+  @artifact_path Ex4pm.Test.WasmArtifact.path()
 
   # ExUnit setup callbacks may only return :ok, a keyword, or a map; an absent
   # artifact is a named, visible module-level skip (not a silent pass).
-  unless File.regular?(@artifact_path) do
-    @moduletag skip: "wasm artifact not built: #{@artifact_path}"
+  if reason = Ex4pm.Test.WasmArtifact.skip_reason() do
+    @moduletag skip: reason
   end
 
   setup do
-    {:ok, instance} = RealTransport.start(@artifact_path)
+    {:ok, instance} =
+      RealTransport.start(@artifact_path, expected_sha256: Ex4pm.Test.WasmArtifact.pin())
+
     {:ok, instance: instance}
   end
 

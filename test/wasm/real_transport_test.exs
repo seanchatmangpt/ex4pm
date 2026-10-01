@@ -5,8 +5,8 @@ defmodule Ex4pmEngine.Wasm.RealTransportTest do
   `Wasmex` instance -- alloc, write, call, read, free, all against real
   linear memory -- rather than a fixture closure.
 
-  Artifact location: `EX4PM_WASM_ARTIFACT`, defaulting to the canonical
-  `~/wasm4pm` release build. When the artifact is absent:
+  Artifact location: `Ex4pm.Test.WasmArtifact.path/0` (EX4PM_WASM_ARTIFACT, app env,
+  bundled priv, then local build fallbacks). When the artifact is absent:
 
     * `EX4PM_WASM_REQUIRED=1` -> every test FAILS (a vacuous pass is a
       defect; `scripts/falsify-wasm-e2e.sh` sets this).
@@ -16,38 +16,17 @@ defmodule Ex4pmEngine.Wasm.RealTransportTest do
 
   alias Ex4pmEngine.Wasm.RealTransport
 
-  @artifact_path System.get_env("EX4PM_WASM_ARTIFACT") ||
-                   Path.expand(
-                     "~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm"
-                   )
-  required? = System.get_env("EX4PM_WASM_REQUIRED") == "1"
-
-  # ExUnit setup callbacks may only return :ok, a keyword, or a map; an absent
-  # artifact is a named, visible module-level skip (not a silent pass) unless
-  # EX4PM_WASM_REQUIRED=1, in which case setup flunks below.
-  if not File.regular?(@artifact_path) and not required? do
-    @moduletag skip: "wasm artifact not built: #{@artifact_path}"
+  @artifact_path Ex4pm.Test.WasmArtifact.path()
+  # Absent artifact: named module-level skip; EX4PM_WASM_REQUIRED=1 makes
+  # skip_reason/0 raise, so absence fails instead of passing vacuously.
+  if reason = Ex4pm.Test.WasmArtifact.skip_reason() do
+    @moduletag skip: reason
   end
 
   setup do
-    unless File.regular?(@artifact_path) do
-      flunk(
-        "REFUSED_ARTIFACT_MISSING: EX4PM_WASM_REQUIRED=1 but wasm artifact absent: #{@artifact_path}"
-      )
-    end
-
-    # Digest pin for admission: EX4PM_WASM_SHA256 when set (the falsify script
-    # exports the sha256 of the artifact it built); otherwise the artifact's
-    # own sha256. This test proves the real ABI transport, not artifact
-    # provenance -- provenance pinning is Admission's own court.
-    pin =
-      case System.get_env("EX4PM_WASM_SHA256") do
-        hex when hex in [nil, ""] ->
-          :crypto.hash(:sha256, File.read!(@artifact_path)) |> Base.encode16(case: :lower)
-
-        hex ->
-          hex
-      end
+    # Digest pin: EX4PM_WASM_SHA256 or the artifact's own sha256 (this test proves
+    # the ABI transport; provenance pinning is Admission's own court).
+    pin = Ex4pm.Test.WasmArtifact.pin()
 
     start_opts = [expected_sha256: pin]
 
@@ -148,5 +127,42 @@ defmodule Ex4pmEngine.Wasm.RealTransportTest do
 
     assert result.standing == :alive
     assert result.value["activities"] == ["a", "b", "c"]
+  end
+
+  @tag :real_wasm
+  test "opts[:timeout] reaches the real Wasmex call: timeout 0 yields a typed :call_timeout refusal, and the instance stays usable",
+       %{instance: instance} do
+    request = %{"traces" => [["a", "b", "c"], ["a", "b"]]}
+
+    assert {:error, %Ex4pm.Refusal{code: :call_timeout}} =
+             RealTransport.call(instance, "wasm4pm_ex4pm_discover_v1", request, timeout: 0)
+
+    assert {:error, %Ex4pm.Refusal{code: :call_timeout}} =
+             RealTransport.replay(instance, "wasm4pm_ex4pm_discover_replay_v1", request,
+               timeout: 0
+             )
+
+    # Same instance, default timeout: still a real, correct answer.
+    assert {:ok, %{"result" => %{"activities" => _}}} =
+             RealTransport.call(instance, "wasm4pm_ex4pm_discover_v1", request)
+  end
+
+  @tag :real_wasm
+  test "default_transport/2 forwards execute/3 opts[:timeout] to the real wasm calls", %{
+    instance: instance
+  } do
+    transport =
+      RealTransport.default_transport(instance, %{
+        export_name: "wasm4pm_ex4pm_discover_v1",
+        replay_export_name: "wasm4pm_ex4pm_discover_replay_v1",
+        algorithm_id: :discover,
+        protocol: Ex4pmEngine.Wasm.Adapter.protocol(),
+        wasm4pm_source_sha: Ex4pmEngine.Wasm.Adapter.wasm4pm_source_sha()
+      })
+
+    request = %{"traces" => [["a", "b"]]}
+
+    assert {:error, %Ex4pm.Refusal{code: :call_timeout}} = transport.(request, timeout: 0)
+    assert {:ok, _response, %{replay_verified: true}} = transport.(request, [])
   end
 end

@@ -1,7 +1,7 @@
 defmodule Ex4pmEngine.Wasm.RealTransport do
   @moduledoc """
   The real Wasmex-backed transport for every `Ex4pmEngine.Wasm.*` adapter
-  (`discover`, `conform`, `align`, `htn_plan`, ... all 19 Phase-1/2/3
+  (`discover`, `conform`, `align`, `htn_plan`, ... all 33 registered
   algorithms) -- the piece the CI workflow
   (`.github/workflows/wasm4pm-bindings-integration.yml`) explicitly names as
   "follow-on work, tracked in docs/ARD-v26.9.x-wasm4pm-phase1.md": every
@@ -284,9 +284,13 @@ defmodule Ex4pmEngine.Wasm.RealTransport do
       wasm4pm_source_sha: wasm4pm_source_sha
     } = algo
 
-    fn request, _opts ->
-      with {:ok, response} <- call(instance, export_name, request),
-           {:ok, replayed?} <- replay(instance, replay_export_name, request) do
+    fn request, opts ->
+      # Per-call limits (`:timeout`, `:max_request_bytes`, `:max_response_bytes`)
+      # supplied by the adapter's `execute/3` opts reach the real Wasmex calls.
+      call_opts = Keyword.take(opts, [:timeout, :max_request_bytes, :max_response_bytes])
+
+      with {:ok, response} <- call(instance, export_name, request, call_opts),
+           {:ok, replayed?} <- replay(instance, replay_export_name, request, call_opts) do
         result_digest = Map.get(response, "digest") || ""
 
         receipt = %{

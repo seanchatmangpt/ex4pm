@@ -66,7 +66,7 @@ end
 
 defmodule Ex4pmEngine.Reactors.WasmCapabilitiesReactor do
   @moduledoc """
-  Triggers all 19 real `wasm4pm-ex4pm-bindings` process-intelligence
+  Triggers all 33 real `wasm4pm-ex4pm-bindings` process-intelligence
   algorithms as Reactor steps against ONE shared, real Wasmex instance --
   the "wasm4pm capabilities triggered by reactors" requirement.
 

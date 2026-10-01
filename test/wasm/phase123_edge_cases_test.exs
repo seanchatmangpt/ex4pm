@@ -13,18 +13,18 @@ defmodule Ex4pmEngine.Wasm.Phase123EdgeCasesTest do
 
   alias Ex4pmEngine.Wasm.RealTransport
 
-  @artifact_path Path.expand(
-                   "~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm"
-                 )
+  @artifact_path Ex4pm.Test.WasmArtifact.path()
 
   # ExUnit setup callbacks may only return :ok, a keyword, or a map; an absent
   # artifact is a named, visible module-level skip (not a silent pass).
-  unless File.regular?(@artifact_path) do
-    @moduletag skip: "wasm artifact not built: #{@artifact_path}"
+  if reason = Ex4pm.Test.WasmArtifact.skip_reason() do
+    @moduletag skip: reason
   end
 
   setup do
-    {:ok, instance} = RealTransport.start(@artifact_path)
+    {:ok, instance} =
+      RealTransport.start(@artifact_path, expected_sha256: Ex4pm.Test.WasmArtifact.pin())
+
     {:ok, instance: instance}
   end
 
@@ -269,25 +269,48 @@ defmodule Ex4pmEngine.Wasm.Phase123EdgeCasesTest do
 
   @tag :real_wasm
   test "all 19 Phase-1/2/3 replay exports agree with a direct recompute", %{instance: i} do
-    checks = [
-      {"wasm4pm_ex4pm_discover_replay_v1", %{traces: [["a", "b"]]}},
-      {"wasm4pm_ex4pm_conform_replay_v1",
-       %{traces: [["a", "b"]], model_edges: [%{from: "a", to: "b"}]}},
-      {"wasm4pm_ex4pm_simulate_replay_v1",
-       %{edges: [%{from: "a", to: "b"}], start: "a", steps: 1, seed: 1}},
-      {"wasm4pm_ex4pm_optimize_replay_v1",
-       %{edges: [%{from: "a", to: "b", duration: 1.0}], start: "a", end: "b"}},
-      {"wasm4pm_ex4pm_powl_mine_replay_v1", %{traces: [["a", "b"]]}},
-      {"wasm4pm_ex4pm_survival_replay_v1", %{times: [1.0, 2.0], events: [1.0, 0.0]}},
-      {"wasm4pm_ex4pm_markov_replay_v1",
-       %{transition_matrix: [0.5, 0.5, 0.5, 0.5], n_states: 2, max_iter: 10, tol: 1.0e-6}},
-      {"wasm4pm_ex4pm_bayesian_replay_v1",
-       %{data: [1.0, 2.0], n_features: 1, targets: [2.0, 4.0]}}
-    ]
+    phase123 = ~w(discover conform simulate optimize powl_mine survival markov bayesian
+                  ocpq_eval strips_plan htn_plan ctl_check allen_temporal oc_discover
+                  align etc_precision soundness playout prolog_query)a
 
-    for {export, request} <- checks do
-      assert {:ok, true} = RealTransport.replay(i, export, request),
-             "#{export} failed real replay verification"
+    assert length(phase123) == 19
+    requests = Ex4pm.Test.WasmArtifact.canonical_requests()
+    specs = Map.new(RealTransport.algo_specs(), &{&1.algorithm_id, &1})
+
+    for id <- phase123 do
+      spec = Map.fetch!(specs, id)
+      request = Map.fetch!(requests, id)
+
+      assert {:ok, true} = RealTransport.replay(i, spec.replay_export_name, request),
+             "#{spec.replay_export_name} failed real replay verification"
+
+      # The forward export also runs for real on the same request.
+      assert {:ok, %{"result" => _}} = RealTransport.call(i, spec.export_name, request),
+             "#{spec.export_name} failed real execution"
     end
+  end
+
+  @tag :real_wasm
+  test "etc_precision: real call returns a precision value and its replay agrees", %{instance: i} do
+    request = Ex4pm.Test.WasmArtifact.canonical_requests().etc_precision
+    result = result!(i, "wasm4pm_ex4pm_etc_precision_v1", request)
+
+    refute Map.has_key?(result, "error")
+    assert Map.has_key?(result, "precision")
+
+    assert {:ok, true} =
+             RealTransport.replay(i, "wasm4pm_ex4pm_etc_precision_replay_v1", request)
+  end
+
+  @tag :real_wasm
+  test "playout: real call produces traces from the two-transition net and replay agrees", %{
+    instance: i
+  } do
+    request = Ex4pm.Test.WasmArtifact.canonical_requests().playout
+    result = result!(i, "wasm4pm_ex4pm_playout_v1", request)
+
+    refute Map.has_key?(result, "error")
+    assert is_map(result)
+    assert {:ok, true} = RealTransport.replay(i, "wasm4pm_ex4pm_playout_replay_v1", request)
   end
 end
