@@ -1,0 +1,73 @@
+name: ex4pm-global-topology-observer
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: Fly application to observe
+        required: true
+        default: ex4pm-control-plane
+      fault_injection:
+        description: Explicitly stop/start one observed machine after attestation
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  topology:
+    runs-on: ubuntu-latest
+    env:
+      EX4PM_SUBJECT_SHA: ${{ github.sha }}
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      FLY_APP: ${{ inputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+
+      - name: Verify exact subject identity
+        run: test "$(git rev-parse HEAD)" = "$EX4PM_SUBJECT_SHA"
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Observe provider machine identities
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$FLY_API_TOKEN"
+          mkdir -p artifacts/qualification/global
+          flyctl machine list --app "$FLY_APP" --json > artifacts/qualification/global/fly-machines.json
+
+      - name: Independently verify topology attestations
+        run: |
+          python3 scripts/qualify-fly-topology.py \
+            artifacts/qualification/global/fly-machines.json \
+            --source-sha "$EX4PM_SUBJECT_SHA" \
+            --output-dir artifacts/qualification/global/attestations
+
+      - name: Explicit external fault injection
+        if: ${{ inputs.fault_injection }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          victim="$(python3 - <<'PY'
+          import json
+          value=json.load(open('artifacts/qualification/global/fly-machines.json'))
+          machines=value.get('machines', value) if isinstance(value, dict) else value
+          print(machines[0]['id'])
+          PY
+          )"
+          printf 'victim=%s\n' "$victim" | tee artifacts/qualification/global/fault-injection.txt
+          flyctl machine stop "$victim" --app "$FLY_APP"
+          flyctl machine start "$victim" --app "$FLY_APP"
+          printf 'result=stop-start-completed\n' >> artifacts/qualification/global/fault-injection.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ex4pm-global-topology-${{ env.EX4PM_SUBJECT_SHA }}
+          path: artifacts/qualification/global/
+          if-no-files-found: error
