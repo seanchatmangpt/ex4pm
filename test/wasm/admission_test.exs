@@ -184,9 +184,11 @@ defmodule Ex4pmEngine.Wasm.AdmissionTest do
                Admission.admit(trunc, fixture_opts(expected_sha256: sha_hex(trunc)))
     end
 
-    test "default allowlist comes from MANIFEST.json (well-formed entries, protocol pinned)" do
+    test "default allowlist comes from MANIFEST.json (zero-import artifact => empty, protocol pinned)" do
       allow = Admission.import_allowlist()
-      assert allow != []
+      # The pinned artifact is built with no host imports (build-wasm.sh), so the
+      # allowlist is empty and admission refuses ANY import (fail closed).
+      assert allow == []
 
       assert Enum.all?(allow, fn {m, n, p, r} ->
                is_binary(m) and is_binary(n) and is_list(p) and is_list(r)

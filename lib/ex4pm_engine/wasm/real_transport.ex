@@ -45,37 +45,16 @@ defmodule Ex4pmEngine.Wasm.RealTransport do
   Wasmtime runtime configured by the `wasmex` dep and every byte written or
   read crosses that real boundary.
 
-  ## The real, independently discovered `__wbindgen_placeholder__` gap
+  ## Zero-import artifact
 
-  `wasm4pm-ex4pm-bindings` links the full `wasm4pm` crate, whose
-  `Cargo.toml` declares `wasm-bindgen` as a mandatory (non-optional,
-  non-feature-gated) dependency and carries 111 unconditionally-compiled
-  `#[wasm_bindgen]`-attributed items across its ML/stats/drift modules --
-  code this crate's own `discover`/`conform`/`align`/etc. exports never
-  call, but which the linker still considers reachable. The resulting
-  `wasm4pm_ex4pm_bindings.wasm` therefore imports 87 `__wbindgen_placeholder__`
-  / `__wbindgen_externref_xform__` host functions it does not itself define
-  -- confirmed for real by parsing the compiled artifact's own WASM import
-  section (`wasm-objdump`-equivalent: every import type here was read
-  directly from the binary's Type/Import sections, not assumed), and every
-  one of the 87 uses only `i32`/`i64`/`f64` params/results (wasm-bindgen's
-  classic non-reference-types ABI) -- Wasmex's documented import type set
-  (`:i32`/`:i64`/`:v128`/`:f32`/`:f64`, no `:externref`) covers all of them.
-  `stub_imports/1` (derived from the admitted `priv/wasm4pm/MANIFEST.json`
-  `host_abi.imports` allowlist -- the single source shared with
-  `Ex4pmEngine.Wasm.Admission`) supplies all 87 as real, correctly-signed
-  Wasmex import stubs returning zero-valued results. They are provided
-  ONLY to satisfy WASM instantiation-time import resolution; none of the
-  19 `<algo>_v1` exports this module actually drives reach any JS-interop
-  code path at runtime, so these stubs are never invoked in the executions
-  this module performs -- this is not faking algorithm behavior, it is
-  satisfying dead, unrelated linkage the upstream crate currently leaves in
-  the artifact unconditionally. The real, minimal fix belongs upstream (make
-  `wasm-bindgen` and its 111 call sites genuinely optional behind the
-  `browser` feature in `~/wasm4pm/wasm4pm/Cargo.toml`); that is a
-  cross-cutting refactor of code this module does not own, so this is
-  documented here as the real, named, still-open upstream gap rather than
-  silently worked around.
+  The artifact is linked by `wasm4pm-ex4pm-bindings/scripts/build-wasm.sh`
+  (staticlib + `rust-lld`, exporting only the allowlisted `export_name`
+  symbols) and imports NOTHING. `priv/wasm4pm/MANIFEST.json`
+  `host_abi.imports` is therefore empty, and `Ex4pmEngine.Wasm.Admission`
+  refuses any artifact that imports a host function. `stub_imports/1` only
+  materializes imports that an explicit `:import_allowlist` override admits
+  (used by tests against a real fixture module); for the production
+  allowlist it yields `%{}`.
   """
 
   alias Ex4pm.Core.Hash
@@ -154,60 +133,19 @@ defmodule Ex4pmEngine.Wasm.RealTransport do
         }
 
   @doc """
-  The real, closed registry of all 19 `Ex4pmEngine.Wasm.*` Phase-1/2/3
-  adapters -- one entry per `<algo>_v1`/`<algo>_replay_v1` export pair the
-  `wasm4pm-ex4pm-bindings` crate exposes (verified against
-  `~/wasm4pm/crates/wasm4pm-ex4pm-bindings/src/{lib,phase2,phase2_playout,prolog}.rs`).
-  This is the single source of truth `Ex4pmEngine.Reactors.WasmCapabilitiesReactor`
-  and any Chicago test wiring `default_transport/2` should read from, rather
-  than each re-deriving export-name strings by hand.
+  The closed registry of all 33 `Ex4pmEngine.Wasm.*` adapters -- one entry per
+  `<algo>_v1`/`<algo>_replay_v1` export pair the `wasm4pm-ex4pm-bindings` crate
+  exposes. Delegates to the GENERATED `Ex4pmEngine.Wasm.AlgoRegistry` (source:
+  `priv/ontology/ex4pm.ttl` plus the vendored bindings pack), so there is one
+  registry, not two. The generated `:standing` key is dropped to keep this
+  function's shape unchanged for existing consumers.
   """
   @spec algo_specs() :: [algo_spec()]
   def algo_specs do
-    [
-      %{module: Ex4pmEngine.Wasm.Discover, algorithm_id: :discover},
-      %{module: Ex4pmEngine.Wasm.Conform, algorithm_id: :conform},
-      %{module: Ex4pmEngine.Wasm.Simulate, algorithm_id: :simulate},
-      %{module: Ex4pmEngine.Wasm.Optimize, algorithm_id: :optimize},
-      %{module: Ex4pmEngine.Wasm.PowlMine, algorithm_id: :powl_mine},
-      %{module: Ex4pmEngine.Wasm.Survival, algorithm_id: :survival},
-      %{module: Ex4pmEngine.Wasm.Markov, algorithm_id: :markov},
-      %{module: Ex4pmEngine.Wasm.Bayesian, algorithm_id: :bayesian},
-      %{module: Ex4pmEngine.Wasm.OcpqEval, algorithm_id: :ocpq_eval},
-      %{module: Ex4pmEngine.Wasm.StripsPlan, algorithm_id: :strips_plan},
-      %{module: Ex4pmEngine.Wasm.HtnPlan, algorithm_id: :htn_plan},
-      %{module: Ex4pmEngine.Wasm.CtlCheck, algorithm_id: :ctl_check},
-      %{module: Ex4pmEngine.Wasm.AllenTemporal, algorithm_id: :allen_temporal},
-      %{module: Ex4pmEngine.Wasm.OcDiscover, algorithm_id: :oc_discover},
-      %{module: Ex4pmEngine.Wasm.Align, algorithm_id: :align},
-      %{module: Ex4pmEngine.Wasm.EtcPrecision, algorithm_id: :etc_precision},
-      %{module: Ex4pmEngine.Wasm.Soundness, algorithm_id: :soundness},
-      %{module: Ex4pmEngine.Wasm.Playout, algorithm_id: :playout},
-      %{module: Ex4pmEngine.Wasm.PrologQuery, algorithm_id: :prolog_query},
-      # Phase 4 (statistics/ML, ~wasm4pm/crates/wasm4pm-ex4pm-bindings/src/phase4_stats.rs)
-      %{module: Ex4pmEngine.Wasm.KsStatistic, algorithm_id: :ks_statistic},
-      %{module: Ex4pmEngine.Wasm.KsCriticalValue, algorithm_id: :ks_critical_value},
-      %{module: Ex4pmEngine.Wasm.Regression, algorithm_id: :regression},
-      %{module: Ex4pmEngine.Wasm.Forecast, algorithm_id: :forecast},
-      %{module: Ex4pmEngine.Wasm.HoltForecast, algorithm_id: :holt_forecast},
-      %{module: Ex4pmEngine.Wasm.Ewma, algorithm_id: :ewma},
-      %{module: Ex4pmEngine.Wasm.TrendClassify, algorithm_id: :trend_classify},
-      %{module: Ex4pmEngine.Wasm.Mean, algorithm_id: :mean},
-      %{module: Ex4pmEngine.Wasm.DotProduct, algorithm_id: :dot_product},
-      %{module: Ex4pmEngine.Wasm.EuclideanDistance, algorithm_id: :euclidean_distance},
-      %{module: Ex4pmEngine.Wasm.Standardize, algorithm_id: :standardize},
-      %{module: Ex4pmEngine.Wasm.Median, algorithm_id: :median},
-      %{module: Ex4pmEngine.Wasm.Percentile, algorithm_id: :percentile},
-      %{module: Ex4pmEngine.Wasm.StdDeviation, algorithm_id: :std_deviation}
-    ]
-    |> Enum.map(fn %{module: mod, algorithm_id: id} ->
-      %{
-        module: mod,
-        algorithm_id: id,
-        export_name: "wasm4pm_ex4pm_#{id}_v1",
-        replay_export_name: "wasm4pm_ex4pm_#{id}_replay_v1"
-      }
-    end)
+    Enum.map(
+      Ex4pmEngine.Wasm.AlgoRegistry.algo_specs(),
+      &Map.take(&1, [:module, :algorithm_id, :export_name, :replay_export_name])
+    )
   end
 
   @doc """
