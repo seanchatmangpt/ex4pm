@@ -7,7 +7,7 @@ defmodule Mix.Tasks.Ex4pm.Ggen.Sync do
   Real, confirmed motivation (ERRC cluster c8, 2026-09-09 deep-search
   workflow): `scripts/standing_coded_sync.sh` hand-rolls "mix deps.get; N x
   mix ggen_igniter.sync calls; mix compile --warnings-as-errors; mix test"
-  for exactly one consumer (`Ex4pm.Standing.Coded`); beam4pm's
+  for exactly one consumer (`Ex4pm.Standing.Coded`); a separate repo's
   `scripts/gate_m2_check.sh` independently hand-rolls a much larger,
   documented-buggy version of the same idea. Neither has a real, general,
   in-BEAM Mix task. This is that task.

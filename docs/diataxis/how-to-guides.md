@@ -335,13 +335,6 @@ which `ggen_igniter` on the xaas side is meant to consume.
    — it does not change xaas calling this endpoint over HTTP rather than
    in-process.
 
-5. `beam4pm` (a separate runtime, execution substrate) is out of scope for this
-   dependency — it is reached only over the network (HTTP/PubSub) and is never a
-   compile-time dependency of xaas or any app outside its own repo. As of
-   `docs/ROADMAP-xaas-integration.md`, `beam4pm` integration is `BLOCKED
-   (external)` pending an in-progress git merge in `~/beam4pm`; the three steps
-   above are not blocked by that and can proceed independently.
-
 See `docs/ROADMAP-xaas-integration.md` for the full requirements this recipe
 implements.
 

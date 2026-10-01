@@ -8,8 +8,7 @@
 #
 # Ex4pm.Standing.Coded -- ex4pm's own first ggen_igniter-manufactured
 # module (docs/PRD-v26.9.10.md R1). Which STANDING[CODE] combinations are
-# admitted is real, varying, ontology-shaped data (mirrors beam4pm's own
-# bpma:AdmittedActuation/bpmi:AdmittedIngestRoute admission-fact pattern),
+# admitted is real, varying, ontology-shaped data,
 # so this is generated, not hand-written -- see docs/PRD-v26.9.10.md's
 # "requirement classification" section for the full reasoning.
 #

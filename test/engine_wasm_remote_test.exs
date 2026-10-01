@@ -1,7 +1,6 @@
 defmodule Ex4pm.EngineWasmRemoteTest do
   @moduledoc """
-  Chicago-style tests for Ex4pm.Engine.WasmRemote (Phase 1,
-  docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md §6). No mocking library: the
+  Chicago-style tests for Ex4pm.Engine.WasmRemote (Phase 1). No mocking library: the
   injected `:wasm_remote_fun` callback is a real, plain 2-arity function,
   the same pattern `test/engine_test.exs`'s existing `:remote_fun`
   (`Ex4pm.Engine.Remote`) coverage already uses.

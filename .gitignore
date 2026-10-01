@@ -97,7 +97,7 @@ Thumbs.db
 k8s/secret.yaml
 
 # ggen_igniter reconciliation manifest + probe output (manufacturing-time
-# state) -- matches beam4pm's own .gitignore convention exactly.
+# state).
 .ggen_igniter/
 .ggen_igniter_tmp/
 

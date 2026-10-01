@@ -63,7 +63,6 @@ Repeated stages are lawful; moving backward is a typed `:stage_regression` refus
 
 - `ggen-marketplace`: canonical reusable Frontier Release Factory vocabulary/projections.
 - `xaas`: persistent operator/product surface.
-- `beam4pm`: generated BEAM record/process representation.
 - `ex4pm`: deterministic process intelligence and conformance calculations.
 - `chatman-ecosystem`: cross-repository routing, standing and authority policy.
 

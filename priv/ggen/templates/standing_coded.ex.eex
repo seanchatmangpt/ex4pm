@@ -30,7 +30,7 @@ defmodule Ex4pm.Standing.Coded do
   @moduledoc """
   Reason-coded standing: `%Ex4pm.Standing.Coded{standing: atom(), code:
   String.t() | nil}`, rendering as the real `STANDING[REASON_CODE]` shape
-  observed in production beam4pm scheduled-task receipts (see
+  observed in production scheduled-task receipts (see
   `docs/PRD-v26.9.10.md`) -- e.g. `ALIVE[WS3_CHICAGO_MERGE_50]`. Does not
   replace bare-atom `Ex4pm.Standing`; both stay valid, this is additive
   for callers that need a reason payload.

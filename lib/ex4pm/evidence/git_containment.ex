@@ -12,8 +12,7 @@ defmodule Ex4pm.Evidence.GitContainment do
 
   No algorithm is reimplemented here -- every call shells out to the real
   `git` binary and parses its real output. Classification: pat-wrapper-over-
-  collaborator (matching beam4pm's own `BeamPM.Petgraph`/`Tract`/`Rust4pm`
-  precedent).
+  collaborator.
   """
 
   @doc """

@@ -1,8 +1,7 @@
 defmodule Ex4pm.Evidence.Batch do
   @moduledoc """
   Durable, resumable batch ledger (hand-written; classification:
-  pat-wrapper-over-admitted-data per `docs/PRD-v26.9.10.md` R2, matching
-  beam4pm's own `BeamPM.Contracts` precedent).
+  pat-wrapper-over-admitted-data per `docs/PRD-v26.9.10.md` R2).
 
   Models exactly the shape the RCA specified as missing: a batch of
   admitted/qualified/published/merged work counted against a `target`,

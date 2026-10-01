@@ -308,8 +308,7 @@ end
 
 defmodule Ex4pm.Engine.WasmRemote do
   @moduledoc """
-  Network-backed WASM execution candidate (docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md
-  Phase 1, §6). Additive alongside the existing in-process `Ex4pm.Engine.Wasm` and
+  Network-backed WASM execution candidate (Phase 1). Additive alongside the existing in-process `Ex4pm.Engine.Wasm` and
   `Ex4pm.Engine.CmcaWasm` candidates — does not replace either, and is not in the
   default preference table (`Ex4pm.Engine.Registry`'s `preference/1`), so it is only
   selected via an explicit `engine: :wasm_remote` opt.

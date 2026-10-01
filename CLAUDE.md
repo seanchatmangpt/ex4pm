@@ -152,20 +152,6 @@ layer other Elixir apps import — now that ex4pm is a single flat library (no m
 has a real hex-publishable shape: `package()`, `@version`, `description`). There is no
 umbrella-only coupling left to worry about — `Ex4pm.Core.*`/`Ex4pm.Contracts` are ordinary
 modules inside the one published app.
-beam4pm is a separate runtime (the actual execution substrate — Rust rf1-rf4 oracles,
-whatever receipt/actuation machinery survives its current merge) reached only over the
-network (HTTP/PubSub), never as a compile-time dependency of anything outside its own
-repo — xaas has no business knowing beam4pm's internal module names.
-
-**Status update, 2026-09-09 (later same day):** a research pass found beam4pm's git
-state clean — `HEAD` at `61f8d48 merge: integrate local/session-integration (11 real
-branches' work)`, no `.git/MERGE_HEAD` — meaning the merge this note originally
-described as in-progress appears committed. Per this note's own standing rule, that
-observation alone does not lift the block: the rule requires the *user* to confirm the
-merge is committed before beam4pm is touched again, not an agent's `git status` read.
-Treat beam4pm as **PARTIAL_ALIVE / pending confirmation** rather than either fully
-BLOCKED or fully clear until the user says so explicitly. **ex4pm is NOT
-blocked** — the three items below can proceed independently of beam4pm's state.
 
 **What that roadmap asks of this repo specifically**, if you're the one picking this
 up:
@@ -193,6 +179,3 @@ up:
    Adding `ex4pm` as xaas's compile-time dependency (item 1) is for shared types
    and validation only; it does not change xaas calling this endpoint over HTTP rather
    than in-process.
-
-beam4pm-specific items in that roadmap are explicitly out of scope for this repo, and
-are BLOCKED per the status above regardless.
