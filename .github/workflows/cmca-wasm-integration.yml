@@ -3,11 +3,11 @@ name: BCINR CMCA WASM integration
 on:
   pull_request:
     paths:
-      - "apps/ex4pm/lib/ex4pm.ex"
-      - "apps/ex4pm/test/cmca_test.exs"
-      - "apps/ex4pm_engine/lib/ex4pm/engine.ex"
-      - "apps/ex4pm_engine/lib/ex4pm/engine/cmca_wasm.ex"
-      - "apps/ex4pm_engine/test/cmca_wasm_test.exs"
+      - "lib/ex4pm.ex"
+      - "test/cmca_test.exs"
+      - "lib/ex4pm/engine.ex"
+      - "lib/ex4pm/engine/cmca_wasm.ex"
+      - "test/cmca_wasm_test.exs"
       - "docs/PRD-v26.8.22.md"
       - "docs/ARD-v26.8.22.md"
       - ".github/workflows/cmca-wasm-integration.yml"
@@ -54,7 +54,7 @@ jobs:
           mix compile --warnings-as-errors
 
       - name: Execute ex4pm CMCA admission and receipt courts
-        run: mix test apps/ex4pm_engine/test/cmca_wasm_test.exs apps/ex4pm/test/cmca_test.exs
+        run: mix test test/cmca_wasm_test.exs test/cmca_test.exs
 
       - name: Checkout exact wasm4pm CMCA export source
         uses: actions/checkout@v4

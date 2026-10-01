@@ -16,24 +16,13 @@ RUN mix local.hex --force && mix local.rebar --force
 ENV MIX_ENV="prod"
 
 COPY mix.exs mix.lock ./
-COPY apps/ex4pm_core/mix.exs apps/ex4pm_core/
-COPY apps/ex4pm_evidence/mix.exs apps/ex4pm_evidence/
-COPY apps/ex4pm_engine/mix.exs apps/ex4pm_engine/
-COPY apps/ex4pm_contracts/mix.exs apps/ex4pm_contracts/
-COPY apps/ex4pm_runtime/mix.exs apps/ex4pm_runtime/
-COPY apps/ex4pm_stream/mix.exs apps/ex4pm_stream/
-COPY apps/ex4pm_domain/mix.exs apps/ex4pm_domain/
-COPY apps/ex4pm/mix.exs apps/ex4pm/
-COPY apps/ex4pm_cli/mix.exs apps/ex4pm_cli/
-COPY apps/ex4pm_web/mix.exs apps/ex4pm_web/
-COPY apps/ex4pm_information/mix.exs apps/ex4pm_information/
-COPY apps/ex4pm_qualification/mix.exs apps/ex4pm_qualification/
 
 RUN mix deps.get --only $MIX_ENV
 RUN mix deps.compile
 
 COPY config config
-COPY apps apps
+COPY lib lib
+COPY priv priv
 
 RUN mix compile
 RUN mix release
@@ -53,9 +42,9 @@ ENV MIX_ENV="prod"
 ENV PORT="8080"
 
 WORKDIR "/app"
-COPY --from=builder /app/_build/${MIX_ENV}/rel/ex4pm_umbrella ./
+COPY --from=builder /app/_build/${MIX_ENV}/rel/ex4pm ./
 RUN chown -R nobody:root /app
 
 USER nobody
 EXPOSE 8080
-CMD ["/app/bin/ex4pm_umbrella", "start"]
+CMD ["/app/bin/ex4pm", "start"]

@@ -3,9 +3,9 @@ name: wasm4pm-ex4pm-bindings integration (Phase 1 + Phase 2)
 on:
   pull_request:
     paths:
-      - "apps/ex4pm_engine/lib/ex4pm/engine.ex"
-      - "apps/ex4pm_engine/lib/ex4pm_engine/wasm/**"
-      - "apps/ex4pm_engine/test/wasm/**"
+      - "lib/ex4pm/engine.ex"
+      - "lib/ex4pm_engine/wasm/**"
+      - "test/wasm/**"
       - ".github/workflows/wasm4pm-bindings-integration.yml"
   push:
     branches:
@@ -52,7 +52,7 @@ jobs:
           mix compile --warnings-as-errors
 
       - name: Execute Phase-1 adapter admission tests
-        run: mix test apps/ex4pm_engine/test/wasm/
+        run: mix test test/wasm/
 
       - name: Checkout exact wasm4pm-ex4pm-bindings source
         uses: actions/checkout@v4
@@ -164,7 +164,7 @@ jobs:
             # :alive admission when given that exact observed source SHA and
             # WASM digest. It does not yet call the raw ptr/len WASM ABI
             # through Wasmex from this script — that memory-marshal glue
-            # (matching apps/ex4pm_engine/lib/ex4pm/engine/adapters.ex's
+            # (matching lib/ex4pm/engine/adapters.ex's
             # Ex4pm.Engine.Wasm contract) is follow-on work, tracked in
             # docs/ARD-v26.9.x-wasm4pm-phase1.md as the remaining gap between
             # "adapter admits a reported execution" and "adapter drives the
