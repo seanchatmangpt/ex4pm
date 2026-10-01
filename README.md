@@ -28,6 +28,8 @@ The engine registry preserves these candidates simultaneously:
 - `:beam` - native deterministic Elixir algorithms;
 - `:ex4pm_plan` - pinned ex4pm-plan cloud planning worker protocol;
 - `:wasm` - Wasmex/Wasmtime execution of admitted WebAssembly artifacts;
+- `:wasm_<algo>` - 33 per-algorithm adapters (`Ex4pmEngine.Wasm.*`) over the admitted wasm4pm-ex4pm-bindings artifact;
+- `:ferroplan` - PDDL/HTN/FOND planning via the bundled, sha256-pinned ferroplan wasm (explicit `engine: :ferroplan`);
 - `:nif` - configured native NIF module;
 - `:remote` - configured remote engine callback.
 
@@ -110,18 +112,39 @@ A response without observed capsule identity remains `PARTIAL_ALIVE`; a mismatch
 
 ## wasm4pm bridge
 
-`Ex4pm.Engine.Wasm` is a real Wasmex-backed raw WebAssembly route. Because wasm4pm builds can expose build-specific ABIs, ex4pm does not invent an OCEL string ABI. The adapter only executes a configured export/parameter contract. A wasm4pm integration reaches `ALIVE` only when the exact artifact, export, parameters, output decoder, and replay evidence are all bound to one run.
+`Ex4pm.Engine.Wasm` is the raw Wasmex-backed route: because wasm4pm builds can expose build-specific ABIs, it does not invent an OCEL string ABI and only executes a configured export/parameter contract.
 
-The WIT component contract is a forward portable ex4pm engine boundary; it does not claim that arbitrary historical wasm4pm wasm-bindgen bundles already implement that component world.
+The working path for the `wasm4pm-ex4pm-bindings` artifact is admission plus a real transport: `Ex4pmEngine.Wasm.Admission` (sha256 pin, compile, import allowlist, required exports) and `Ex4pmEngine.Wasm.RealTransport` (ptr/len UTF-8 JSON ABI through a real Wasmex instance). A run reaches `ALIVE` only when the exact admitted artifact, export, request and replay evidence are bound to one run. The WIT component contract remains a forward portable engine boundary; arbitrary historical wasm-bindgen bundles do not implement that component world.
 
-### Building and supplying the wasm artifact
+There are 33 algorithm adapters in `Ex4pmEngine.Wasm.AlgoRegistry` (`ls lib/ex4pm_engine/wasm` shows 33 algorithm modules plus `adapter`, `admission`, `algo_registry`, `real_transport`, `ferroplan_transport`); the registry is generated from `priv/ontology/ex4pm.ttl` and the bindings pack, not hand-written.
 
-The Hex package does not bundle the wasm artifact. Build it from the wasm4pm repository
-(`crates/wasm4pm-ex4pm-bindings/scripts/build-wasm.sh`, zero imports, 70 exports) and pass its
-path as `artifact_path` to `Ex4pmEngine.Wasm.RealTransport.start/2`. The artifact is admitted
-against the sha256 pin in `priv/wasm4pm/MANIFEST.json` (override with
-`config :ex4pm, :wasm4pm_sha256`); a missing, mismatched or import-bearing artifact yields a typed
-`%Ex4pm.Refusal{}`. `artifact.path` in the manifest is informational only and is never read.
+### The artifact
+
+New in 26.10.1: the admitted artifact is bundled at `priv/wasm4pm/wasm4pm_ex4pm_bindings.wasm` (zero imports, 70 function exports), and `Ex4pmEngine.Wasm.Host` (supervised by the application) boots it with no configuration. To use another build, build it with `crates/wasm4pm-ex4pm-bindings/scripts/build-wasm.sh` and set `EX4PM_WASM_ARTIFACT` / `config :ex4pm, :wasm4pm_artifact`. The digest is pinned in `priv/wasm4pm/MANIFEST.json` (override with `config :ex4pm, :wasm4pm_sha256`); a missing, mismatched or import-bearing artifact yields a typed `%Ex4pm.Refusal{}`. `artifact.path` in the manifest is informational only.
+
+```elixir
+{:ok, transports} = Ex4pmEngine.Wasm.RealTransport.all_transports("/path/to/wasm4pm_ex4pm_bindings.wasm")
+
+{:ok, result} =
+  Ex4pmEngine.Wasm.Discover.execute(:discover, %{traces: [["a", "b", "c"], ["a", "b"]]}, transports)
+
+result.standing           #=> :alive
+result.evidence.replay_verified #=> true
+```
+
+Runnable: `mix run examples/real_wasm_discover.exs`. Guide: `docs/guides/real-wasm.md`.
+
+## Planning with ferroplan
+
+```elixir
+alias Ex4pm.Engine.Ferroplan
+
+domain  = File.read!("test/support/fixtures/ferroplan/logistics_domain.pddl")
+problem = File.read!("test/support/fixtures/ferroplan/logistics_p1.pddl")
+{:ok, %{"plan" => plan}} = Ferroplan.plan(domain, problem)
+```
+
+The ferroplan wasm ships in `priv/ferroplan` with a sha256 pin; planning is CONSTRUCT-only. Runnable: `mix run examples/ferroplan_plan.exs`. Guides: `docs/guides/planning-with-ferroplan.md`, `docs/guides/choosing-an-engine.md`, reference `docs/FERROPLAN-RUNTIME.md`.
 
 ## OCEL and XES
 

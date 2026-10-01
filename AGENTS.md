@@ -43,7 +43,11 @@ Generated artifacts are projections. Find the owning ontology, graph, query, sch
 
 ## Editing surfaces
 
-Canonical semantic objects live in `lib/ex4pm/` (`Ex4pm.Core`, `Ex4pm.OCEL`, `Ex4pm.POWL`, etc. — `core.ex`, `ocel.ex`, `powl.ex`). `lib/ex4pm_core/` holds the unrelated `Ex4pmCore.ProcessIR` namespace, not these canonical objects. Engine, runtime, stream, domain, CLI, and the `test/demo_web/` demo web app are projections/adapters. Never make an adapter's incidental representation canonical without an admitted equivalence proof.
+WASM adapters, Admission, transports and Host live in `lib/ex4pm_engine/wasm/`; `Ex4pmEngine.Wasm.AlgoRegistry` and the per-algorithm adapters are generated (edit the ontology/pack, not the outputs). Canonical semantic objects live in `lib/ex4pm/` (`Ex4pm.Core`, `Ex4pm.OCEL`, `Ex4pm.POWL`, etc. — `core.ex`, `ocel.ex`, `powl.ex`). `lib/ex4pm_core/` holds the unrelated `Ex4pmCore.ProcessIR` namespace, not these canonical objects. Engine, runtime, stream, domain, CLI, and the `test/demo_web/` demo web app are projections/adapters. Never make an adapter's incidental representation canonical without an admitted equivalence proof.
+
+## wasm4pm and ferroplan authority
+
+wasm4pm and ferroplan run only as admitted artifacts: the sha256 pin (`priv/wasm4pm/MANIFEST.json`, `priv/ferroplan/MANIFEST.json`), the import allowlist (empty) and required exports are checked by `Ex4pmEngine.Wasm.Admission` before instantiation, and an artifact that fails admission yields a typed refusal, never a fallback. Execution (`RealTransport`, `FerroplanTransport`, `Ex4pmEngine.Wasm.Host`) is CONSTRUCT-only: results are candidates with `authority: :construct_only` and carry no ambient SELECT or DO authority. A plan or algorithm result may only be actuated through `Ex4pm.Evidence.BRCE` with a pending receipt. `:alive` requires admitted AND executed in the same run; a present file, configured transport or receipt-shaped map is not execution. No mocks or fixture closures stand in for the real wasm when claiming standing.
 
 ## Verification
 

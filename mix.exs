@@ -180,16 +180,63 @@ defmodule Ex4pm.MixProject do
   defp docs do
     [
       main: "readme",
+      source_url: @source_url,
+      source_ref: "v#{@version}",
       extras: [
         "README.md",
+        "docs/guides/real-wasm.md",
+        "docs/guides/planning-with-ferroplan.md",
+        "docs/guides/choosing-an-engine.md",
         "docs/ARCHITECTURE.md",
+        "docs/FERROPLAN-RUNTIME.md",
+        "docs/ALGORITHM-REGISTRY-GENERATION.md",
+        "docs/ARD-v26.9.x-wasm4pm-phase1.md",
+        "CHANGELOG.md",
         "docs/consumer/tutorials.md",
         "docs/consumer/how-to-guides.md",
         "docs/consumer/reference.md",
         "docs/consumer/explanation.md"
       ],
       groups_for_extras: [
+        Guides: ~r{^docs/guides/},
+        "WASM and planning": [
+          "docs/FERROPLAN-RUNTIME.md",
+          "docs/ALGORITHM-REGISTRY-GENERATION.md",
+          "docs/ARD-v26.9.x-wasm4pm-phase1.md"
+        ],
         "Consumer Guide": Path.wildcard("docs/consumer/*.md")
+      ],
+      groups_for_modules: [
+        "Public API": [Ex4pm, Ex4pm.Engine, Ex4pm.Engine.Result, Ex4pm.Refusal, Ex4pm.Contracts],
+        Ferroplan: [Ex4pm.Engine.Ferroplan, Ex4pmEngine.Wasm.FerroplanTransport],
+        "WASM engines": [
+          Ex4pm.Engine.Wasm,
+          Ex4pm.Engine.WasmRemote,
+          Ex4pmEngine.Wasm.Admission,
+          Ex4pmEngine.Wasm.RealTransport,
+          Ex4pmEngine.Wasm.Host,
+          Ex4pmEngine.Wasm.AlgoRegistry,
+          Ex4pmEngine.Wasm.Adapter
+        ],
+        "WASM adapters": ~r/^Ex4pmEngine\.Wasm\./,
+        "Other engines": [
+          Ex4pm.Engine.Beam,
+          Ex4pm.Engine.Beam4pm,
+          Ex4pm.Engine.Beam4pmA2A,
+          Ex4pm.Engine.Ex4pmPlan,
+          Ex4pm.Engine.CmcaWasm,
+          Ex4pm.Engine.NifCandidate,
+          Ex4pm.Engine.Remote,
+          Ex4pm.Engine.Differential
+        ],
+        "Evidence / BRCE": [~r/^Ex4pm\.Evidence\./, ~r/^Ex4pmEvidence\./],
+        Core: [~r/^Ex4pm\.Core/, ~r/^Ex4pmCore\./, Ex4pm.Standing],
+        Domain: [~r/^Ex4pm\.Domain/, ~r/^Ex4pmDomain\./],
+        "Information / Reactor": [~r/^Ex4pm\.Information/, ~r/^Ex4pmEngine\.Reactors/],
+        Qualification: [~r/^Ex4pm\.Qualification/, ~r/^Mix\.Tasks\./],
+        "Runtime and streaming": [~r/^Ex4pm\.Runtime/, ~r/^Ex4pm\.Stream/],
+        "Process engines (Ex4pmEngine)": ~r/^Ex4pmEngine\./,
+        "Compat types": ~r/^Wasm4pmCompat\./
       ]
     ]
   end

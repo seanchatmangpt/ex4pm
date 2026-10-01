@@ -5,9 +5,11 @@ through Wasmex/Wasmtime. This supersedes the earlier design in which ferroplan p
 reached only as a remote HTTP route on beam4pm (see the supersession notes in
 `EX4PM-THINNING-BEAM4PM-ENRICHMENT.md` and `BEAM4PM-OPENAPI-GGEN-IGNITER-PLAN.md`).
 
-Status of this document: the implementation is landing concurrently. Everything below is the
-intended contract. Items marked **(unverified)** have not been observed executing at the time
-of writing; check the module source and `MANIFEST.json` before relying on them.
+Status of this document: the implementation is merged (`Ex4pm.Engine.Ferroplan`,
+`Ex4pmEngine.Wasm.FerroplanTransport`, `priv/ferroplan/{ferroplan_wasm.wasm,MANIFEST.json}`).
+Statements below were checked against `lib/ex4pm/engine/ferroplan.ex`,
+`lib/ex4pm_engine/wasm/ferroplan_transport.ex` and the manifest on 2026-10-01; the remaining
+**(unverified)** markers name the guest-side items this repo cannot check by reading ex4pm source.
 
 ## Pipeline
 
@@ -25,43 +27,59 @@ github.com/seanchatmangpt/ferroplan  crates/ferroplan-wasm   (target wasm32-wasi
 
 - Artifact: `priv/ferroplan/ferroplan_wasm.wasm`, built from the `ferroplan-wasm` crate of
   `github.com/seanchatmangpt/ferroplan` for `wasm32-wasip1`.
-- Pin: `priv/ferroplan/MANIFEST.json` records the sha256 of the artifact (and, intended, the
-  source git sha and toolchain used to build it). The manifest is the admission input; the
+- Pin: `priv/ferroplan/MANIFEST.json` records the sha256 of the artifact, size, the source
+  crate version (0.29.0) and git sha, the build target/command, the WASI import allowlist, the
+  required exports and the op list. The manifest is the admission input; the
   runtime never trusts a `.wasm` file whose digest it has not compared to the pin.
 - Until the artifact exists on disk, `Ex4pm.Engine.Ferroplan.wasm_built?/0` returns `false`
   and every planning call returns a typed refusal rather than raising.
 
 ## Transport: `Ex4pmEngine.Wasm.FerroplanTransport`
 
-Wasmex GenServer wrapping the WASI module. JSON ABI over linear memory with three exports:
+Wasmex GenServer wrapping the WASI module. JSON ABI over linear memory with these exports
+(plus `memory`; required exports are `fp_alloc fp_call fp_dealloc memory`):
 
 | Export | Role |
 |---|---|
 | `fp_alloc(len)` | allocate `len` bytes in guest memory, return pointer |
-| `fp_call(ptr, len)` | consume a UTF-8 JSON request at `ptr`/`len`, return a pointer/length to a JSON response |
-| `fp_dealloc(ptr, len)` | release a buffer previously returned by `fp_alloc` or `fp_call` |
+| `fp_call(ptr, len)` | consume a UTF-8 JSON request `{"op": ..., ...}` at `ptr`/`len`; return packed u64 `(out_ptr << 32) \| out_len` locating the JSON response |
+| `fp_dealloc(ptr, len)` | release the RESPONSE buffer (`fp_call` consumes the request buffer) |
 
 Per call: host `fp_alloc` -> write request JSON -> `fp_call` -> read response JSON ->
-`fp_dealloc` both buffers -> decode. The exact request/response envelope (operation names,
-field names) is defined by the `ferroplan-wasm` crate **(unverified here; read the crate's
-ABI module for the authoritative schema)**. Admission precedes instantiation: the transport
-asks `Ex4pmEngine.Wasm.Admission` to admit the artifact digest against the manifest pin and
-refuses to start on mismatch.
+`fp_dealloc` the response buffer -> decode. Errors arrive as an envelope
+`{error: {code, message, retryable}}` and surface as `:ferroplan_engine_error`. Admission precedes
+instantiation: `Ex4pmEngine.Wasm.Admission` checks the digest against the manifest pin and the
+WASI import allowlist (`wasi_snapshot_preview1` imports only) and the transport refuses to start
+on mismatch. Transport refusals beyond admission's: `:ferroplan_artifact_unreadable`,
+`:ferroplan_instantiation_failed`, `:ferroplan_encoding_failed`, `:ferroplan_abi_failure`,
+`:ferroplan_call_timeout`, `:ferroplan_bad_response`. A timeout or trap stops the instance.
+The authoritative request schema lives in the `ferroplan-wasm` crate's `wasi_abi.rs`
+**(guest side, unverified here)**.
 
 ## Facade: `Ex4pm.Engine.Ferroplan`
 
-| Function | Intent |
-|---|---|
-| `plan/4` | classical planning from domain + problem (PDDL) with options |
-| `plan_production/4` | planning for production-style problems **(exact input shape unverified)** |
-| `readiness/1` | report whether the artifact is present, admitted, and instantiable |
-| `version/1` | version string reported by the guest module |
-| `hierarchical_plan` | HTN/HDDL decomposition planning |
-| `fond_policy` | FOND policy synthesis (strong/strong-cyclic) |
-| `wasm_built?/0` | whether `priv/ferroplan/ferroplan_wasm.wasm` exists on disk |
+| Function | wasm op | Intent |
+|---|---|---|
+| `plan/4` | `plan` | classical planning from PDDL domain + problem text |
+| `plan_production/4` | `plan_production` | production planning; authority is candidate-only |
+| `hierarchical_plan/3` | `htn_plan` | HTN planning from PlanningProblem JSON (text or map) + optional limits |
+| `fond_policy/3` | `fond_policy` | FOND policy synthesis; response carries a validation report |
+| `hddl_solve/4` | `hddl_solve` | HDDL domain/problem text + optional limits |
+| `fond_policy_validate/3`, `fond_validate/3` | same | independent policy validation |
+| `explain/4` | `explain` | explain a plan against domain + problem |
+| `readiness/1` | `readiness` | capability manifest + fingerprint |
+| `version/1` | `version` | guest build version (observed `%{"version" => "0.29.0"}`) |
+| `wasm_built?/1`, `available?/1`, `artifact_path/1` | - | file present / digest admitted / resolved path |
 
-Arities for `hierarchical_plan` and `fond_policy` follow the landed module; consult its
-`@spec`s.
+The `Ex4pm.Engine` behaviour (`execute/3`) exposes the same ops as `:ferroplan_*` operations
+(plus the bare `:plan` when `engine: :ferroplan` is explicit) and returns an
+`Ex4pm.Engine.Result` with `evidence.executed`, `wasm_sha256`, `source_version`. Options:
+`:ferroplan_artifact`, `:ferroplan_expected_sha256`, `:timeout`. Refusal codes:
+`:ferroplan_bad_input`, `:ferroplan_artifact_missing`, `:ferroplan_digest_unpinned`,
+`:ferroplan_digest_mismatch`, `:ferroplan_engine_error`, `:ferroplan_unsupported_operation`.
+
+The artifact manifest also lists `session_*` ops; there is no Elixir session facade today, and
+any session wrapper is CONSTRUCT-only (no DO authority).
 
 ## Standing semantics
 

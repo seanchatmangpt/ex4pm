@@ -53,8 +53,10 @@ distribution, then `inet_tls` distribution) — see `docs/CHICAGO.md`.
 
 ## Flat library architecture
 
-One Mix app (`:ex4pm`). All library code lives under `lib/ex4pm/`, organized into namespaced
-directories rather than separate OTP apps — each directory below is a logical module grouping,
+One Mix app (`:ex4pm`). Most library code lives under `lib/ex4pm/`; related namespaces live in
+sibling directories (`lib/ex4pm_engine/` incl. `lib/ex4pm_engine/wasm/` for the WASM adapters,
+Admission, RealTransport, Host and FerroplanTransport; also `lib/ex4pm_core/`, `lib/ex4pm_domain/`).
+Code is organized into namespaced directories rather than separate OTP apps — each directory below is a logical module grouping,
 not a compile boundary:
 
 - **`lib/ex4pm/contracts.ex`** — canonical RDF/Turtle ontology, SHACL shapes, WIT component-world
@@ -72,6 +74,8 @@ not a compile boundary:
   - `:ex4pm_plan` — pinned ex4pm-plan cloud planning worker protocol (exact source SHA +
     protocol version pinned; see README "ex4pm-plan bridge");
   - `:wasm` — real Wasmex/Wasmtime execution of admitted WASM artifacts;
+  - `:wasm_<algo>` — 33 `Ex4pmEngine.Wasm.*` adapters over the admitted wasm4pm-ex4pm-bindings artifact;
+  - `:ferroplan` — PDDL/HTN/FOND planning via the bundled pinned ferroplan wasm (explicit only);
   - `:nif` — configured native NIF module;
   - `:remote` — configured remote engine callback.
   An unavailable engine edge yields a typed standing/refusal, not silent disappearance.
@@ -121,8 +125,17 @@ anything under `lib/ex4pm/qualification/` or distribution/replay code.
   SHA and protocol version; a response without observed capsule identity (source SHA + image
   digest, replay-verified) stays `PARTIAL_ALIVE`, and a mismatched observed source is refused.
 - `Ex4pm.Engine.Wasm` only executes a configured export/parameter contract against an admitted
-  WASM artifact — it does not assume a generic OCEL string ABI, and does not claim historical
-  wasm4pm bundles already implement the WIT component world.
+  WASM artifact — it does not assume a generic OCEL string ABI, and arbitrary historical
+  wasm-bindgen wasm4pm bundles do not implement the WIT component world (the WIT world remains
+  a forward contract).
+- The working wasm4pm path is the admitted `wasm4pm-ex4pm-bindings` artifact:
+  `Ex4pmEngine.Wasm.Admission` (sha256 pin in `priv/wasm4pm/MANIFEST.json`, zero imports,
+  required exports) + `Ex4pmEngine.Wasm.RealTransport` (real Wasmex, ptr/len JSON ABI) drive the
+  33 generated `Ex4pmEngine.Wasm.*` adapters (`AlgoRegistry`). `Ex4pmEngine.Wasm.Host`
+  (supervised) boots the bundled artifact zero-config (new in 26.10.1). See
+  `docs/guides/real-wasm.md`.
+- `:ferroplan` (`Ex4pm.Engine.Ferroplan`, bundled `priv/ferroplan` wasm, explicit
+  `engine: :ferroplan`, CONSTRUCT-only) — see `docs/guides/planning-with-ferroplan.md`.
 
 ## External integration: xaas wants to depend on ex4pm (real, active)
 

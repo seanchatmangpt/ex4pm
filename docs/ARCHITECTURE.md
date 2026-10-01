@@ -65,7 +65,8 @@ This architecture therefore establishes Reactor execution canonicality without c
 - `POWL.layers/1` is not a scheduler.
 - Distributed placement is not an executor.
 - A POWL cycle is not a Reactor dependency cycle.
-- `:wasm` does not invent a string ABI for wasm4pm wasm-bindgen builds.
+- `:wasm` does not invent a string ABI for wasm4pm wasm-bindgen builds. The working path is the admitted `wasm4pm-ex4pm-bindings` artifact: `Ex4pmEngine.Wasm.Admission` (sha256 pin, zero-import allowlist, required exports) plus `Ex4pmEngine.Wasm.RealTransport` (real Wasmex, ptr/len JSON ABI) behind the 33 generated `Ex4pmEngine.Wasm.*` adapters. The WIT component world remains a forward contract.
+- `:ferroplan` (`Ex4pm.Engine.Ferroplan`) executes a pinned wasm32-wasip1 artifact through `Ex4pmEngine.Wasm.FerroplanTransport`; CONSTRUCT-only, explicit engine selection. See `docs/FERROPLAN-RUNTIME.md`.
 
 ## Falsifiers
 
