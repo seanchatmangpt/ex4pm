@@ -23,14 +23,10 @@ defmodule Ex4pm.Engine.Ferroplan.Session do
   """
   use GenServer, restart: :temporary
 
-  import Bitwise
-
   alias Ex4pm.Refusal
   alias Ex4pm.Engine.Ferroplan
   alias Ex4pm.Engine.Ferroplan.SessionSupervisor
   alias Ex4pmEngine.Wasm.FerroplanTransport
-
-  @default_timeout 30_000
 
   # ops that change guest state and are replayed on recovery
   @mutating ~w(set_goal restrict_prefix_claims restrict_contains think replan_following
@@ -47,10 +43,6 @@ defmodule Ex4pm.Engine.Ferroplan.Session do
 
   @doc false
   def mutating?(op), do: op in @mutating
-
-  # responses that are JSON arrays / null: the transport only admits objects,
-  # so these go through `raw_call/4` and are wrapped as `%{"value" => json}`
-  @non_object ~w(observe elapse step suffix)
 
   # -- client API ------------------------------------------------------------
 
@@ -301,86 +293,10 @@ defmodule Ex4pm.Engine.Ferroplan.Session do
     if op in @mutating, do: %{state | journal: [{op, args} | state.journal]}, else: state
   end
 
-  # One guest call with the session handle injected.
+  # One guest call with the session handle injected. Non-object responses
+  # (observe/elapse/step/suffix) arrive from the transport as `%{"value" => json}`.
   defp guest(state, op, args, call_opts) do
     request = Map.put(args, "handle", state.handle)
-    wire = "session_" <> op
-
-    if op in @non_object do
-      raw_call(state.transport, wire, request, call_opts)
-    else
-      FerroplanTransport.call(state.transport, wire, request, call_opts)
-    end
-  end
-
-  # -- raw ABI call for non-object responses --------------------------------
-  # Same wire sequence as FerroplanTransport.call/4 (alloc, write, fp_call,
-  # read, dealloc the response). Needed because the transport refuses JSON
-  # arrays / null (`session_observe`, `session_elapse`, `session_suffix`,
-  # `session_step`); the result is wrapped as `%{"value" => decoded}`.
-
-  defp raw_call(pid, op, request, opts) do
-    timeout = Keyword.get(opts, :timeout, @default_timeout)
-    data = Jason.encode!(Map.put(request, "op", op))
-
-    with {:ok, store} <- Wasmex.store(pid),
-         {:ok, memory} <- Wasmex.memory(pid),
-         {:ok, [raw]} <- Wasmex.call_function(pid, "fp_alloc", [byte_size(data)], timeout),
-         ptr = band(raw, 0xFFFF_FFFF),
-         true <- ptr != 0,
-         :ok <- Wasmex.Memory.write_binary(store, memory, ptr, data),
-         {:ok, [packed]} <- Wasmex.call_function(pid, "fp_call", [ptr, byte_size(data)], timeout) do
-      packed = band(packed, 0xFFFF_FFFF_FFFF_FFFF)
-      out_ptr = bsr(packed, 32)
-      out_len = band(packed, 0xFFFF_FFFF)
-      out = Wasmex.Memory.read_binary(store, memory, out_ptr, out_len)
-      _ = Wasmex.call_function(pid, "fp_dealloc", [out_ptr, out_len], timeout)
-      decode_raw(out)
-    else
-      other ->
-        {:error,
-         Refusal.new(:ferroplan_abi_failure, "#{op} raw call failed",
-           details: %{result: inspect(other, limit: 5)}
-         )}
-    end
-  rescue
-    error ->
-      {:error,
-       Refusal.new(:ferroplan_abi_failure, "ferroplan raw call raised",
-         details: %{error: Exception.message(error)}
-       )}
-  catch
-    :exit, reason ->
-      FerroplanTransport.stop(pid)
-
-      {:error,
-       Refusal.new(:ferroplan_call_timeout, "raw call exited or timed out; instance discarded",
-         details: %{reason: inspect(reason), engine_restarted: true}
-       )}
-  end
-
-  defp decode_raw(out) do
-    case Jason.decode(out) do
-      {:ok, %{"error" => err} = m} when map_size(m) == 1 ->
-        err = if is_map(err), do: err, else: %{}
-
-        {:error,
-         Refusal.new(:ferroplan_engine_error, to_string(err["message"] || "engine error"),
-           details: %{
-             code: err["code"],
-             message: err["message"],
-             retryable: err["retryable"] == true
-           }
-         )}
-
-      {:ok, %{} = m} ->
-        {:ok, m}
-
-      {:ok, other} ->
-        {:ok, %{"value" => other}}
-
-      _ ->
-        {:error, Refusal.new(:ferroplan_bad_response, "response is not JSON")}
-    end
+    FerroplanTransport.call(state.transport, "session_" <> op, request, call_opts)
   end
 end

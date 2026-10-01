@@ -21,9 +21,17 @@ defmodule Ex4pmEngine.Wasm.FerroplanTransport do
   Refusal codes beyond Admission's: `:ferroplan_artifact_unreadable`,
   `:ferroplan_instantiation_failed`, `:ferroplan_encoding_failed`,
   `:ferroplan_abi_failure`, `:ferroplan_call_timeout`,
-  `:ferroplan_bad_response`, and `:ferroplan_engine_error` (ABI error
-  envelope; `details` carries `code`, `message`, `retryable`). A timeout or
-  trap stops the instance (the guest builds with `panic = "abort"`).
+  `:ferroplan_bad_response` (response bytes are not valid JSON), and
+  `:ferroplan_engine_error` (ABI error envelope; `details` carries `code`,
+  `message`, `retryable`). A timeout or trap stops the instance (the guest
+  builds with `panic = "abort"`).
+
+  Response shapes: any valid JSON is admitted. A JSON object is returned
+  as-is, except an object whose only key is `"error"`, which is an engine
+  error refusal. Any other valid JSON (array, `null`, string, number,
+  boolean; e.g. `session_observe`, `session_elapse`, `session_suffix`,
+  `session_step` answer with an array or `null`) is returned wrapped as
+  `{:ok, %{"value" => json}}`.
   """
 
   import Bitwise
@@ -51,6 +59,12 @@ defmodule Ex4pmEngine.Wasm.FerroplanTransport do
     end
   end
 
+  @doc """
+  One ABI call. Returns `{:ok, object}` for object responses and
+  `{:ok, %{"value" => json}}` for non-object JSON (array, null, scalar); an
+  object whose only key is `"error"` is `{:error, :ferroplan_engine_error}`;
+  unparseable response bytes are `{:error, :ferroplan_bad_response}`.
+  """
   @spec call(pid(), String.t(), map(), keyword()) :: {:ok, map()} | {:error, Refusal.t()}
   def call(pid, op, request \\ %{}, opts \\ [])
       when is_pid(pid) and is_binary(op) and is_map(request) do
@@ -225,6 +239,14 @@ defmodule Ex4pmEngine.Wasm.FerroplanTransport do
     out = Wasmex.Memory.read_binary(store, memory, out_ptr, out_len)
     _ = call_export(pid, "fp_dealloc", [out_ptr, out_len], timeout)
 
+    decode_response(out)
+  end
+
+  @doc """
+  Pure decode of ferroplan response bytes (see the moduledoc for the shapes).
+  """
+  @spec decode_response(binary()) :: {:ok, map()} | {:error, Refusal.t()}
+  def decode_response(out) when is_binary(out) do
     case Jason.decode(out) do
       {:ok, %{"error" => err} = decoded} when map_size(decoded) == 1 ->
         {:error, engine_refusal(err)}
@@ -232,10 +254,13 @@ defmodule Ex4pmEngine.Wasm.FerroplanTransport do
       {:ok, %{} = decoded} ->
         {:ok, decoded}
 
-      other ->
+      {:ok, other} ->
+        {:ok, %{"value" => other}}
+
+      {:error, error} ->
         {:error,
-         Refusal.new(:ferroplan_bad_response, "response is not a JSON object",
-           details: %{result: inspect(other, limit: 5, printable_limit: 200)}
+         Refusal.new(:ferroplan_bad_response, "response is not valid JSON",
+           details: %{error: Exception.message(error), bytes: byte_size(out)}
          )}
     end
   end
