@@ -114,6 +114,15 @@ A response without observed capsule identity remains `PARTIAL_ALIVE`; a mismatch
 
 The WIT component contract is a forward portable ex4pm engine boundary; it does not claim that arbitrary historical wasm4pm wasm-bindgen bundles already implement that component world.
 
+### Building and supplying the wasm artifact
+
+The Hex package does not bundle the wasm artifact. Build it from the wasm4pm repository
+(`crates/wasm4pm-ex4pm-bindings/scripts/build-wasm.sh`, zero imports, 70 exports) and pass its
+path as `artifact_path` to `Ex4pmEngine.Wasm.RealTransport.start/2`. The artifact is admitted
+against the sha256 pin in `priv/wasm4pm/MANIFEST.json` (override with
+`config :ex4pm, :wasm4pm_sha256`); a missing, mismatched or import-bearing artifact yields a typed
+`%Ex4pm.Refusal{}`. `artifact.path` in the manifest is informational only and is never read.
+
 ## OCEL and XES
 
 OCEL-v2-style object-centric data and XES case logs converge on the same canonical `Ex4pm.EventLog` IR. XES parsing disables DTD processing before XPath projection. A malformed activity/timestamp still reaches canonical admission and receives the same typed refusal as equivalent malformed OCEL.

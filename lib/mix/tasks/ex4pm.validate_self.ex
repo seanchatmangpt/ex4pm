@@ -6,7 +6,7 @@ defmodule Mix.Tasks.Ex4pm.ValidateSelf do
   IEEE OCEL 2.0 NDJSON logs and outputs the complete process discovery and 5D conformance calculus.
 
   Usage:
-      mix ex4pm.validate_self --path /Users/sac/xaas/priv/ocel/ash-actions.ndjson --limit 10000
+      mix ex4pm.validate_self --path path/to/ocel.ndjson --limit 10000
   """
 
   use Mix.Task
@@ -25,7 +25,9 @@ defmodule Mix.Tasks.Ex4pm.ValidateSelf do
         aliases: [p: :path, l: :limit]
       )
 
-    path = Keyword.get(opts, :path, "/Users/sac/xaas/priv/ocel/ash-actions.ndjson")
+    path =
+      Keyword.get(opts, :path) ||
+        Mix.raise("usage: mix ex4pm.validate_self --path <ocel.ndjson> [--limit N]")
     limit = Keyword.get(opts, :limit, 10_000)
 
     Mix.shell().info("\n=======================================================")

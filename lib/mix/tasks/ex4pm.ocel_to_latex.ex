@@ -8,7 +8,7 @@ defmodule Mix.Tasks.Ex4pm.OcelToLatex do
 
   ## Example
 
-      mix ex4pm.ocel_to_latex /Users/sac/xaas/priv/ocel/ash-actions.ndjson --output docs/thesis/chapters/generated_ocel_benchmark_tables.tex
+      mix ex4pm.ocel_to_latex path/to/ocel.ndjson --output docs/thesis/chapters/generated_ocel_benchmark_tables.tex
   """
 
   use Mix.Task
@@ -26,7 +26,7 @@ defmodule Mix.Tasks.Ex4pm.OcelToLatex do
     input_path =
       case positional do
         [path | _] -> path
-        [] -> "/Users/sac/xaas/priv/ocel/ash-actions.ndjson"
+        [] -> Mix.raise("usage: mix ex4pm.ocel_to_latex <ocel.ndjson> [--output FILE]")
       end
 
     output_path =
