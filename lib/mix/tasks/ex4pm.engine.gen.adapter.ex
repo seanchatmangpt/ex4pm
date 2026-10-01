@@ -6,17 +6,10 @@ if Code.ensure_loaded?(Igniter.Mix.Task) do
 
         mix ex4pm.engine.gen.adapter <algorithm_id>
 
-<<<<<<< HEAD
-    Creates `apps/ex4pm_engine/lib/ex4pm_engine/wasm/<algorithm_id>.ex` defining
-    `Ex4pmEngine.Wasm.<CamelizedAlgorithmId>`, a thin per-algorithm wrapper that
-    names the admitted export symbol (defaulted to the algorithm id itself) and
-    delegates real execution to `Ex4pm.Engine.Wasm.execute/3`.
-=======
     Creates `lib/ex4pm_engine/wasm/<algorithm_id>.ex` defining
     `Ex4pmEngine.Wasm.<CamelizedAlgorithmId>`, a thin per-algorithm wrapper
     that names the admitted export symbol (defaulted to the algorithm id itself)
     and delegates real execution to `Ex4pm.Engine.Wasm.execute/3`.
->>>>>>> origin/fix/v26.9.17-prod-compile-closure
     """
 
     use Igniter.Mix.Task
@@ -85,18 +78,10 @@ if Code.ensure_loaded?(Igniter.Mix.Task) do
 else
   defmodule Mix.Tasks.Ex4pm.Engine.Gen.Adapter do
     @moduledoc """
-<<<<<<< HEAD
-    Generates a new WASM adapter module for `Ex4pm.Engine.Wasm` (requires `:igniter`).
-
-    This task depends on the `:igniter` dependency, which is scoped to
-    `only: [:dev, :test]` in `apps/ex4pm_engine/mix.exs`. It is unavailable
-    outside those environments (e.g. `MIX_ENV=prod`).
-=======
     Generates a WASM adapter for `Ex4pm.Engine.Wasm`.
 
     The generator requires the development/test-only `:igniter` dependency.
     In production this task remains resolvable but refuses execution explicitly.
->>>>>>> origin/fix/v26.9.17-prod-compile-closure
     """
 
     use Mix.Task
@@ -104,13 +89,8 @@ else
     @impl Mix.Task
     def run(_argv) do
       Mix.raise("""
-<<<<<<< HEAD
-      mix ex4pm.engine.gen.adapter requires the :igniter dependency, which is only \
-      available in :dev and :test environments. Run this task with MIX_ENV=dev or \
-=======
       mix ex4pm.engine.gen.adapter requires the :igniter dependency, which is only
       available in :dev and :test environments. Run this task with MIX_ENV=dev or
->>>>>>> origin/fix/v26.9.17-prod-compile-closure
       MIX_ENV=test.
       """)
     end
