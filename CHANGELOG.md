@@ -14,6 +14,33 @@ silence means unchanged; state it.
 
 ## [Unreleased]
 
+### Changed
+- `Ex4pmEngine.Wasm.RealTransport` now admits the WASM artifact through
+  `Ex4pmEngine.Wasm.Admission` before instantiation: sha256 digest pin
+  (`priv/wasm4pm/MANIFEST.json`, pinned to the zero-import build), an import
+  allowlist (empty: the artifact may import nothing), required-export check,
+  and typed `%Ex4pm.Refusal{}` errors with request/response size caps. The
+  87 `__wbindgen_*` stub imports are gone (artifact now has 0 imports).
+- `RealTransport.algo_specs/0` delegates to the GENERATED
+  `Ex4pmEngine.Wasm.AlgoRegistry` (33 algorithms), generated from
+  `priv/ontology/ex4pm.ttl` plus the vendored
+  `ex4pm-wasm4pm-bindings-pack` 0.1.2 (`priv/ggen/vendor/`, hash-locked).
+  The 19 Phase 1-3 leaf adapters are byte-identical to the pack's render.
+- `mix ex4pm.engine.gen.adapter` is now a thin wrapper over `ggen sync run`
+  in `ggen/bindings/` with typed refusals.
+
+### Added
+- `scripts/falsify-wasm-e2e.sh` / `mix falsify.wasm` (typed exit codes),
+  `test/wasm/pack_drift_test.exs`, `EX4PM_WASM_REQUIRED` / `EX4PM_WASM_ARTIFACT`
+  / `EX4PM_WASM_SHA256` for real-artifact tests.
+- `docs/ALGORITHM-REGISTRY-GENERATION.md`.
+
+### Public contract
+UNCHANGED (`Ex4pm.OCEL.validate_envelope/1`, `Ex4pm.Stream.Ingest.ingest_envelope/1,2`,
+`Ex4pm.Evidence.BRCE.execute/4`). `RealTransport.start/1,2` and `call/replay`
+now return `%Ex4pm.Refusal{}` errors where they previously returned bare
+error terms (WASM transport surface only).
+
 ## [26.9.30] - 2026-09-30
 
 Version bump 26.9.24 -> 26.9.30 for Hex dry-run publish readiness; package `files`
