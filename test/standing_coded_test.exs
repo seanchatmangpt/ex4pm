@@ -10,13 +10,11 @@ defmodule Ex4pm.Standing.CodedTest do
     assert Coded.parse("ALIVE[WS3_CHICAGO_MERGE_50]") == {:ok, coded}
   end
 
-
   test "round-trips the real production example ALIVE[WS3_FORTUNE5_RUNTIME_VALUE_50]" do
     coded = Coded.new(:alive, "WS3_FORTUNE5_RUNTIME_VALUE_50")
     assert Coded.to_string(coded) == "ALIVE[WS3_FORTUNE5_RUNTIME_VALUE_50]"
     assert Coded.parse("ALIVE[WS3_FORTUNE5_RUNTIME_VALUE_50]") == {:ok, coded}
   end
-
 
   test "round-trips the real production example BUILD_BROKEN[TAKT_SHORTFALL]" do
     coded = Coded.new(:build_broken, "TAKT_SHORTFALL")
@@ -24,11 +22,12 @@ defmodule Ex4pm.Standing.CodedTest do
     assert Coded.parse("BUILD_BROKEN[TAKT_SHORTFALL]") == {:ok, coded}
   end
 
-
   test "round-trips the real production example PARTIAL_ALIVE[MERGED_LOCAL_CAPSULE_NAMESPACE_UNAVAILABLE]" do
     coded = Coded.new(:partial_alive, "MERGED_LOCAL_CAPSULE_NAMESPACE_UNAVAILABLE")
     assert Coded.to_string(coded) == "PARTIAL_ALIVE[MERGED_LOCAL_CAPSULE_NAMESPACE_UNAVAILABLE]"
-    assert Coded.parse("PARTIAL_ALIVE[MERGED_LOCAL_CAPSULE_NAMESPACE_UNAVAILABLE]") == {:ok, coded}
+
+    assert Coded.parse("PARTIAL_ALIVE[MERGED_LOCAL_CAPSULE_NAMESPACE_UNAVAILABLE]") ==
+             {:ok, coded}
   end
 
   test "bare standing (no code) renders and parses without brackets" do

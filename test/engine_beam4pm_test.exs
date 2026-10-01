@@ -17,7 +17,7 @@ defmodule Engine.Beam4pmTest do
   #
   # Real, currently admitted routes this generated test suite covers:
   #
-    #   * `GET /conformance_result` (action `read`, informational only -- not sent over the wire) -> `:beam4pm_conformance_results`
+  #   * `GET /conformance_result` (action `read`, informational only -- not sent over the wire) -> `:beam4pm_conformance_results`
   #   * `GET /ocel_event` (action `read`, informational only -- not sent over the wire) -> `:beam4pm_ocel_events`
 
   alias Ex4pm.Engine.Beam4pm
@@ -87,7 +87,9 @@ defmodule Engine.Beam4pmTest do
     assert Beam4pm.available?(beam4pm_base_url: "http://127.0.0.1:1")
   end
 
-  test "a real successful request against a real AshJsonApi server reaches :alive standing", %{base_url: base_url} do
+  test "a real successful request against a real AshJsonApi server reaches :alive standing", %{
+    base_url: base_url
+  } do
     # Real JSON:API spec requirement, confirmed the hard way: a write
     # request needs the `application/vnd.api+json` media type, not plain
     # `application/json`, or AshJsonApi refuses it as 415 Unsupported
@@ -95,7 +97,9 @@ defmodule Engine.Beam4pmTest do
     seed_response =
       Req.post!(base_url <> "/ocel_event",
         headers: [{"content-type", "application/vnd.api+json"}],
-        json: %{"data" => %{"type" => "ocel_event", "attributes" => %{"activity" => "commit_qualified"}}}
+        json: %{
+          "data" => %{"type" => "ocel_event", "attributes" => %{"activity" => "commit_qualified"}}
+        }
       )
 
     %{"data" => %{"id" => id}} = seed_response.body
@@ -114,7 +118,9 @@ defmodule Engine.Beam4pmTest do
   end
 
   test "an unadmitted operation is refused, never silently attempted", %{base_url: base_url} do
-    assert {:error, refusal} = Beam4pm.execute(:not_an_admitted_operation, %{}, beam4pm_base_url: base_url)
+    assert {:error, refusal} =
+             Beam4pm.execute(:not_an_admitted_operation, %{}, beam4pm_base_url: base_url)
+
     assert refusal.code == :beam4pm_unsupported_operation
   end
 
@@ -127,7 +133,9 @@ defmodule Engine.Beam4pmTest do
     base_url = start_router!(ErrorRouter)
 
     assert {:error, refusal} =
-             Beam4pm.execute(:beam4pm_conformance_results, %{id: "c1"}, beam4pm_base_url: base_url)
+             Beam4pm.execute(:beam4pm_conformance_results, %{id: "c1"},
+               beam4pm_base_url: base_url
+             )
 
     assert refusal.code == :beam4pm_http_error
     assert refusal.details.status == 500
@@ -135,7 +143,9 @@ defmodule Engine.Beam4pmTest do
 
   test "a real connection failure (server not listening) is refused as unavailable" do
     assert {:error, refusal} =
-             Beam4pm.execute(:beam4pm_ocel_events, %{id: "e1"}, beam4pm_base_url: "http://127.0.0.1:1")
+             Beam4pm.execute(:beam4pm_ocel_events, %{id: "e1"},
+               beam4pm_base_url: "http://127.0.0.1:1"
+             )
 
     assert refusal.code == :beam4pm_unavailable
   end
@@ -144,7 +154,9 @@ defmodule Engine.Beam4pmTest do
     base_url = start_router!(InvalidBodyRouter)
 
     assert {:error, refusal} =
-             Beam4pm.execute(:beam4pm_ocel_events, %{id: "non-object-body-trigger"}, beam4pm_base_url: base_url)
+             Beam4pm.execute(:beam4pm_ocel_events, %{id: "non-object-body-trigger"},
+               beam4pm_base_url: base_url
+             )
 
     assert refusal.code == :beam4pm_invalid_response
     assert refusal.details.status == 200
@@ -160,7 +172,9 @@ defmodule Engine.Beam4pmTest do
     assert Beam4pm.available?([])
   end
 
-  test "execute/3 also resolves base_url from Application.get_env when opts omit it", %{base_url: base_url} do
+  test "execute/3 also resolves base_url from Application.get_env when opts omit it", %{
+    base_url: base_url
+  } do
     Application.put_env(:ex4pm, :beam4pm_base_url, base_url)
     on_exit(fn -> Application.delete_env(:ex4pm, :beam4pm_base_url) end)
 
@@ -199,6 +213,4 @@ defmodule Engine.Beam4pmTest do
     # anywhere near the fake server's multi-second sleep.
     assert elapsed_us < 2_000_000
   end
-
-
 end

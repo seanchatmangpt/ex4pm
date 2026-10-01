@@ -51,8 +51,18 @@ defmodule Ex4pm.Engine.Beam4pm do
   alias Ex4pm.Refusal
 
   @route_table %{
-    :beam4pm_conformance_results => %{json_api_type: "conformance_result", action: "read", http_method: :get, status: :live},
-    :beam4pm_ocel_events => %{json_api_type: "ocel_event", action: "read", http_method: :get, status: :live}
+    :beam4pm_conformance_results => %{
+      json_api_type: "conformance_result",
+      action: "read",
+      http_method: :get,
+      status: :live
+    },
+    :beam4pm_ocel_events => %{
+      json_api_type: "ocel_event",
+      action: "read",
+      http_method: :get,
+      status: :live
+    }
   }
 
   @impl true
@@ -84,13 +94,17 @@ defmodule Ex4pm.Engine.Beam4pm do
 
       {:ok, %{status: status, body: body}} when status in 200..299 ->
         {:error,
-         Refusal.new(:beam4pm_openapi_unavailable, "beam4pm returned a 2xx status but a non-JSON-object openapi body",
+         Refusal.new(
+           :beam4pm_openapi_unavailable,
+           "beam4pm returned a 2xx status but a non-JSON-object openapi body",
            details: %{status: status, url: url, body: inspect(body)}
          )}
 
       {:ok, %{status: status}} ->
         {:error,
-         Refusal.new(:beam4pm_openapi_unavailable, "beam4pm returned a non-2xx status for its openapi document",
+         Refusal.new(
+           :beam4pm_openapi_unavailable,
+           "beam4pm returned a non-2xx status for its openapi document",
            details: %{status: status, url: url}
          )}
 
@@ -117,13 +131,17 @@ defmodule Ex4pm.Engine.Beam4pm do
     with %{json_api_type: type, http_method: method} <-
            Map.get(@route_table, operation) ||
              {:error,
-              Refusal.new(:beam4pm_unsupported_operation, "beam4pm has no admitted route for this operation",
+              Refusal.new(
+                :beam4pm_unsupported_operation,
+                "beam4pm has no admitted route for this operation",
                 details: %{operation: operation}
               )},
          base when is_binary(base) <-
            base_url(opts) ||
              {:error,
-              Refusal.new(:beam4pm_unavailable, "no beam4pm_base_url configured", details: %{operation: operation})},
+              Refusal.new(:beam4pm_unavailable, "no beam4pm_base_url configured",
+                details: %{operation: operation}
+              )},
          {:ok, document} <- fetch_openapi_document(base, opts) do
       admitted_path = "/#{type}"
       paths = Map.get(document, "paths", %{})
@@ -168,7 +186,9 @@ defmodule Ex4pm.Engine.Beam4pm do
     with %{json_api_type: type, action: action, http_method: method, status: status} <-
            Map.get(@route_table, operation) ||
              {:error,
-              Refusal.new(:beam4pm_unsupported_operation, "beam4pm has no admitted route for this operation",
+              Refusal.new(
+                :beam4pm_unsupported_operation,
+                "beam4pm has no admitted route for this operation",
                 details: %{operation: operation}
               )},
          :ok <-
@@ -176,14 +196,18 @@ defmodule Ex4pm.Engine.Beam4pm do
               :ok
             else
               {:error,
-               Refusal.new(:beam4pm_route_not_live, "this operation's beam4pm route is forward_declared, not live yet",
+               Refusal.new(
+                 :beam4pm_route_not_live,
+                 "this operation's beam4pm route is forward_declared, not live yet",
                  details: %{operation: operation, status: status}
                )}
             end),
          base when is_binary(base) <-
            base_url(opts) ||
              {:error,
-              Refusal.new(:beam4pm_unavailable, "no beam4pm_base_url configured", details: %{operation: operation})},
+              Refusal.new(:beam4pm_unavailable, "no beam4pm_base_url configured",
+                details: %{operation: operation}
+              )},
          :ok <- maybe_verify_contract(operation, opts),
          {:ok, response} <- request(base, type, action, method, subject, opts) do
       {:ok,
@@ -245,8 +269,15 @@ defmodule Ex4pm.Engine.Beam4pm do
 
     result =
       case method do
-        :get -> http_module.get(url, retry: false, receive_timeout: receive_timeout)
-        :post -> http_module.post(url, json: subject || %{}, retry: false, receive_timeout: receive_timeout)
+        :get ->
+          http_module.get(url, retry: false, receive_timeout: receive_timeout)
+
+        :post ->
+          http_module.post(url,
+            json: subject || %{},
+            retry: false,
+            receive_timeout: receive_timeout
+          )
       end
 
     case result do
@@ -255,7 +286,9 @@ defmodule Ex4pm.Engine.Beam4pm do
 
       {:ok, %{status: status, body: body}} when status in 200..299 ->
         {:error,
-         Refusal.new(:beam4pm_invalid_response, "beam4pm returned a 2xx status but a non-JSON-object body",
+         Refusal.new(
+           :beam4pm_invalid_response,
+           "beam4pm returned a 2xx status but a non-JSON-object body",
            details: %{status: status, url: url, body: inspect(body)}
          )}
 
@@ -269,7 +302,10 @@ defmodule Ex4pm.Engine.Beam4pm do
         {:error, Refusal.new(:beam4pm_timeout, "beam4pm request timed out", details: %{url: url})}
 
       {:error, reason} ->
-        {:error, Refusal.new(:beam4pm_unavailable, "beam4pm request failed", details: %{url: url, reason: inspect(reason)})}
+        {:error,
+         Refusal.new(:beam4pm_unavailable, "beam4pm request failed",
+           details: %{url: url, reason: inspect(reason)}
+         )}
     end
   end
 
@@ -281,7 +317,8 @@ defmodule Ex4pm.Engine.Beam4pm do
     end
   end
 
-  defp identity_from(%{"meta" => %{"source_sha" => sha, "receipt_verified" => true}}) when is_binary(sha) do
+  defp identity_from(%{"meta" => %{"source_sha" => sha, "receipt_verified" => true}})
+       when is_binary(sha) do
     %{source_sha: sha, receipt_verified: true}
   end
 
