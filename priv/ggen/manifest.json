@@ -38,5 +38,53 @@
     "template": "priv/ggen/templates/engine_beam4pm_test.exs.eex",
     "out": "test/engine_beam4pm_test.exs",
     "test_path": "test/engine_beam4pm_test.exs"
+  },
+  {
+    "name": "algo_registry",
+    "ontology": "priv/ontology/ex4pm.ttl",
+    "extra_ontologies": [
+      "priv/ggen/vendor/ex4pm-wasm4pm-bindings-pack.ontology.ttl",
+      "priv/ggen/vendor/standing-ladder-pack.ontology.ttl",
+      "priv/ggen/vendor/provenance.ttl"
+    ],
+    "gates": [
+      "priv/ggen/vendor/gates/ex4pm-wasm4pm-bindings-pack/010_required.rq",
+      "priv/ggen/vendor/gates/ex4pm-wasm4pm-bindings-pack/030_value_constraints.rq",
+      "priv/ggen/vendor/gates/ex4pm-wasm4pm-bindings-pack/040_required_abi.rq",
+      "priv/ggen/vendor/gates/ex4pm-wasm4pm-bindings-pack/050_binding_source_agreement.rq",
+      "priv/ggen/vendor/gates/standing-ladder-pack/010_no_skipped_states.rq",
+      "priv/ggen/gates/010_every_binding_registered.rq",
+      "priv/ggen/gates/020_unique_algorithm_id.rq"
+    ],
+    "query_bindings": {
+      "algorithms": "priv/ggen/queries/registered_algorithms.rq"
+    },
+    "template": "priv/ggen/templates/algo_registry.ex.eex",
+    "out": "lib/ex4pm_engine/wasm/algo_registry.ex",
+    "test_path": null
+  },
+  {
+    "name": "algo_registry_test",
+    "ontology": "priv/ontology/ex4pm.ttl",
+    "extra_ontologies": [
+      "priv/ggen/vendor/ex4pm-wasm4pm-bindings-pack.ontology.ttl",
+      "priv/ggen/vendor/standing-ladder-pack.ontology.ttl",
+      "priv/ggen/vendor/provenance.ttl"
+    ],
+    "gates": [
+      "priv/ggen/vendor/gates/ex4pm-wasm4pm-bindings-pack/010_required.rq",
+      "priv/ggen/vendor/gates/ex4pm-wasm4pm-bindings-pack/030_value_constraints.rq",
+      "priv/ggen/vendor/gates/ex4pm-wasm4pm-bindings-pack/040_required_abi.rq",
+      "priv/ggen/vendor/gates/ex4pm-wasm4pm-bindings-pack/050_binding_source_agreement.rq",
+      "priv/ggen/vendor/gates/standing-ladder-pack/010_no_skipped_states.rq",
+      "priv/ggen/gates/010_every_binding_registered.rq",
+      "priv/ggen/gates/020_unique_algorithm_id.rq"
+    ],
+    "query_bindings": {
+      "algorithms": "priv/ggen/queries/registered_algorithms.rq"
+    },
+    "template": "priv/ggen/templates/algo_registry_test.exs.eex",
+    "out": "test/algo_registry_test.exs",
+    "test_path": "test/algo_registry_test.exs"
   }
 ]

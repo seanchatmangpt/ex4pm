@@ -1,0 +1,6 @@
+# ggen sync staging outputs (not promoted into ex4pm lib/)
+crates/
+lib/
+.clap-noun-verb/
+.ggen/
+.ggen-v2/receipt-log.jsonl

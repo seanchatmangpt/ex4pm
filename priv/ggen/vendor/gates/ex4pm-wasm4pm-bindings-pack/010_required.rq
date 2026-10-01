@@ -1,0 +1,30 @@
+# MESSAGE: presence gate. Any row = a typed individual missing a required property (?missing):
+#   - every epm:Module (embedded Rust source) must have epm:sourceText;
+#   - every epm:Manifest (Cargo.toml) must have epm:manifestText;
+#   - every epm:AlgorithmBinding must have all 9 of: algorithmId, elixirSourceModule,
+#     elixirModuleName, wasmExportName, wasmReplayExportName, requestShape, resultShape,
+#     bcinrLike, wasm4pmSourceCrate.
+# Non-emptiness / value checks live in 030_value_constraints.rq; ABI and cross-source agreement
+# live in 040/050; live-crate drift lives in 060_crate_drift.py.
+# (translated from tcps-wasm-pack's shapes.ttl sh:minCount 1 pattern)
+PREFIX epm: <http://seanchatmangpt.github.io/packs/ex4pm-wasm4pm-bindings#>
+SELECT ?s ?missing WHERE {
+  {
+    ?s a epm:Module .
+    BIND(epm:sourceText AS ?missing)
+    FILTER NOT EXISTS { ?s epm:sourceText ?v }
+  } UNION {
+    ?s a epm:Manifest .
+    BIND(epm:manifestText AS ?missing)
+    FILTER NOT EXISTS { ?s epm:manifestText ?v }
+  } UNION {
+    ?s a epm:AlgorithmBinding .
+    VALUES ?missing {
+      epm:algorithmId epm:elixirSourceModule epm:elixirModuleName epm:wasmExportName
+      epm:wasmReplayExportName epm:requestShape epm:resultShape epm:bcinrLike
+      epm:wasm4pmSourceCrate
+    }
+    FILTER NOT EXISTS { ?s ?missing ?v }
+  }
+}
+ORDER BY ?s ?missing

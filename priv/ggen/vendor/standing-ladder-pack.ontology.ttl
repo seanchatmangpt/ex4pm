@@ -1,0 +1,69 @@
+@prefix stl:   <http://seanchatmangpt.github.io/packs/standing-ladder#> .
+@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
+
+#################################################################
+# The fixed 10-state ladder itself. Fixed as 10 individuals with an explicit
+# integer stl:stateIndex so "next state" / "is this a skip" can be computed
+# in SPARQL by integer arithmetic instead of hardcoded string comparisons.
+#################################################################
+
+stl:StandingState a rdfs:Class ;
+    rdfs:label "One of the 10 fixed rungs of the evidentiary standing ladder. Closed set -- exactly the 10 individuals below, never extended ad hoc." .
+
+stl:stateIndex a rdf:Property ; rdfs:domain stl:StandingState ;
+    rdfs:comment "0-based position in the fixed ladder order. UNKNOWN=0 .. VERIFIED=9." .
+stl:stateName a rdf:Property ; rdfs:domain stl:StandingState ;
+    rdfs:comment "The state's canonical name, verbatim from the fixed ladder order." .
+
+stl:UNKNOWN a stl:StandingState ; stl:stateIndex 0 ; stl:stateName "UNKNOWN" .
+stl:OBSERVED a stl:StandingState ; stl:stateIndex 1 ; stl:stateName "OBSERVED" .
+stl:VALIDATED a stl:StandingState ; stl:stateIndex 2 ; stl:stateName "VALIDATED" .
+stl:DERIVED a stl:StandingState ; stl:stateIndex 3 ; stl:stateName "DERIVED" .
+stl:CANDIDATE a stl:StandingState ; stl:stateIndex 4 ; stl:stateName "CANDIDATE" .
+stl:EXPERIMENTALLY_SUPPORTED a stl:StandingState ; stl:stateIndex 5 ; stl:stateName "EXPERIMENTALLY_SUPPORTED" .
+stl:ADMITTED a stl:StandingState ; stl:stateIndex 6 ; stl:stateName "ADMITTED" .
+stl:MANUFACTURED a stl:StandingState ; stl:stateIndex 7 ; stl:stateName "MANUFACTURED" .
+stl:ACTUATED a stl:StandingState ; stl:stateIndex 8 ; stl:stateName "ACTUATED" .
+stl:VERIFIED a stl:StandingState ; stl:stateIndex 9 ; stl:stateName "VERIFIED" .
+
+#################################################################
+# stl:StandingClaim -- one fact's CURRENT standing. Not self-certifying:
+# gates/010_no_skipped_states.rq refuses any claim whose stl:hasStanding
+# lacks a real, unbroken, evidenced stl:StandingTransition chain reaching it
+# from UNKNOWN.
+#################################################################
+
+stl:StandingClaim a rdfs:Class ;
+    rdfs:label "One real fact's current position on the evidentiary standing ladder. stl:hasStanding is only admissible if gates/010_no_skipped_states.rq confirms a real, unbroken, evidenced stl:StandingTransition chain reaches it from stl:UNKNOWN -- never trusted on its own say-so." .
+
+stl:aboutFact a rdf:Property ; rdfs:domain stl:StandingClaim ;
+    rdfs:comment "The IRI of a real fact present and typed in the admitted union graph. A dangling IRI is refused." .
+stl:hasStanding a rdf:Property ; rdfs:domain stl:StandingClaim ; rdfs:range stl:StandingState ;
+    rdfs:comment "REQUIRED. The claim's current, gate-checked rung on the ladder." .
+
+#################################################################
+# stl:StandingTransition -- one real, evidenced single-rung step. Each
+# transition must be EXACTLY one step (toState's stateIndex = fromState's
+# stateIndex + 1) with a non-empty stl:evidenceRef.
+#################################################################
+
+stl:StandingTransition a rdfs:Class ;
+    rdfs:label "One real, evidenced single-rung step in a stl:StandingClaim's promotion history. Must be exactly one ladder rung (no skipping) and must carry a real, non-empty stl:evidenceRef -- never a placeholder." .
+
+stl:aboutClaim a rdf:Property ; rdfs:domain stl:StandingTransition ; rdfs:range stl:StandingClaim ;
+    rdfs:comment "Which stl:StandingClaim this transition is one step of the promotion history for." .
+stl:fromState a rdf:Property ; rdfs:domain stl:StandingTransition ; rdfs:range stl:StandingState .
+stl:toState a rdf:Property ; rdfs:domain stl:StandingTransition ; rdfs:range stl:StandingState .
+stl:evidenceRef a rdf:Property ; rdfs:domain stl:StandingTransition ;
+    rdfs:comment "REQUIRED, non-empty. A real, specific, checkable citation of what evidence justified THIS ONE transition -- never empty; never generic." .
+stl:transitionOrder a rdf:Property ; rdfs:domain stl:StandingTransition ;
+    rdfs:comment "1-based position of this transition within its claim's own chain -- redundant with fromState/toState stateIndex arithmetic, retained as an independently-checkable ordering fact." .
+
+# Deliberately no cross-repository worked claim lives in canonical pack source.
+# A StandingClaim is consumer data and must point at a fact that is actually
+# present in that consumer's admitted union graph. The marketplace qualification
+# fixture under qualification/consumer.ttl supplies the SREGym worked example
+# together with its external fact identity. This prevents a reusable semantic
+# pack from acquiring a hidden runtime dependency on another pack merely to
+# validate its own schema.

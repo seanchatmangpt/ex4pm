@@ -116,4 +116,97 @@ defmodule Ex4pmGgenSyncTaskTest do
     # a partially-successful sync.
     refute File.exists?(Path.join(dir, "generated_out.ex"))
   end
+
+  defp scratch_dir! do
+    # ggen_igniter's authorized root is the project, so scratch inputs live
+    # under the already-gitignored .ggen_igniter_tmp/.
+    d = Path.join(File.cwd!(), ".ggen_igniter_tmp/sync_task_test_#{System.unique_integer([:positive])}")
+    File.mkdir_p!(d)
+    on_exit(fn -> File.rm_rf!(d) end)
+    d
+  end
+
+  test "an extra_ontologies path that does not exist aborts naming the unit and the missing input", %{dir: dir} do
+    path =
+      write_manifest!(dir, [
+        %{
+          "name" => "unit_with_missing_extra",
+          "ontology" => "priv/ontology/ex4pm.ttl",
+          "extra_ontologies" => [Path.join(dir, "no_such_extra.ttl")],
+          "query_bindings" => %{},
+          "template" => "priv/ggen/templates/standing_coded.ex.eex",
+          "out" => Path.join(dir, "never_written.ex"),
+          "test_path" => nil
+        }
+      ])
+
+    {output, exit_code} = run_sync(["--manifest", path])
+
+    assert exit_code != 0
+    assert output =~ "FAILED at unit unit_with_missing_extra"
+    assert output =~ "ontology input(s) not found"
+    refute File.exists?(Path.join(dir, "never_written.ex"))
+  end
+
+  test "a vendored input whose sha256 differs from the lock refuses the unit" do
+    d = scratch_dir!()
+    vendor = Path.join(d, "vendor")
+    File.mkdir_p!(vendor)
+    File.write!(Path.join(vendor, "x.ontology.ttl"), "@prefix ex: <https://example.org/> .\nex:a ex:b ex:c .\n")
+
+    File.write!(
+      Path.join(vendor, "PACKS.lock.json"),
+      Jason.encode!(%{
+        "packs" => [%{"name" => "x", "files" => [%{"path" => "x.ontology.ttl", "sha256" => String.duplicate("0", 64)}]}]
+      })
+    )
+
+    manifest =
+      write_manifest!(d, [
+        %{
+          "name" => "locked_unit",
+          "ontology" => "priv/ontology/ex4pm.ttl",
+          "extra_ontologies" => [Path.join(vendor, "x.ontology.ttl")],
+          "vendor_lock" => Path.join(vendor, "PACKS.lock.json"),
+          "query_bindings" => %{},
+          "template" => "priv/ggen/templates/standing_coded.ex.eex",
+          "out" => Path.join(d, "never_written.ex"),
+          "test_path" => nil
+        }
+      ])
+
+    {output, exit_code} = run_sync(["--manifest", manifest])
+
+    assert exit_code != 0
+    assert output =~ "FAILED at unit locked_unit"
+    assert output =~ "re-run priv/ggen/vendor/sync.sh"
+    refute File.exists?(Path.join(d, "never_written.ex"))
+  end
+
+  test "a gate that returns any row refuses the unit before generation" do
+    d = scratch_dir!()
+    File.write!(Path.join(d, "o.ttl"), "@prefix ex: <https://example.org/> .\nex:a ex:b ex:c .\n")
+    File.write!(Path.join(d, "always_fires.rq"), "SELECT ?s WHERE { ?s ?p ?o } LIMIT 1\n")
+
+    manifest =
+      write_manifest!(d, [
+        %{
+          "name" => "gated_unit",
+          "ontology" => Path.join(d, "o.ttl"),
+          "gates" => [Path.join(d, "always_fires.rq")],
+          "query_bindings" => %{},
+          "template" => "priv/ggen/templates/standing_coded.ex.eex",
+          "out" => Path.join(d, "never_written.ex"),
+          "test_path" => nil
+        }
+      ])
+
+    {output, exit_code} = run_sync(["--manifest", manifest])
+
+    assert exit_code != 0
+    assert output =~ "FAILED at unit gated_unit"
+    assert output =~ "gate(s) refused"
+    assert output =~ "always_fires.rq: 1 row(s)"
+    refute File.exists?(Path.join(d, "never_written.ex"))
+  end
 end

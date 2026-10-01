@@ -1,0 +1,11 @@
+[project]
+name = "ex4pm-wasm4pm-bindings-consumer"
+
+[ontology]
+source = "ontology.ttl"
+
+[packs]
+"ex4pm-wasm4pm-bindings-pack" = { path = "ex4pm-wasm4pm-bindings-pack" }
+
+[templates]
+dir = "templates"

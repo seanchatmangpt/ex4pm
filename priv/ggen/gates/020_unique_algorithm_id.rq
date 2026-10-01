@@ -1,0 +1,10 @@
+# MESSAGE: algorithm_id must map to exactly one export pair and one module. Any row = an
+# algorithm_id (?id) with more than one distinct binding IRI, export name, or module name
+# (e.g. a transitional overlay left in place after the vendored pack gained the same binding).
+PREFIX epm: <http://seanchatmangpt.github.io/packs/ex4pm-wasm4pm-bindings#>
+SELECT ?id (COUNT(DISTINCT ?b) AS ?bindings) (COUNT(DISTINCT ?e) AS ?exports) (COUNT(DISTINCT ?m) AS ?modules) WHERE {
+  ?b a epm:AlgorithmBinding ; epm:algorithmId ?id ; epm:wasmExportName ?e ; epm:elixirModuleName ?m .
+}
+GROUP BY ?id
+HAVING (COUNT(DISTINCT ?b) > 1 || COUNT(DISTINCT ?e) > 1 || COUNT(DISTINCT ?m) > 1)
+ORDER BY ?id

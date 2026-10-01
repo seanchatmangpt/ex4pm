@@ -39,6 +39,8 @@ defmodule Ex4pmGgenVerifyDeterminismTest do
     assert exit_code == 0, "expected --all to succeed against the real manifest, got:\n#{output}"
     assert output =~ "deterministic  standing_coded"
     assert output =~ "deterministic  standing_coded_test"
+    assert output =~ "deterministic  algo_registry"
+    assert output =~ "deterministic  algo_registry_test"
   end
 
   test "a tampered checked-in file is caught, named, and reported non-zero -- not fail-open" do
@@ -199,6 +201,47 @@ defmodule Ex4pmGgenVerifyDeterminismTest do
 
     assert exit_code != 0
     assert output =~ "regeneration failed (exit"
+    refute output =~ "is NOT deterministic"
+  end
+
+  test "a vendored input whose sha256 differs from the lock is refused as a vendor mismatch, not a determinism mismatch" do
+    d = Path.join(File.cwd!(), ".ggen_igniter_tmp/vd_lock_test_#{:erlang.unique_integer([:positive])}")
+    vendor = Path.join(d, "vendor")
+    File.mkdir_p!(vendor)
+    on_exit(fn -> File.rm_rf!(d) end)
+
+    File.write!(Path.join(vendor, "x.ontology.ttl"), "@prefix ex: <https://example.org/> .\nex:a ex:b ex:c .\n")
+
+    File.write!(
+      Path.join(vendor, "PACKS.lock.json"),
+      Jason.encode!(%{
+        "packs" => [%{"name" => "x", "files" => [%{"path" => "x.ontology.ttl", "sha256" => String.duplicate("0", 64)}]}]
+      })
+    )
+
+    manifest = Path.join(d, "manifest.json")
+
+    File.write!(
+      manifest,
+      Jason.encode!([
+        %{
+          "name" => "locked_unit",
+          "ontology" => "priv/ontology/ex4pm.ttl",
+          "extra_ontologies" => [Path.join(vendor, "x.ontology.ttl")],
+          "vendor_lock" => Path.join(vendor, "PACKS.lock.json"),
+          "query_bindings" => %{"admitted" => "priv/ggen/queries/admitted_standing_codes.rq"},
+          "template" => "priv/ggen/templates/standing_coded.ex.eex",
+          "out" => "lib/ex4pm/standing_coded.ex"
+        }
+      ])
+    )
+
+    {output, exit_code} =
+      System.cmd("mix", ["ex4pm.ggen.verify_determinism", "--all", "--manifest", manifest], stderr_to_stdout: true)
+
+    assert exit_code != 0
+    assert output =~ "vendor/ontology input refused"
+    assert output =~ "re-run priv/ggen/vendor/sync.sh"
     refute output =~ "is NOT deterministic"
   end
 end

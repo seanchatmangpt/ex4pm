@@ -1,0 +1,30 @@
+# MESSAGE: epm:sourceText/epm:manifestText must be non-empty; every epm:AlgorithmBinding's
+# epm:wasmExportName/epm:wasmReplayExportName must start with "wasm4pm_ex4pm_" (the crate's
+# single shared export-name prefix, matching lib.rs's actual #[unsafe(export_name = ...)] values)
+# — this file checks non-emptiness and export-name-prefix agreement (translated from
+# tcps-wasm-pack's shapes.ttl sh:minLength 1 pattern; any row = a bound value failing its check)
+PREFIX epm: <http://seanchatmangpt.github.io/packs/ex4pm-wasm4pm-bindings#>
+SELECT ?s ?p ?v WHERE {
+  {
+    ?s a epm:Module ; epm:sourceText ?v .
+    BIND(epm:sourceText AS ?p)
+    FILTER(STRLEN(STR(?v)) < 1)
+  } UNION {
+    ?s a epm:Manifest ; epm:manifestText ?v .
+    BIND(epm:manifestText AS ?p)
+    FILTER(STRLEN(STR(?v)) < 1)
+  } UNION {
+    ?s a epm:AlgorithmBinding ; epm:wasmExportName ?v .
+    BIND(epm:wasmExportName AS ?p)
+    FILTER(!STRSTARTS(STR(?v), "wasm4pm_ex4pm_"))
+  } UNION {
+    ?s a epm:AlgorithmBinding ; epm:wasmReplayExportName ?v .
+    BIND(epm:wasmReplayExportName AS ?p)
+    FILTER(!STRSTARTS(STR(?v), "wasm4pm_ex4pm_"))
+  } UNION {
+    ?s a epm:AlgorithmBinding ; epm:wasm4pmSourceCrate ?v .
+    BIND(epm:wasm4pmSourceCrate AS ?p)
+    FILTER(?v NOT IN ("wasm4pm-ex4pm-bindings", "miniml-core", "wasm4pm-cognition", "ocpq", "prolog8", "wasm4pm"))
+  }
+}
+ORDER BY ?s ?p

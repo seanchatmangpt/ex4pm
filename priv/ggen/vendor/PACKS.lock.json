@@ -1,0 +1,62 @@
+{
+  "schema": "ex4pm.ggen.vendor-lock/v1",
+  "source_repo": "ggen-marketplace",
+  "source_git_sha": "d467c417adffeea6f303b354867063c860bffeb7",
+  "packs": [
+    {
+      "name": "ex4pm-wasm4pm-bindings-pack",
+      "version": "0.1.2",
+      "source_tree_dirty": false,
+      "files": [
+        {
+          "path": "ex4pm-wasm4pm-bindings-pack.ontology.ttl",
+          "source_path": "packs/ex4pm-wasm4pm-bindings-pack/ontology.ttl",
+          "sha256": "2fcd79660b8769c340364ff510f50fe75b47a52839ec43e6db674da4a648dd1e"
+        },
+        {
+          "path": "gates/ex4pm-wasm4pm-bindings-pack/010_required.rq",
+          "source_path": "packs/ex4pm-wasm4pm-bindings-pack/gates/010_required.rq",
+          "sha256": "6a8a196bdabda229325f7fbac5ddb5ebeb83ff00152888fa206c1e7077275501"
+        },
+        {
+          "path": "gates/ex4pm-wasm4pm-bindings-pack/030_value_constraints.rq",
+          "source_path": "packs/ex4pm-wasm4pm-bindings-pack/gates/030_value_constraints.rq",
+          "sha256": "6f4b22c66332fae7db44a5e256a49765c5b2b747cf1ccf72ac131738dc45f3db"
+        },
+        {
+          "path": "gates/ex4pm-wasm4pm-bindings-pack/040_required_abi.rq",
+          "source_path": "packs/ex4pm-wasm4pm-bindings-pack/gates/040_required_abi.rq",
+          "sha256": "f6710f02cf0170a95aeea80947623a31ca01e684aa2df79630335a4927d822c0"
+        },
+        {
+          "path": "gates/ex4pm-wasm4pm-bindings-pack/050_binding_source_agreement.rq",
+          "source_path": "packs/ex4pm-wasm4pm-bindings-pack/gates/050_binding_source_agreement.rq",
+          "sha256": "b74778852794d2e188a1e713a886ecffab7cff510f50501a2564664944cb027c"
+        }
+      ]
+    },
+    {
+      "name": "standing-ladder-pack",
+      "version": "0.1.1",
+      "source_tree_dirty": false,
+      "files": [
+        {
+          "path": "standing-ladder-pack.ontology.ttl",
+          "source_path": "packs/standing-ladder-pack/ontology.ttl",
+          "sha256": "cf2c419148f6459ac73864ec0d2cf08cd6d6b660fa6789327e79fc102121552a"
+        },
+        {
+          "path": "gates/standing-ladder-pack/010_no_skipped_states.rq",
+          "source_path": "packs/standing-ladder-pack/gates/010_no_skipped_states.rq",
+          "sha256": "e7067be15b282d4aedbb4c704e6a412fe054248b7b998a4b10420abdf5e1113f"
+        }
+      ]
+    }
+  ],
+  "generated": [
+    {
+      "path": "provenance.ttl",
+      "sha256": "d112b223546d51982289d2eb4b2e8e9468975811f85f03a7be16f9d7830d9cfc"
+    }
+  ]
+}

@@ -70,3 +70,7 @@ parse → route → admit/refuse → construct → BRCE → DO → receipt → r
 `SELECT`, `CONSTRUCT`, and `DO` are separate authority domains. Only `Ex4pm.Evidence.BRCE` may authorize a state-changing callback. A pending receipt must exist before callback invocation and an outcome receipt must terminate every attempted invocation.
 
 Canonical semantic objects live in `ex4pm_core`; engine, runtime, stream, domain, CLI, and web surfaces are projections/adapters unless an admitted equivalence proof establishes otherwise. Preserve the maximal lawful BEAM/WASM/NIF/remote/stream/projection graph before selection. Prefer `mix verify` for the repository crown; for narrow repairs, run the owning app verifier first and expand after success.
+
+## Generation authority
+
+`lib/ex4pm_engine/wasm/algo_registry.ex` and `test/algo_registry_test.exs` are generated from the RDF graph (`priv/ontology/ex4pm.ttl` merged with the sha256-locked packs in `priv/ggen/vendor/`) by `mix ex4pm.ggen.sync`; never hand-edit them. Add algorithms or update vendored packs per `docs/ALGORITHM-REGISTRY-GENERATION.md`, and verify with `mix ex4pm.ggen.verify_determinism --all`. Standing rungs on registrations use the 10-state `standing-ladder-pack` ladder, backed by evidenced transitions, never defaulted.

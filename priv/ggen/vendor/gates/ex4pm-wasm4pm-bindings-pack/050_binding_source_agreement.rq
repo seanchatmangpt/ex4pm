@@ -1,0 +1,18 @@
+# MESSAGE: binding/source agreement gate. Any row = an epm:AlgorithmBinding export name (?export,
+# of property ?p) that does not appear as an `export_name = "..."` attribute in ANY embedded
+# epm:sourceText, i.e. the ontology declares a binding the embedded Rust never exports.
+# The converse count identity (2*bindings + 4 infra == distinct export_name attributes extracted
+# from all sourceText) needs regex extraction SPARQL 1.1 lacks, so it is checked by
+# tests/run_gates.py (COUNT_IDENTITY) and gates/060_crate_drift.py.
+PREFIX epm: <http://seanchatmangpt.github.io/packs/ex4pm-wasm4pm-bindings#>
+SELECT ?s ?p ?export WHERE {
+  ?s a epm:AlgorithmBinding .
+  { ?s epm:wasmExportName ?export . BIND(epm:wasmExportName AS ?p) }
+  UNION
+  { ?s epm:wasmReplayExportName ?export . BIND(epm:wasmReplayExportName AS ?p) }
+  FILTER NOT EXISTS {
+    ?m a epm:Module ; epm:sourceText ?t .
+    FILTER(CONTAINS(STR(?t), CONCAT("export_name = \"", STR(?export), "\"")))
+  }
+}
+ORDER BY ?s ?p

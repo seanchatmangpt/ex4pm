@@ -192,3 +192,853 @@ ex4pmb:ferroplan_fond_policy a ex4pmb:AdmittedBeam4pmService ;
     ex4pmb:planningType "Fond" ;
     ex4pmb:status "forward_declared" ;
     rdfs:comment "Strong FOND fixed-point policy over PPDDL oneof effects (ferroplan core planning_runtime.rs::fond_policy, PlanningType::Fond). Not yet reachable via ferroplan-wasm or a beam4pm json_api route. NOT live yet." .
+
+# =============================================================================
+# Algorithm registry admission graph (docs/ALGORITHM-REGISTRY-GENERATION.md).
+# One ex4pmal:RegisteredAlgorithm per epm:AlgorithmBinding (individuals owned
+# by the vendored ex4pm-wasm4pm-bindings-pack), each linked to an
+# stl:StandingClaim (vendored standing-ladder-pack) whose rung is backed by
+# real, single-step, evidenced stl:StandingTransition individuals. Rung is the
+# HIGHEST one with checkable evidence -- never defaulted. The 10-rung ladder
+# is NOT the 6-state Ex4pm.Standing; the two are deliberately unmapped.
+# Merged at generation time with priv/ggen/vendor/*.ttl (manifest
+# "extra_ontologies"); mix ex4pm.ggen.sync gates the merged graph.
+# =============================================================================
+@prefix ex4pmal: <https://chatman.ai/ex4pm/algorithm-registry#> .
+@prefix epm: <http://seanchatmangpt.github.io/packs/ex4pm-wasm4pm-bindings#> .
+@prefix stl: <http://seanchatmangpt.github.io/packs/standing-ladder#> .
+
+ex4pmal:RegisteredAlgorithm a rdfs:Class ;
+    rdfs:comment "One algorithm admitted into Ex4pmEngine.Wasm.AlgoRegistry: binds an epm:AlgorithmBinding to a gated stl:StandingClaim." .
+ex4pmal:binding a rdf:Property ; rdfs:domain ex4pmal:RegisteredAlgorithm ; rdfs:range epm:AlgorithmBinding .
+ex4pmal:standingClaim a rdf:Property ; rdfs:domain ex4pmal:RegisteredAlgorithm ; rdfs:range stl:StandingClaim .
+ex4pmal:unit a rdf:Property ; rdfs:range xsd:string .
+
+ex4pmal:registry_generation a prov:Activity ;
+    ex4pmal:unit "algo_registry" ;
+    rdfs:comment "priv/ggen/manifest.json units algo_registry and algo_registry_test (mix ex4pm.ggen.sync)." .
+
+ex4pmal:reg_align a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Align ;
+    ex4pmal:standingClaim ex4pmal:claim_align ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_align a stl:StandingClaim ;
+    stl:aboutFact epm:Align ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_align_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_align ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Align (algorithmId align) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/align.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_align_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_align ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_align_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_align ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the align spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_allen_temporal a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:AllenTemporal ;
+    ex4pmal:standingClaim ex4pmal:claim_allen_temporal ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_allen_temporal a stl:StandingClaim ;
+    stl:aboutFact epm:AllenTemporal ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_allen_temporal_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_allen_temporal ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:AllenTemporal (algorithmId allen_temporal) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/allen_temporal.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_allen_temporal_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_allen_temporal ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_allen_temporal_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_allen_temporal ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the allen_temporal spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_bayesian a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Bayesian ;
+    ex4pmal:standingClaim ex4pmal:claim_bayesian ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_bayesian a stl:StandingClaim ;
+    stl:aboutFact epm:Bayesian ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_bayesian_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_bayesian ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Bayesian (algorithmId bayesian) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/bayesian.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_bayesian_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_bayesian ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_bayesian_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_bayesian ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the bayesian spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_conform a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Conform ;
+    ex4pmal:standingClaim ex4pmal:claim_conform ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_conform a stl:StandingClaim ;
+    stl:aboutFact epm:Conform ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_conform_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_conform ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Conform (algorithmId conform) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/conform.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_conform_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_conform ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_conform_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_conform ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the conform spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_ctl_check a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:CtlCheck ;
+    ex4pmal:standingClaim ex4pmal:claim_ctl_check ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_ctl_check a stl:StandingClaim ;
+    stl:aboutFact epm:CtlCheck ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_ctl_check_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ctl_check ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:CtlCheck (algorithmId ctl_check) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/ctl_check.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_ctl_check_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ctl_check ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_ctl_check_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ctl_check ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the ctl_check spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_discover a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Discover ;
+    ex4pmal:standingClaim ex4pmal:claim_discover ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_discover a stl:StandingClaim ;
+    stl:aboutFact epm:Discover ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_discover_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_discover ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Discover (algorithmId discover) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/discover.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_discover_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_discover ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_discover_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_discover ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the discover spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_dot_product a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:DotProduct ;
+    ex4pmal:standingClaim ex4pmal:claim_dot_product ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_dot_product a stl:StandingClaim ;
+    stl:aboutFact epm:DotProduct ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_dot_product_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_dot_product ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:DotProduct (algorithmId dot_product) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/dot_product.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_dot_product_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_dot_product ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_dot_product_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_dot_product ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the dot_product spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_etc_precision a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:EtcPrecision ;
+    ex4pmal:standingClaim ex4pmal:claim_etc_precision ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_etc_precision a stl:StandingClaim ;
+    stl:aboutFact epm:EtcPrecision ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_etc_precision_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_etc_precision ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:EtcPrecision (algorithmId etc_precision) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/etc_precision.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_etc_precision_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_etc_precision ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_etc_precision_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_etc_precision ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the etc_precision spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_euclidean_distance a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:EuclideanDistance ;
+    ex4pmal:standingClaim ex4pmal:claim_euclidean_distance ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_euclidean_distance a stl:StandingClaim ;
+    stl:aboutFact epm:EuclideanDistance ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_euclidean_distance_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_euclidean_distance ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:EuclideanDistance (algorithmId euclidean_distance) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/euclidean_distance.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_euclidean_distance_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_euclidean_distance ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_euclidean_distance_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_euclidean_distance ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the euclidean_distance spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_ewma a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Ewma ;
+    ex4pmal:standingClaim ex4pmal:claim_ewma ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_ewma a stl:StandingClaim ;
+    stl:aboutFact epm:Ewma ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_ewma_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ewma ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Ewma (algorithmId ewma) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/ewma.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_ewma_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ewma ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_ewma_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ewma ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the ewma spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_forecast a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Forecast ;
+    ex4pmal:standingClaim ex4pmal:claim_forecast ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_forecast a stl:StandingClaim ;
+    stl:aboutFact epm:Forecast ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_forecast_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_forecast ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Forecast (algorithmId forecast) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/forecast.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_forecast_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_forecast ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_forecast_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_forecast ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the forecast spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_holt_forecast a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:HoltForecast ;
+    ex4pmal:standingClaim ex4pmal:claim_holt_forecast ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_holt_forecast a stl:StandingClaim ;
+    stl:aboutFact epm:HoltForecast ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_holt_forecast_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_holt_forecast ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:HoltForecast (algorithmId holt_forecast) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/holt_forecast.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_holt_forecast_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_holt_forecast ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_holt_forecast_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_holt_forecast ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the holt_forecast spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_htn_plan a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:HtnPlan ;
+    ex4pmal:standingClaim ex4pmal:claim_htn_plan ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_htn_plan a stl:StandingClaim ;
+    stl:aboutFact epm:HtnPlan ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_htn_plan_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_htn_plan ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:HtnPlan (algorithmId htn_plan) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/htn_plan.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_htn_plan_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_htn_plan ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_htn_plan_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_htn_plan ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the htn_plan spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_ks_critical_value a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:KsCriticalValue ;
+    ex4pmal:standingClaim ex4pmal:claim_ks_critical_value ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_ks_critical_value a stl:StandingClaim ;
+    stl:aboutFact epm:KsCriticalValue ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_ks_critical_value_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ks_critical_value ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:KsCriticalValue (algorithmId ks_critical_value) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/ks_critical_value.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_ks_critical_value_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ks_critical_value ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_ks_critical_value_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ks_critical_value ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the ks_critical_value spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_ks_statistic a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:KsStatistic ;
+    ex4pmal:standingClaim ex4pmal:claim_ks_statistic ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_ks_statistic a stl:StandingClaim ;
+    stl:aboutFact epm:KsStatistic ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_ks_statistic_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ks_statistic ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:KsStatistic (algorithmId ks_statistic) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/ks_statistic.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_ks_statistic_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ks_statistic ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_ks_statistic_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ks_statistic ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the ks_statistic spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_markov a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Markov ;
+    ex4pmal:standingClaim ex4pmal:claim_markov ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_markov a stl:StandingClaim ;
+    stl:aboutFact epm:Markov ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_markov_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_markov ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Markov (algorithmId markov) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/markov.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_markov_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_markov ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_markov_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_markov ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the markov spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_mean a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Mean ;
+    ex4pmal:standingClaim ex4pmal:claim_mean ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_mean a stl:StandingClaim ;
+    stl:aboutFact epm:Mean ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_mean_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_mean ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Mean (algorithmId mean) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/mean.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_mean_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_mean ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_mean_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_mean ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the mean spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_median a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Median ;
+    ex4pmal:standingClaim ex4pmal:claim_median ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_median a stl:StandingClaim ;
+    stl:aboutFact epm:Median ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_median_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_median ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Median (algorithmId median) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/median.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_median_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_median ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_median_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_median ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the median spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_oc_discover a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:OcDiscover ;
+    ex4pmal:standingClaim ex4pmal:claim_oc_discover ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_oc_discover a stl:StandingClaim ;
+    stl:aboutFact epm:OcDiscover ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_oc_discover_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_oc_discover ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:OcDiscover (algorithmId oc_discover) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/oc_discover.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_oc_discover_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_oc_discover ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_oc_discover_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_oc_discover ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the oc_discover spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_ocpq_eval a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:OcpqEval ;
+    ex4pmal:standingClaim ex4pmal:claim_ocpq_eval ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_ocpq_eval a stl:StandingClaim ;
+    stl:aboutFact epm:OcpqEval ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_ocpq_eval_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ocpq_eval ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:OcpqEval (algorithmId ocpq_eval) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/ocpq_eval.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_ocpq_eval_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ocpq_eval ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_ocpq_eval_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_ocpq_eval ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the ocpq_eval spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_optimize a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Optimize ;
+    ex4pmal:standingClaim ex4pmal:claim_optimize ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_optimize a stl:StandingClaim ;
+    stl:aboutFact epm:Optimize ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_optimize_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_optimize ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Optimize (algorithmId optimize) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/optimize.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_optimize_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_optimize ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_optimize_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_optimize ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the optimize spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_percentile a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Percentile ;
+    ex4pmal:standingClaim ex4pmal:claim_percentile ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_percentile a stl:StandingClaim ;
+    stl:aboutFact epm:Percentile ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_percentile_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_percentile ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Percentile (algorithmId percentile) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/percentile.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_percentile_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_percentile ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_percentile_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_percentile ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the percentile spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_playout a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Playout ;
+    ex4pmal:standingClaim ex4pmal:claim_playout ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_playout a stl:StandingClaim ;
+    stl:aboutFact epm:Playout ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_playout_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_playout ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Playout (algorithmId playout) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/playout.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_playout_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_playout ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_playout_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_playout ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the playout spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_powl_mine a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:PowlMine ;
+    ex4pmal:standingClaim ex4pmal:claim_powl_mine ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_powl_mine a stl:StandingClaim ;
+    stl:aboutFact epm:PowlMine ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_powl_mine_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_powl_mine ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:PowlMine (algorithmId powl_mine) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/powl_mine.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_powl_mine_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_powl_mine ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_powl_mine_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_powl_mine ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the powl_mine spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_prolog_query a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:PrologQuery ;
+    ex4pmal:standingClaim ex4pmal:claim_prolog_query ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_prolog_query a stl:StandingClaim ;
+    stl:aboutFact epm:PrologQuery ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_prolog_query_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_prolog_query ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:PrologQuery (algorithmId prolog_query) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/prolog_query.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_prolog_query_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_prolog_query ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_prolog_query_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_prolog_query ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the prolog_query spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_regression a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Regression ;
+    ex4pmal:standingClaim ex4pmal:claim_regression ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_regression a stl:StandingClaim ;
+    stl:aboutFact epm:Regression ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_regression_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_regression ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Regression (algorithmId regression) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/regression.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_regression_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_regression ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_regression_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_regression ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the regression spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_simulate a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Simulate ;
+    ex4pmal:standingClaim ex4pmal:claim_simulate ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_simulate a stl:StandingClaim ;
+    stl:aboutFact epm:Simulate ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_simulate_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_simulate ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Simulate (algorithmId simulate) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/simulate.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_simulate_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_simulate ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_simulate_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_simulate ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the simulate spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_soundness a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Soundness ;
+    ex4pmal:standingClaim ex4pmal:claim_soundness ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_soundness a stl:StandingClaim ;
+    stl:aboutFact epm:Soundness ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_soundness_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_soundness ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Soundness (algorithmId soundness) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/soundness.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_soundness_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_soundness ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_soundness_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_soundness ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the soundness spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_standardize a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Standardize ;
+    ex4pmal:standingClaim ex4pmal:claim_standardize ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_standardize a stl:StandingClaim ;
+    stl:aboutFact epm:Standardize ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_standardize_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_standardize ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Standardize (algorithmId standardize) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/standardize.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_standardize_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_standardize ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_standardize_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_standardize ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the standardize spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_std_deviation a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:StdDeviation ;
+    ex4pmal:standingClaim ex4pmal:claim_std_deviation ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_std_deviation a stl:StandingClaim ;
+    stl:aboutFact epm:StdDeviation ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_std_deviation_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_std_deviation ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:StdDeviation (algorithmId std_deviation) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/std_deviation.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_std_deviation_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_std_deviation ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_std_deviation_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_std_deviation ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the std_deviation spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_strips_plan a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:StripsPlan ;
+    ex4pmal:standingClaim ex4pmal:claim_strips_plan ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_strips_plan a stl:StandingClaim ;
+    stl:aboutFact epm:StripsPlan ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_strips_plan_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_strips_plan ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:StripsPlan (algorithmId strips_plan) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/strips_plan.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_strips_plan_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_strips_plan ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_strips_plan_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_strips_plan ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the strips_plan spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_survival a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:Survival ;
+    ex4pmal:standingClaim ex4pmal:claim_survival ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_survival a stl:StandingClaim ;
+    stl:aboutFact epm:Survival ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_survival_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_survival ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:Survival (algorithmId survival) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/survival.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_survival_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_survival ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_survival_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_survival ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the survival spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .
+
+ex4pmal:reg_trend_classify a ex4pmal:RegisteredAlgorithm ;
+    ex4pmal:binding epm:TrendClassify ;
+    ex4pmal:standingClaim ex4pmal:claim_trend_classify ;
+    prov:wasDerivedFrom ex4pmal:pack_ex4pm_wasm4pm_bindings_pack ;
+    prov:wasGeneratedBy ex4pmal:registry_generation .
+
+ex4pmal:claim_trend_classify a stl:StandingClaim ;
+    stl:aboutFact epm:TrendClassify ;
+    stl:hasStanding stl:DERIVED .
+
+ex4pmal:claim_trend_classify_t1 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_trend_classify ;
+    stl:fromState stl:UNKNOWN ; stl:toState stl:OBSERVED ; stl:transitionOrder 1 ;
+    stl:evidenceRef "OBSERVED: epm:TrendClassify (algorithmId trend_classify) is declared in the vendored ex4pm-wasm4pm-bindings-pack ontology (identity: ex4pmal:pack_ex4pm_wasm4pm_bindings_pack in priv/ggen/vendor/provenance.ttl) and adapter lib/ex4pm_engine/wasm/trend_classify.ex declares the same wasm_export (asserted by generated test/algo_registry_test.exs)." .
+
+ex4pmal:claim_trend_classify_t2 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_trend_classify ;
+    stl:fromState stl:OBSERVED ; stl:toState stl:VALIDATED ; stl:transitionOrder 2 ;
+    stl:evidenceRef "VALIDATED: vendored pack gates 010_required, 030_value_constraints, 040_required_abi, 050_binding_source_agreement and the local registry gates return zero rows on the merged graph; enforced on every mix ex4pm.ggen.sync (manifest unit algo_registry, field gates)." .
+
+ex4pmal:claim_trend_classify_t3 a stl:StandingTransition ;
+    stl:aboutClaim ex4pmal:claim_trend_classify ;
+    stl:fromState stl:VALIDATED ; stl:toState stl:DERIVED ; stl:transitionOrder 3 ;
+    stl:evidenceRef "DERIVED: the trend_classify spec row of lib/ex4pm_engine/wasm/algo_registry.ex is derived from this binding by priv/ggen/queries/registered_algorithms.rq; mix ex4pm.ggen.verify_determinism --all regenerates it byte-identically." .

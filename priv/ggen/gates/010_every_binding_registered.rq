@@ -1,0 +1,17 @@
+# MESSAGE: every epm:AlgorithmBinding must have exactly one ex4pmal:RegisteredAlgorithm and every
+# RegisteredAlgorithm must point at a typed epm:AlgorithmBinding. Any row = an unregistered binding
+# (?kind "unregistered_binding") or a dangling registration (?kind "dangling_registration").
+PREFIX epm: <http://seanchatmangpt.github.io/packs/ex4pm-wasm4pm-bindings#>
+PREFIX ex4pmal: <https://chatman.ai/ex4pm/algorithm-registry#>
+SELECT ?s ?kind WHERE {
+  {
+    ?s a epm:AlgorithmBinding .
+    FILTER NOT EXISTS { ?r a ex4pmal:RegisteredAlgorithm ; ex4pmal:binding ?s }
+    BIND("unregistered_binding" AS ?kind)
+  } UNION {
+    ?s a ex4pmal:RegisteredAlgorithm .
+    FILTER NOT EXISTS { ?s ex4pmal:binding ?b . ?b a epm:AlgorithmBinding }
+    BIND("dangling_registration" AS ?kind)
+  }
+}
+ORDER BY ?s ?kind

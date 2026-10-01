@@ -1,0 +1,19 @@
+# MESSAGE: ABI-presence gate. The crate's shared buffer ABI is four infra exports defined in
+# epm:LibModule's embedded source: version_v1, alloc_v1, dealloc_v1, free_v1. Any row = a required
+# infra export name (?export) that does NOT appear as an `export_name = "..."` attribute in
+# epm:LibModule epm:sourceText. Hosts (Wasmex etc.) cannot call an algorithm export without
+# alloc/dealloc/free, so a missing one is a hard fail.
+PREFIX epm: <http://seanchatmangpt.github.io/packs/ex4pm-wasm4pm-bindings#>
+SELECT ?export WHERE {
+  VALUES ?export {
+    "wasm4pm_ex4pm_bindings_version_v1"
+    "wasm4pm_ex4pm_bindings_alloc_v1"
+    "wasm4pm_ex4pm_bindings_dealloc_v1"
+    "wasm4pm_ex4pm_bindings_free_v1"
+  }
+  FILTER NOT EXISTS {
+    epm:LibModule epm:sourceText ?t .
+    FILTER(CONTAINS(STR(?t), CONCAT("export_name = \"", ?export, "\"")))
+  }
+}
+ORDER BY ?export

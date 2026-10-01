@@ -32,6 +32,11 @@ defmodule Mix.Tasks.Ex4pm.Ggen.VerifyDeterminism do
 
   ## Exit behavior
 
+  Units may declare `"extra_ontologies"` (see `Mix.Tasks.Ex4pm.Ggen.Sync`):
+  the same merged scratch ontology is built, and vendored inputs whose sha256
+  differs from `priv/ggen/vendor/PACKS.lock.json` fail the unit as a
+  vendor-lock mismatch (not as a determinism mismatch).
+
   Exits 0 with `"deterministic: <out>"` per matching unit. Exits 1 naming
   the exact unit and a real diff summary on any mismatch -- never silently
   passes a divergent unit.
@@ -44,7 +49,15 @@ defmodule Mix.Tasks.Ex4pm.Ggen.VerifyDeterminism do
   def run(args) do
     {opts, _rest, _invalid} =
       OptionParser.parse(args,
-        strict: [ontology: :string, query: :keep, template: :string, out: :string, all: :boolean, manifest: :string],
+        strict: [
+          ontology: :string,
+          extra_ontology: :keep,
+          query: :keep,
+          template: :string,
+          out: :string,
+          all: :boolean,
+          manifest: :string
+        ],
         aliases: [o: :ontology, t: :template]
       )
 
@@ -56,6 +69,7 @@ defmodule Mix.Tasks.Ex4pm.Ggen.VerifyDeterminism do
         unit = %{
           "name" => Keyword.get(opts, :out),
           "ontology" => Keyword.fetch!(opts, :ontology),
+          "extra_ontologies" => Keyword.get_values(opts, :extra_ontology),
           "query_bindings" => parse_query_opts(opts),
           "template" => Keyword.fetch!(opts, :template),
           "out" => Keyword.fetch!(opts, :out)
@@ -112,7 +126,7 @@ defmodule Mix.Tasks.Ex4pm.Ggen.VerifyDeterminism do
     end
   end
 
-  defp verify_unit(%{"name" => name, "ontology" => ontology, "template" => template, "out" => out} = unit) do
+  defp verify_unit(%{"name" => name, "template" => template, "out" => out} = unit) do
     unless File.exists?(out) do
       throw_or_error(name, "checked-in output #{out} does not exist -- run mix ex4pm.ggen.sync first")
     else
@@ -135,25 +149,37 @@ defmodule Mix.Tasks.Ex4pm.Ggen.VerifyDeterminism do
         |> Map.get("query_bindings", %{})
         |> Enum.flat_map(fn {k, v} -> ["--query", "#{k}=#{v}"] end)
 
-      cmd_args =
-        ["ggen_igniter.sync", "--ontology", ontology] ++
-          query_args ++ ["--template", template, "--out", scratch_out]
+      case Mix.Tasks.Ex4pm.Ggen.Sync.prepare_ontology(unit) do
+        {:error, msg} ->
+          {:error, "unit #{name}: vendor/ontology input refused while verifying #{out}: #{msg}"}
 
-      case System.cmd("mix", cmd_args, stderr_to_stdout: true) do
-        {_output, 0} ->
-          regenerated = File.read!(scratch_out)
-          File.rm(scratch_out)
+        {:ok, effective_ontology, cleanup} ->
+          cmd_args =
+            ["ggen_igniter.sync", "--ontology", effective_ontology] ++
+              query_args ++ ["--template", template, "--out", scratch_out]
 
-          if regenerated == checked_in do
-            {:ok, "deterministic: #{out}"}
-          else
-            {:error, diff_error(name, out, checked_in, regenerated)}
-          end
-
-        {output, code} ->
-          File.rm(scratch_out)
-          {:error, "unit #{name}: regeneration failed (exit #{code}) while verifying #{out}:\n\n#{output}"}
+          result = System.cmd("mix", cmd_args, stderr_to_stdout: true)
+          cleanup.()
+          compare_regeneration(result, name, out, scratch_out, checked_in)
       end
+    end
+  end
+
+  defp compare_regeneration(result, name, out, scratch_out, checked_in) do
+    case result do
+      {_output, 0} ->
+        regenerated = File.read!(scratch_out)
+        File.rm(scratch_out)
+
+        if regenerated == checked_in do
+          {:ok, "deterministic: #{out}"}
+        else
+          {:error, diff_error(name, out, checked_in, regenerated)}
+        end
+
+      {output, code} ->
+        File.rm(scratch_out)
+        {:error, "unit #{name}: regeneration failed (exit #{code}) while verifying #{out}:\n\n#{output}"}
     end
   end
 

@@ -28,7 +28,7 @@ Per the `ex4pm-wasm-surface` research (grounded inventory, this repo, `pwd` conf
 - `lib/ex4pm_engine/wasm/` — 36 files, 1,360 LOC total:
   - `real_transport.ex` (485 LOC) — `Ex4pmEngine.Wasm.RealTransport`, the actual Wasmex/Wasmtime driver: `Wasmex.start_link/1` (`real_transport.ex:98`), `Wasmex.Memory.write_binary/read_binary` (`real_transport.ex:214-222,244-249,475`), `Wasmex.call_function/3` for the ptr/len ABI (`real_transport.ex:452,459,466`). This file also documents a real, named upstream gap: 87 `__wbindgen_placeholder__` stub imports (`real_transport.ex:56-73`) — i.e. the in-process WASM execution surface is not even fully functional against its own target artifacts today.
   - `adapter.ex` (297 LOC) — the shared six-state-standing `use`-macro all leaf adapters build on.
-  - `algo_registry.ex` (22 LOC) — currently lists only `:mean` as a canonical registered algorithm (`algo_registry.ex:16-18`), despite 33 leaf adapter files existing.
+  - `algo_registry.ex` — now GENERATED (unit `algo_registry`, `mix ex4pm.ggen.sync`) from the `epm:AlgorithmBinding` ontology graph: 33 registered algorithms matching the 33 leaf adapter files (see `docs/ALGORITHM-REGISTRY-GENERATION.md`). Earlier revisions registered only `:mean`.
   - 33 leaf adapter files (16-22 LOC each). 17 of 33 carry a moduledoc citation to `~/ggen-marketplace/packs/ex4pm-wasm4pm-bindings-pack` (e.g. `discover.ex:3-4`). **That pack does not exist** — confirmed no such directory under `~/ggen-marketplace/packs/`. The citation is false as written; all 36 files in this directory are hand-written, not machine-generated, despite claiming otherwise.
 - Test surface: `test/wasm/` + related reactor/benchmark tests total 1,992 LOC across 10 files (`adapters_smoke_test.exs` 102, `discover_test.exs` 93, `phase123_edge_cases_test.exs` 291, `phase2_adapters_smoke_test.exs` 227, `phase3_adapters_smoke_test.exs` 157, `phase4_edge_cases_test.exs` 295, `real_transport_test.exs` 118, `wasm_capabilities_reactor_test.exs` 84, `wasm_all_capabilities_test.exs` 431, `wasm_engine_benchmark_test.exs` 194), plus `Wasmex` references in `test/engine_test.exs` and `test/property/powl_reactor_correspondence_property_test.exs`.
 
@@ -54,7 +54,7 @@ No core/contracts file (`Ex4pm.Core.*`, `Ex4pm.Contracts`) references Wasmex or 
 | Injected-callback CMCA adapter | `lib/ex4pm/engine/cmca_wasm.ex` | 237 | hand-written |
 | Wasmtime driver | `lib/ex4pm_engine/wasm/real_transport.ex` | 485 | hand-written; documents 87 unresolved `__wbindgen_placeholder__` stub imports |
 | Adapter macro | `lib/ex4pm_engine/wasm/adapter.ex` | 297 | hand-written |
-| Algorithm registry | `lib/ex4pm_engine/wasm/algo_registry.ex` | 22 | hand-written; only `:mean` registered |
+| Algorithm registry | `lib/ex4pm_engine/wasm/algo_registry.ex` | generated | generated from ontology (33 algorithms); a test asserts every on-disk adapter is registered |
 | 33 leaf adapters | `lib/ex4pm_engine/wasm/*.ex` | ~561 (36-file dir total 1,360 minus above) | hand-written; 17/33 falsely cite a nonexistent ggen pack |
 | Reactor wiring | `lib/ex4pm_engine/reactors/wasm_capabilities_reactor.ex` | n/a | aliases `Adapter`/`RealTransport` directly |
 | Tests | `test/wasm/*` + reactor/benchmark tests | 1,992 | — |
