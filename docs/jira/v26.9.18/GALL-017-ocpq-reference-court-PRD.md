@@ -1,7 +1,7 @@
 # PRD v26.9.18 — GALL-017: OCPQ Reference Court
 
 **Status:** FINAL_SPEC — closed for v26.9.24  
-**Implementation standing:** OPEN in PR #47 (gall/v26.9.18-final-specs @ 75b9e47b: lib/ex4pm/gall.ex + test/gall_v26_9_18_test.exs; not on main)  
+**Implementation standing:** PARTIAL_ALIVE via PR #47 (gall/v26.9.18-final-specs; originally 75b9e47b, compile fixes + hardening at 8a68c2c9, court repair on top of b74753fd): lib/ex4pm/gall.ex, test/gall_v26_9_18_test.exs, test/gall_v26_9_18_hardening_test.exs, test/gall_v26_9_18_repair_test.exs, benchmark receipt benchmarks/gall_v26_9_18_bench_receipt.json. AC1-AC5 executed in ex4pm; AC6 (consumption by wasm4pm GALL-023) UNVERIFIED in this repository.  
 **Release:** v26.9.18  
 **Repository:** `seanchatmangpt/ex4pm`  
 **Owner:** ex4pm  
