@@ -1,11 +1,22 @@
 {
   "protocol": "wasm4pm.ex4pm-bindings/v1",
-  "_comment": "artifact.sha256 pins the zero-import artifact built by ~/wasm4pm/crates/wasm4pm-ex4pm-bindings/scripts/build-wasm.sh (0 imports, 71 exports, 2204812 bytes). host_abi.imports is the SOLE import allowlist (Ex4pmEngine.Wasm.Admission); an empty list means the artifact may import nothing. Re-pin whenever the artifact is rebuilt.",
+  "_comment": "artifact.sha256 pins the bundled zero-import artifact built by crates/wasm4pm-ex4pm-bindings/scripts/build-wasm.sh (0 imports, 70 function exports + 1 memory export, 2204812 bytes). host_abi.imports is the SOLE import allowlist (Ex4pmEngine.Wasm.Admission); an empty list means the artifact may import nothing. Re-pin with scripts/refresh-wasm4pm-artifact.sh whenever the artifact is rebuilt.",
   "artifact": {
-    "path": "(informational, not read) ~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm",
-    "sha256": "92eacdcba794a89fc52b710fb632adaeeca4c725f6f818a283ebad05435da0ad"
+    "path": "wasm4pm_ex4pm_bindings.wasm",
+    "sha256": "92eacdcba794a89fc52b710fb632adaeeca4c725f6f818a283ebad05435da0ad",
+    "size": 2204812
   },
   "host_abi": {
     "imports": []
+  },
+  "provenance": {
+    "source_repo": "~/wasm4pm",
+    "source_branch": "fix/v26.9.30-ci-fmt-tsc",
+    "source_commit": "4e592c0f9c94d074613036cac352f9684a95f39c",
+    "toolchain": "nightly-2026-04-15",
+    "build_command": "bash crates/wasm4pm-ex4pm-bindings/scripts/build-wasm.sh",
+    "abi_doc": "docs/abi/ex4pm-bindings.abi.json",
+    "export_count": 70,
+    "import_count": 0
   }
 }
