@@ -1,0 +1,20 @@
+name: DEVELOP Select Evidence
+on:
+  pull_request:
+    paths:
+      - 'scripts/develop/evidence/**'
+      - 'receipts/select/2026-08-23-evidence.json'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18'
+          otp-version: '27'
+      - run: test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+      - run: for f in scripts/develop/evidence/*.exs; do elixir "$f"; done
+      - run: elixir -r scripts/develop/evidence/*.exs -e 'IO.inspect(Ex4pm.Develop.Evidence.EffectiveQuorum.admit(3,0.0,2.0))'

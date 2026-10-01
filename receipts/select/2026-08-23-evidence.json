@@ -1,0 +1,10 @@
+{
+  "schema": "ex4pm.select/1",
+  "subject": "seanchatmangpt/ex4pm@fe99c07c847b67fcfbf4f215cb0edfbb50f88900",
+  "candidate_family": "evidence-distributed-runtime",
+  "decision": "SELECT",
+  "ctqs": {"reversibility": "high", "dependency_relief": "currentness-and-replay", "authority_surface": "VERIFY_ONLY"},
+  "selected_capabilities": ["vector-clock", "effective-quorum", "circuit-breaker", "replay-chain", "admission-token", "brce-temporal-monitor", "lease-currentness", "failure-dominance", "generation-frontier", "qualification"],
+  "authority": "SELECT",
+  "actuation_performed": false
+}
