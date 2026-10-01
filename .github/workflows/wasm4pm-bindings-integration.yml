@@ -171,8 +171,8 @@ jobs:
             # :alive admission when given that exact observed source SHA and
             # WASM digest. It does not yet call the raw ptr/len WASM ABI
             # through Wasmex from this script — that memory-marshal glue
-            # (matching lib/ex4pm/engine/adapters.ex's
-            # Ex4pm.Engine.Wasm contract) is follow-on work, tracked in
+            # (matching the Ex4pm.Engine.Wasm contract in
+            # lib/ex4pm/engine/adapters.ex) is follow-on work, tracked in
             # docs/ARD-v26.9.x-wasm4pm-phase1.md as the remaining gap between
             # "adapter admits a reported execution" and "adapter drives the
             # WASM call itself."
