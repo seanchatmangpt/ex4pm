@@ -5,6 +5,10 @@
 **Scope:** `~/beam4pm` (AshJsonApi routes + OpenAPI emission), generated via `ggen_igniter`
 from ontology admission facts, mirroring the existing `bpm:RecordType` → `lib/beam4pm_ash/`
 manufacturing pattern already running in that repo.
+**Update 2026-09-30:** any ferroplan planning route in this plan (forward-declared, to be
+served by beam4pm over HTTP) is superseded by the native engine: ex4pm embeds the ferroplan
+WASI wasm and executes it in-process (`docs/FERROPLAN-RUNTIME.md`). The rest of this plan is
+unchanged.
 
 ## 1. Summary
 

@@ -24,6 +24,15 @@ package does not bundle the wasm artifact (see README).
 
 ### Added
 
+- **Native ferroplan runtime.** `Ex4pm.Engine.Ferroplan` embeds the ferroplan WASI wasm
+  (`priv/ferroplan/ferroplan_wasm.wasm`, sha256-pinned in `priv/ferroplan/MANIFEST.json`,
+  built from ferroplan 0.29.0 `2a2e1d8`) through `Ex4pmEngine.Wasm.FerroplanTransport`
+  (admission: digest pin + WASI import allowlist + required exports; typed
+  `%Ex4pm.Refusal{}`, no raises). Facade: `plan/4`, `plan_production/4` (candidate-only,
+  `:partial_alive`), `readiness/1`, `version/1`, `hierarchical_plan/4`, `fond_policy/4`,
+  `hddl_solve/4`, `wasm_built?/0`; explicit selection via `engine: :ferroplan`.
+  `fond_policy_validate` returns a typed unsupported refusal (not exposed by the wasm).
+  See `docs/FERROPLAN-RUNTIME.md`.
 - `scripts/falsify-wasm-e2e.sh` / `mix falsify.wasm` (typed exit codes),
   `test/wasm/pack_drift_test.exs`, `EX4PM_WASM_REQUIRED` / `EX4PM_WASM_ARTIFACT`
   / `EX4PM_WASM_SHA256` for real-artifact tests; `docs/ALGORITHM-REGISTRY-GENERATION.md`.
@@ -47,6 +56,9 @@ package does not bundle the wasm artifact (see README).
   `priv/ontology/ex4pm.ttl` plus the vendored
   `ex4pm-wasm4pm-bindings-pack` 0.1.2 (`priv/ggen/vendor/`, hash-locked).
   The 19 Phase 1-3 leaf adapters are byte-identical to the pack's render.
+- **BREAKING (Beam4pm engine surface):** the forward-declared `:ferroplan_hierarchical_plan`
+  and `:ferroplan_fond_policy` routes (previously refused `:beam4pm_route_not_live`) are
+  removed from `Ex4pm.Engine.Beam4pm`; ferroplan is native (above).
 - `mix ex4pm.engine.gen.adapter` is now a thin wrapper over `ggen sync run`
   in `ggen/bindings/` with typed refusals.
 - **Duplicate ingestion envelopes are now short-circuited, not re-ingested.**
