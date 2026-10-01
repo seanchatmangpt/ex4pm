@@ -76,11 +76,11 @@ defmodule Ex4pmEngine.Wasm.Adapter do
       def supports?(operation, _opts), do: operation == @algorithm_id
 
       @impl true
-      def available?(opts), do: is_function(Keyword.get(opts, @transport_key), 2)
+      def available?(opts), do: is_function(Adapter.transport(opts, @transport_key), 2)
 
       @impl true
       def execute(operation, subject, opts) when operation == @algorithm_id and is_map(subject) do
-        case Keyword.get(opts, @transport_key) do
+        case Adapter.transport(opts, @transport_key) do
           fun when is_function(fun, 2) ->
             case fun.(Adapter.json_term(subject), opts) do
               {:ok, response, identity} when is_map(response) ->
@@ -165,6 +165,23 @@ defmodule Ex4pmEngine.Wasm.Adapter do
       def wasm4pm_source_sha, do: @wasm4pm_source_sha
       def wasm_export, do: @wasm_export
       def wasm_replay_export, do: @wasm_replay_export
+    end
+  end
+
+  @doc """
+  Resolves the transport callback for `key`: an explicit option always wins;
+  otherwise the supervised `Ex4pmEngine.Wasm.Host` transport when the Host is
+  running and admitted. `wasm_default: false` disables the fallback.
+  """
+  def transport(opts, key) do
+    case Keyword.get(opts, key) do
+      fun when is_function(fun, 2) ->
+        fun
+
+      _ ->
+        if Keyword.get(opts, :wasm_default, true) == false,
+          do: nil,
+          else: Ex4pmEngine.Wasm.Host.transport(key)
     end
   end
 

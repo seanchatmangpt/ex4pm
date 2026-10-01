@@ -40,7 +40,7 @@ defmodule Ex4pmEngine.Wasm.DiscoverTest do
     assert Discover.id() == :wasm_discover
     assert Discover.supports?(:discover, [])
     refute Discover.supports?(:conform, [])
-    refute Discover.available?([])
+    refute Discover.available?(wasm_default: false)
     assert Discover.available?(discover_wasm_fun: fn _r, _o -> :noop end)
   end
 
@@ -88,6 +88,6 @@ defmodule Ex4pmEngine.Wasm.DiscoverTest do
 
   test "no transport callback is a typed unavailable refusal" do
     assert {:error, %Refusal{code: :discover_wasm_unavailable}} =
-             Discover.execute(:discover, @subject, [])
+             Discover.execute(:discover, @subject, wasm_default: false)
   end
 end
