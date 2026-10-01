@@ -14,7 +14,37 @@ silence means unchanged; state it.
 
 ## [Unreleased]
 
+## [26.9.30] - 2026-09-30
+
+Version bump 26.9.24 -> 26.9.30. Adds `Ex4pm.Aloop`, OCEL 2.0 value-time object
+attributes, idempotent ingestion, and the pack-driven WASM surface: sha256-pinned,
+zero-import artifact admission (`Ex4pmEngine.Wasm.Admission`) and a generated algorithm
+registry. Package `files` now includes README.md, CHANGELOG.md and LICENSE. The Hex
+package does not bundle the wasm artifact (see README).
+
+### Added
+
+- **Native ferroplan runtime.** `Ex4pm.Engine.Ferroplan` embeds the ferroplan WASI wasm
+  (`priv/ferroplan/ferroplan_wasm.wasm`, sha256-pinned in `priv/ferroplan/MANIFEST.json`,
+  built from ferroplan 0.29.0 `2a2e1d8`) through `Ex4pmEngine.Wasm.FerroplanTransport`
+  (admission: digest pin + WASI import allowlist + required exports; typed
+  `%Ex4pm.Refusal{}`, no raises). Facade: `plan/4`, `plan_production/4` (candidate-only,
+  `:partial_alive`), `readiness/1`, `version/1`, `hierarchical_plan/4`, `fond_policy/4`,
+  `hddl_solve/4`, `wasm_built?/0`; explicit selection via `engine: :ferroplan`.
+  `fond_policy_validate` returns a typed unsupported refusal (not exposed by the wasm).
+  See `docs/FERROPLAN-RUNTIME.md`.
+- `scripts/falsify-wasm-e2e.sh` / `mix falsify.wasm` (typed exit codes),
+  `test/wasm/pack_drift_test.exs`, `EX4PM_WASM_REQUIRED` / `EX4PM_WASM_ARTIFACT`
+  / `EX4PM_WASM_SHA256` for real-artifact tests; `docs/ALGORITHM-REGISTRY-GENERATION.md`.
+- **`Ex4pm.Aloop` module added (`64c157d`).** Independent online process intelligence
+  over ALOOP OCEL 2.0 event logs: ingest/episode segmentation, loop-depth/recurrence,
+  human causal edges, provider replacement with substitution-equivalence verdicts,
+  orphan-DO and unconsumed-receipt detection, DFG/variants/precision, conformance
+  divergences, repair/replan chains, and a deterministic JSON-encodable
+  `analysis_receipt/1`.
+
 ### Changed
+
 - `Ex4pmEngine.Wasm.RealTransport` now admits the WASM artifact through
   `Ex4pmEngine.Wasm.Admission` before instantiation: sha256 digest pin
   (`priv/wasm4pm/MANIFEST.json`, pinned to the zero-import build), an import
@@ -26,42 +56,11 @@ silence means unchanged; state it.
   `priv/ontology/ex4pm.ttl` plus the vendored
   `ex4pm-wasm4pm-bindings-pack` 0.1.2 (`priv/ggen/vendor/`, hash-locked).
   The 19 Phase 1-3 leaf adapters are byte-identical to the pack's render.
+- **BREAKING (Beam4pm engine surface):** the forward-declared `:ferroplan_hierarchical_plan`
+  and `:ferroplan_fond_policy` routes (previously refused `:beam4pm_route_not_live`) are
+  removed from `Ex4pm.Engine.Beam4pm`; ferroplan is native (above).
 - `mix ex4pm.engine.gen.adapter` is now a thin wrapper over `ggen sync run`
   in `ggen/bindings/` with typed refusals.
-
-### Added
-- `scripts/falsify-wasm-e2e.sh` / `mix falsify.wasm` (typed exit codes),
-  `test/wasm/pack_drift_test.exs`, `EX4PM_WASM_REQUIRED` / `EX4PM_WASM_ARTIFACT`
-  / `EX4PM_WASM_SHA256` for real-artifact tests.
-- `docs/ALGORITHM-REGISTRY-GENERATION.md`.
-
-### Public contract
-UNCHANGED (`Ex4pm.OCEL.validate_envelope/1`, `Ex4pm.Stream.Ingest.ingest_envelope/1,2`,
-`Ex4pm.Evidence.BRCE.execute/4`). `RealTransport.start/1,2` and `call/replay`
-now return `%Ex4pm.Refusal{}` errors where they previously returned bare
-error terms (WASM transport surface only).
-
-## [26.9.30] - 2026-09-30
-
-Version bump 26.9.24 -> 26.9.30 for Hex dry-run publish readiness; package `files`
-now includes README.md, CHANGELOG.md and LICENSE. Contents of the former Unreleased
-section ship in this release.
-
-### Public contract
-
-UNCHANGED by the version bump itself (see entries below for contract notes).
-
-### Added
-
-- **`Ex4pm.Aloop` module added (`64c157d`).** Independent online process intelligence
-  over ALOOP OCEL 2.0 event logs: ingest/episode segmentation, loop-depth/recurrence,
-  human causal edges, provider replacement with substitution-equivalence verdicts,
-  orphan-DO and unconsumed-receipt detection, DFG/variants/precision, conformance
-  divergences, repair/replan chains, and a deterministic JSON-encodable
-  `analysis_receipt/1`.
-
-### Changed
-
 - **Duplicate ingestion envelopes are now short-circuited, not re-ingested.**
   `Ex4pm.Stream.Ingest.ingest_envelope/1,2` detects a re-submitted envelope by its
   normalized subject content hash (`log.subject.hash`, deterministic and invariant
@@ -93,6 +92,9 @@ UNCHANGED by the version bump itself (see entries below for contract notes).
 - `Ex4pm.Aloop` (`lib/ex4pm/aloop.ex`) — **ADDED** (`64c157d`): new public module,
   24 public functions from `event_classes/0` through `analysis_receipt/1`; additive
   only — the three contract surfaces above are untouched.
+- `Ex4pmEngine.Wasm.RealTransport.start/1,2` and `call`/`replay` — **CHANGED**: now
+  return `%Ex4pm.Refusal{}` errors where they previously returned bare error terms
+  (WASM transport surface only; not one of the three contract surfaces above).
 
 ## [26.9.9] - 2026-09-09
 
