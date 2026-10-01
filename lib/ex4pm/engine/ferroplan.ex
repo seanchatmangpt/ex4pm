@@ -494,7 +494,15 @@ defmodule Ex4pm.Engine.Ferroplan do
 
   defp run_admitted(op, request, admission, opts) do
     t0 = System.monotonic_time()
-    result = do_run_admitted(op, request, admission, opts)
+
+    result =
+      Ex4pm.Engine.CallLog.wrap(
+        :ferroplan,
+        op,
+        admission.sha256,
+        Keyword.put(opts, :call_log_artifact, "sha256:" <> admission.sha256),
+        fn -> do_run_admitted(op, request, admission, opts) end
+      )
 
     :telemetry.execute(
       [:ex4pm, :engine, :ferroplan, String.to_atom(op)],

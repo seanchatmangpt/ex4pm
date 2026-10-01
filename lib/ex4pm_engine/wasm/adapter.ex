@@ -80,6 +80,16 @@ defmodule Ex4pmEngine.Wasm.Adapter do
 
       @impl true
       def execute(operation, subject, opts) when operation == @algorithm_id and is_map(subject) do
+        Ex4pm.Engine.CallLog.wrap(
+          @engine_id,
+          @algorithm_id,
+          fn -> Ex4pm.Core.Hash.digest(subject) end,
+          opts,
+          fn -> do_execute(operation, subject, opts) end
+        )
+      end
+
+      defp do_execute(operation, subject, opts) do
         case Adapter.transport(opts, @transport_key) do
           fun when is_function(fun, 2) ->
             case fun.(Adapter.json_term(subject), opts) do
