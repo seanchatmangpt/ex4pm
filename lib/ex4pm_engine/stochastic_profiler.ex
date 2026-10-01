@@ -33,36 +33,17 @@ defmodule Ex4pmEngine.StochasticProfiler do
         fn lines ->
           # Track per-case trace sequences to compute transition pairs
           case_sequences = %{}
+          tabs = {activities_tab, objects_tab, durations_tab, transitions_tab}
 
           {count, case_seq} =
             Enum.reduce(lines, {0, case_sequences}, fn line, {acc, cs_acc} ->
               case Jason.decode(line) do
-                {:ok, %{"ocel:activity" => act} = json} ->
-                  :ets.update_counter(activities_tab, act, {2, 1}, {act, 0})
-
-                  omap = json["ocel:omap"] || []
-
-                  Enum.each(omap, fn obj ->
-                    :ets.update_counter(objects_tab, obj, {2, 1}, {obj, 0})
+                {:ok, json} when is_map(json) ->
+                  json
+                  |> events_from()
+                  |> Enum.reduce({acc, cs_acc}, fn ev, {n, cs} ->
+                    record_event(ev, cs, n, tabs)
                   end)
-
-                  vmap = json["ocel:vmap"] || %{}
-
-                  if duration = vmap["duration_ms"] do
-                    :ets.insert(durations_tab, {act, duration})
-                  end
-
-                  # Track transition: per case_id, store last activity and increment pair count
-                  case_id = json["ocel:id"] || "default"
-                  prev_act = Map.get(cs_acc, case_id)
-                  new_cs = Map.put(cs_acc, case_id, act)
-
-                  if prev_act do
-                    pair_key = {prev_act, act}
-                    :ets.update_counter(transitions_tab, pair_key, {2, 1}, {pair_key, 0})
-                  end
-
-                  {acc + 1, new_cs}
 
                 _ ->
                   {acc, cs_acc}
@@ -196,5 +177,48 @@ defmodule Ex4pmEngine.StochasticProfiler do
       top_transitions: top_transitions,
       variant_pareto: variant_pareto
     }
+  end
+
+  # Normalises both supported wire shapes into uniform event maps: the legacy
+  # one-event-per-line form ("ocel:activity") and the OCEL 2.0 envelope form
+  # ("ocel:events" list with typed events and object relationships).
+  defp events_from(%{"ocel:activity" => act} = json) do
+    [
+      %{
+        act: act,
+        objects: json["ocel:omap"] || [],
+        duration: (json["ocel:vmap"] || %{})["duration_ms"],
+        case_id: json["ocel:id"] || "default"
+      }
+    ]
+  end
+
+  defp events_from(%{"ocel:events" => events}) when is_list(events) do
+    for %{"type" => act} = ev when is_binary(act) <- events do
+      objects = for %{"objectId" => oid} <- ev["relationships"] || [], do: oid
+
+      %{
+        act: act,
+        objects: objects,
+        duration: (ev["attributes"] || %{})["duration_ms"],
+        case_id: List.first(objects) || "default"
+      }
+    end
+  end
+
+  defp events_from(_), do: []
+
+  defp record_event(ev, cs, n, {activities_tab, objects_tab, durations_tab, transitions_tab}) do
+    %{act: act, objects: objects, duration: duration, case_id: case_id} = ev
+    :ets.update_counter(activities_tab, act, {2, 1}, {act, 0})
+    Enum.each(objects, &:ets.update_counter(objects_tab, &1, {2, 1}, {&1, 0}))
+    if duration, do: :ets.insert(durations_tab, {act, duration})
+
+    if prev_act = Map.get(cs, case_id) do
+      pair_key = {prev_act, act}
+      :ets.update_counter(transitions_tab, pair_key, {2, 1}, {pair_key, 0})
+    end
+
+    {n + 1, Map.put(cs, case_id, act)}
   end
 end

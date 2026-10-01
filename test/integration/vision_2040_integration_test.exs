@@ -88,7 +88,12 @@ defmodule Ex4pm.Integration.Vision2040IntegrationTest do
         ocel_path
         |> File.stream!()
         |> Stream.map(&Jason.decode!/1)
-        |> Enum.frequencies_by(& &1["ocel:activity"])
+        |> Stream.flat_map(fn
+          %{"ocel:events" => events} -> Enum.map(events, & &1["type"])
+          %{"ocel:activity" => act} -> [act]
+          _ -> []
+        end)
+        |> Enum.frequencies()
         |> Enum.max_by(fn {_activity, count} -> count end)
         |> elem(0)
 

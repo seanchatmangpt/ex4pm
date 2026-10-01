@@ -96,7 +96,8 @@ defmodule Ex4pm.EngineTest do
              # claims :discover -- Beam4pm.supports?/2 returns false for
              # :discover (see test/engine_beam4pm_test.exs for its real
              # admitted operations).
-             :beam4pm
+             :beam4pm,
+             :wasm_remote
            ]
 
     assert Enum.find(candidates, &(&1.id == :beam)).standing == :partial_alive

@@ -6,6 +6,9 @@ on:
     branches:
       - main
       - feat/**
+      - fix/**
+      - epoch/**
+      - release/**
 
 permissions:
   contents: read
@@ -18,15 +21,19 @@ jobs:
       EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       EX4PM_PLAN_SHA: 99816fb389670174be44ddaaf3b42f00496e6f21
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ env.EX4PM_SUBJECT_SHA }}
+          persist-credentials: false
 
       - name: Verify exact subject identity
         run: |
           actual="$(git rev-parse HEAD)"
           printf 'admitted=%s\nobserved=%s\n' "$EX4PM_SUBJECT_SHA" "$actual"
           test "$actual" = "$EX4PM_SUBJECT_SHA"
+
+      - name: Verify atomic v26.8.23 release graph
+        run: python3 scripts/check-release-version.py 26.8.23
 
       - uses: erlef/setup-beam@v1
         with:
@@ -77,7 +84,7 @@ jobs:
 
       - name: Upload formatting patch
         if: failure() && steps.format.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: format-patch-${{ env.EX4PM_SUBJECT_SHA }}
           path: .ci/format.patch
@@ -85,24 +92,26 @@ jobs:
 
       - name: Upload formatter-produced source
         if: failure() && steps.format.outcome == 'failure'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: formatted-source-${{ env.EX4PM_SUBJECT_SHA }}
           path: |
-            apps
             config
+            lib
+            test
             mix.exs
             .formatter.exs
           if-no-files-found: error
 
       - name: Checkout exact ex4pm-plan source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: seanchatmangpt/ex4pm-plan
           ref: ${{ env.EX4PM_PLAN_SHA }}
           path: .ci/ex4pm-plan
           submodules: recursive
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Verify exact planner source identity
         run: |
@@ -110,7 +119,7 @@ jobs:
           printf 'planner_admitted=%s\nplanner_observed=%s\n' "$EX4PM_PLAN_SHA" "$actual"
           test "$actual" = "$EX4PM_PLAN_SHA"
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
@@ -176,6 +185,11 @@ jobs:
           PY
           cat /tmp/ex4pm-plan-result.json
           docker image inspect --format='{{.Id}}' "ex4pm-plan:${EX4PM_PLAN_SHA}" > /tmp/ex4pm-plan-image-digest
+          mkdir -p artifacts/qualification/planner
+          cp /tmp/ex4pm-plan-request.json artifacts/qualification/planner/
+          cp /tmp/ex4pm-plan-worker-output.log artifacts/qualification/planner/
+          cp /tmp/ex4pm-plan-result.json artifacts/qualification/planner/
+          cp /tmp/ex4pm-plan-image-digest artifacts/qualification/planner/
 
       - name: Admit exact planner result through ex4pm and replay receipt
         run: |
@@ -208,10 +222,58 @@ jobs:
             IO.puts("ex4pm-plan exact capsule -> Ex4pm.plan -> receipt replay: ALIVE")
           '
 
-      - name: Upload resolved lockfile
+      - name: Upload planner protocol evidence
         if: always()
         uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-plan-protocol-${{ env.EX4PM_SUBJECT_SHA }}
+          path: artifacts/qualification/planner/
+          if-no-files-found: warn
+
+      - name: Upload resolved lockfile
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
           name: mix-lock-${{ env.EX4PM_SUBJECT_SHA }}
           path: mix.lock
           if-no-files-found: error
+
+
+  production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      MIX_ENV: prod
+      EX4PM_SUBJECT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SUBJECT_SHA }}
+          persist-credentials: false
+
+      - name: Verify exact production subject identity
+        run: |
+          actual="$(git rev-parse HEAD)"
+          printf 'admitted=%s\nobserved=%s\n' "$EX4PM_SUBJECT_SHA" "$actual"
+          test "$actual" = "$EX4PM_SUBJECT_SHA"
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Resolve exact locked production dependencies
+        run: |
+          rm -rf deps _build
+          mix deps.get --check-locked
+
+      - name: Compile production candidate with warnings as errors
+        run: mix compile --force --warnings-as-errors
+
+      - name: Prove generator task remains resolvable without Igniter
+        run: mix help ex4pm.engine.gen.adapter >/tmp/ex4pm-engine-gen-adapter-help.txt

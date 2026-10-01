@@ -29,24 +29,30 @@ defmodule Ex4pmEngine.StreamingEngine do
       |> Stream.chunk_every(chunk_size)
       |> Task.async_stream(
         fn lines ->
+          tables = {activities_table, objects_table, durations_table}
+
           Enum.reduce(lines, 0, fn line, acc ->
             case Jason.decode(line) do
               {:ok, %{"ocel:activity" => act} = json} ->
-                :ets.update_counter(activities_table, act, {2, 1}, {act, 0})
+                acc +
+                  record(
+                    tables,
+                    act,
+                    json["ocel:omap"] || [],
+                    (json["ocel:vmap"] || %{})["duration_ms"]
+                  )
 
-                omap = json["ocel:omap"] || []
+              {:ok, %{"ocel:events" => events}} when is_list(events) ->
+                # OCEL 2.0 envelope: one JSON document carrying a list of events.
+                Enum.reduce(events, acc, fn event, inner ->
+                  act = event["type"]
+                  objects = for %{"objectId" => oid} <- event["relationships"] || [], do: oid
+                  duration = (event["attributes"] || %{})["duration_ms"]
 
-                Enum.each(omap, fn obj ->
-                  :ets.update_counter(objects_table, obj, {2, 1}, {obj, 0})
+                  if is_binary(act),
+                    do: inner + record(tables, act, objects, duration),
+                    else: inner
                 end)
-
-                vmap = json["ocel:vmap"] || %{}
-
-                if duration = vmap["duration_ms"] do
-                  :ets.insert(durations_table, {act, duration})
-                end
-
-                acc + 1
 
               _ ->
                 acc
@@ -105,5 +111,16 @@ defmodule Ex4pmEngine.StreamingEngine do
       unique_objects: map_size(object_counts),
       duration_stats: stats
     }
+  end
+
+  defp record({activities_table, objects_table, durations_table}, act, objects, duration) do
+    :ets.update_counter(activities_table, act, {2, 1}, {act, 0})
+
+    Enum.each(objects, fn obj ->
+      :ets.update_counter(objects_table, obj, {2, 1}, {obj, 0})
+    end)
+
+    if duration, do: :ets.insert(durations_table, {act, duration})
+    1
   end
 end

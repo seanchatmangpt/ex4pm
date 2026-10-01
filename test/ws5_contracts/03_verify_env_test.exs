@@ -1,4 +1,4 @@
-defmodule Ex4pmCore.WS5.VerifyEnvTest do
+defmodule Ex4pmCore.WS5.VerifyEnvStageTest do
   use ExUnit.Case, async: true
 
   test "verify command remains bound to MIX_ENV=test" do

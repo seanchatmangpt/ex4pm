@@ -1,4 +1,4 @@
-ExUnit.start(exclude: [:chicago, :integration, :stress])
+ExUnit.start(exclude: [:chicago, :integration, :stress, :live_external])
 
 # test/demo_web (Phoenix/LiveView demo harness) isn't part of the shipped
 # :ex4pm application (it moved out of lib/ on purpose — see docs/ARCHITECTURE.md)

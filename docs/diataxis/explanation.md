@@ -190,7 +190,9 @@ bottom-to-top by what each layer is allowed to assume exists below it:
   a static non-dynamic capability registry) rather than the orchestration logic itself.
 - **`Ex4pm.Stream`** (`lib/ex4pm/stream/`) — Broadway-based backpressured, acknowledged
   ingestion. Kept as its own namespace because ingestion has its own operational
-  concerns (backpressure, idempotency by sequence number, Prometheus telemetry) that are
+  concerns (backpressure, duplicate suppression by normalized subject content hash —
+  invariant across retries, so the same logical event is ingested exactly once; the
+  `sequence` number is validation-only — plus Prometheus telemetry) that are
   orthogonal to analytical operations.
 - **`Ex4pm.Qualification`** (`lib/ex4pm/qualification/` for the crown, rails, verifier,
   reference-NIF, and POWL-court pieces; `lib/ex4pm_qualification/` — a separate

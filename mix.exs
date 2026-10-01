@@ -41,7 +41,9 @@ defmodule Ex4pm.MixProject do
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
         "ex4pm.lint.truth": :test,
-        "ex4pm.crown": :test
+        "ex4pm.crown": :test,
+        "ex4pm.release.contract": :test,
+        "ex4pm.rails.court": :test
       ],
       dialyzer: [
         plt_core_path: "priv/plts/core.plt",
@@ -68,7 +70,9 @@ defmodule Ex4pm.MixProject do
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
         "ex4pm.lint.truth": :test,
-        "ex4pm.crown": :test
+        "ex4pm.crown": :test,
+        "ex4pm.release.contract": :test,
+        "ex4pm.rails.court": :test
       ]
     ]
   end
@@ -219,7 +223,8 @@ defmodule Ex4pm.MixProject do
         # shrink.
         "test --include integration --include stress",
         "ex4pm.powl.court",
-        "ex4pm.sabotage.court"
+        "ex4pm.sabotage.court",
+        "ex4pm.ggen.verify_determinism --all"
       ],
       "test.stress": [
         "test test/benchmarks/stress_benchmark_test.exs test/benchmarks/wasm_engine_benchmark_test.exs --include stress"

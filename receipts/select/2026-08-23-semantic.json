@@ -1,0 +1,10 @@
+{
+  "schema": "ex4pm.select/1",
+  "subject": "seanchatmangpt/ex4pm@e8681f093c1d0493e4e3fa95456783d0b298c9a6",
+  "candidate_family": "semantic-composition",
+  "decision": "SELECT",
+  "ctqs": {"reversibility": "high", "dependency_relief": "semantic-correspondence", "authority_surface": "SELECT_ONLY"},
+  "selected_capabilities": ["bounded-fixed-point", "semilattice-laws", "bisimulation-witness", "scc-condensation", "epsilon-pareto", "topology-refusal"],
+  "authority": "SELECT",
+  "actuation_performed": false
+}

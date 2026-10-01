@@ -37,6 +37,37 @@ replay -> bounded standing`) that these capabilities implement.
 | `mix ex4pm.ocel_to_latex [path_to_ocel_ndjson] [--output path]` | `Mix.Tasks.Ex4pm.OcelToLatex`: reads an IEEE OCEL 2.0 NDJSON log, calls `Ex4pmEngine.OcelToLatex.export_latex/2` to emit LaTeX benchmark tables |
 | `mix ex4pm.validate_self --path <ocel_ndjson> --limit <n>` | `Mix.Tasks.Ex4pm.ValidateSelf`: runs `Reactor.run(Ex4pmEngine.Reactors.SelfConformanceReactor, ...)` against a real OCEL log; prints discovery, 5D conformance vector, EARL Turtle proof, final receipted STANDING; exits 1 on error |
 
+## lib/ex4pm/aloop.ex
+
+| Function | Purpose |
+| --- | --- |
+| `Ex4pm.Aloop.event_classes/0` | Returns the admitted ALOOP event-class vocabulary as a list of strings |
+| `Ex4pm.Aloop.object_types/0` | Returns the admitted ALOOP OCEL object-type vocabulary as a list of strings |
+| `Ex4pm.Aloop.qualifiers/0` | Returns the admitted qualifier vocabulary as a list of strings |
+| `Ex4pm.Aloop.model_edges/0` | The admitted ALOOP directly-follows model: a MapSet of `{from_activity, to_activity}` tuples |
+| `Ex4pm.Aloop.ingest/1` (raw) | Ingests a raw OCEL 2.0 map via `Ex4pm.OCEL.normalize/1` (or passes through an already-normalized `Ex4pm.EventLog`) into the canonical event-log IR |
+| `Ex4pm.Aloop.episodes/1` (log) | Segments a normalized log into `%{episode_id => [events sorted by time]}`; events referencing no Episode object land under `:__outside_any_episode__` |
+| `Ex4pm.Aloop.loop_depths/1` (log) | Per-episode loop depth: the number of `gap.detect` loop iterations |
+| `Ex4pm.Aloop.recurrence?/1` (log) | `true` when at least one episode ran the loop to a second iteration |
+| `Ex4pm.Aloop.human_causal_edges/1` (log) | Every event attributed `originAuthority: "human"` together with its directly-follows edge inside the same episode |
+| `Ex4pm.Aloop.human_causal_edge_present?/1` (log) | `true` when at least one human causal edge exists |
+| `Ex4pm.Aloop.provider_replacements/1` (log) | Provider replacements observed, with substitution-equivalence verdicts |
+| `Ex4pm.Aloop.provider_replacement_occurred?/1` (log) | `true` when at least one `provider.replace` event was observed |
+| `Ex4pm.Aloop.substitution_equivalent?/1` (suffix_events) | `true` when the replacement provider re-executes the execution spine in order: `worker.claim` -> `execution.start` -> ... -> `receipt.persist` |
+| `Ex4pm.Aloop.orphan_dos/1` (log) | Orphan consequences: `actuate` events with no `receipt.persist` later in the same episode (actuation with no downstream receipt/consumer) |
+| `Ex4pm.Aloop.every_do_receipted?/1` (log) | `true` when no orphan DOs remain |
+| `Ex4pm.Aloop.unconsumed_receipts/1` (log) | Receipts persisted but never consumed by a later `observe`/`reobserve` before a new loop iteration (`gap.detect`) starts in the same episode |
+| `Ex4pm.Aloop.every_receipt_consumed?/1` (log) | `true` when no unconsumed receipts remain |
+| `Ex4pm.Aloop.dfg/1` (log) | Directly-follows graph over the whole log as sorted `[%{"from" =>, "to" =>, "count" =>}]`; edges never cross episode boundaries |
+| `Ex4pm.Aloop.variants/1` (log) | Distinct per-episode activity sequences, each with a stable content-hash id, the episodes exhibiting it, and its count |
+| `Ex4pm.Aloop.precision/1` (log) | Fraction of observed directly-follows edges the admitted ALOOP model admits; `1.0` when every observed edge is lawful, `nil` when the log has no edges |
+| `Ex4pm.Aloop.divergences/1` (log) | Every observed divergence from the ALOOP model: off-vocabulary activity, post-terminal activity, missing episode start/terminal, events outside any episode, unreceipted DO, unconsumed receipt, missing `originAuthority`, `provider.replace` missing qualifiers, off-model edge |
+| `Ex4pm.Aloop.conformant?/1` (log) | `true` when `divergences/1` is empty |
+| `Ex4pm.Aloop.repair_replan_chains/1` (log) | Detects `execution.crash -> failure.detect` followed by a recovery activity (`provider.replace`, `replan`, or `reconcile`), with the recovery observed |
+| `Ex4pm.Aloop.analysis_receipt/1` (source) | Full machine-readable analysis receipt (`ex4pm.aloop.analysis_receipt/v1`, JSON-encodable, deterministic); accepts a raw OCEL 2.0 map or a normalized `Ex4pm.EventLog`; `standing: "REFUSED"` with refusal code/message on ingest failure |
+
+No Mix tasks defined in this namespace.
+
 ## lib/ex4pm/cli.ex
 
 | Function | Purpose |
@@ -168,7 +199,7 @@ No Mix tasks defined in this namespace (grep for `defmodule Mix.Tasks` returned 
 
 | Task | Purpose |
 | --- | --- |
-| `mix ex4pm.engine.gen.adapter <algorithm_id> [--export NAME]` | `Mix.Tasks.Ex4pm.Engine.Gen.Adapter`: Igniter-based codegen scaffolding a new `Ex4pmEngine.Wasm.<AlgorithmId>` thin adapter delegating to `Ex4pm.Engine.Wasm.execute/3`, generates `lib/ex4pm_engine/wasm/<algorithm_id>.ex` with `algorithm_id/0`, `export/0`, `execute/2` |
+| `mix ex4pm.engine.gen.adapter <algorithm_id> [--export NAME]` | `Mix.Tasks.Ex4pm.Engine.Gen.Adapter`: Igniter-based codegen scaffolding a new `Ex4pmEngine.Wasm.<AlgorithmId>` thin adapter delegating to `Ex4pm.Engine.Wasm.execute/3`, generates `lib/ex4pm_engine/wasm/<algorithm_id>.ex` with `algorithm_id/0`, `export/0`, `execute/2`. Igniter-based only when `igniter` is loaded (dep is `:dev`/`:test`-only) — under `MIX_ENV=prod` compilation succeeds and invoking the task raises a clear error (`0834d78`) |
 
 ## lib/ex4pm/evidence
 
@@ -324,7 +355,7 @@ currently empty (one_for_one supervisor with no children registered).
 | `Ex4pm.Stream.Producer.ack/3` | `Broadway.Acknowledger` callback; sends `{:ex4pm_stream_ack, successful, failed}` to a pid ack_target, no-ops otherwise |
 | `Ex4pm.Stream.Pipeline.start_link/1` | Starts the Broadway pipeline (producer + processors) wiring a caller-supplied sink callback and object map |
 | `Ex4pm.Stream.Pipeline.handle_message/3` | Broadway callback; for a raw `%Ex4pm.Event{}` calls sink directly, for raw non-normalized data runs `Ex4pm.OCEL.normalize/1` first |
-| `Ex4pm.Stream.Ingest.ingest_envelope/2` | Validates an OCEL producer envelope, checks idempotency, normalizes into a log, forwards events to an OnlineMiner process, records pending+outcome ingestion receipts, optionally invokes a broadcaster/1 callback |
+| `Ex4pm.Stream.Ingest.ingest_envelope/2` | Validates an OCEL producer envelope (pure validation: envelope shape + non-negative `sequence` via `check_sequence/1`), short-circuits duplicates to `{:ok, %{status: :duplicate_ignored, ..., original_receipt_hash: h}}` recording **no** new receipts, otherwise normalizes into a log, forwards events to an OnlineMiner process, records pending+outcome ingestion receipts, optionally invokes a broadcaster/1 callback |
 | `Ex4pm.Stream.Metrics.metrics/0` | Returns the list of `Telemetry.Metrics` definitions (counters for processed/failed Broadway messages/batches, duration distribution) |
 | `Ex4pm.Stream.Metrics.child_spec/1` | `Supervisor.child_spec/1`-compatible spec starting `TelemetryMetricsPrometheus.Core` with this module's metrics |
 | `Ex4pm.Stream.Metrics.scrape/0` | Scrapes the default-named (`:ex4pm_stream_prometheus_metrics`) Prometheus reporter, returns real Prometheus-format text |

@@ -1,0 +1,10 @@
+{
+  "schema": "ex4pm.select/1",
+  "subject": "seanchatmangpt/ex4pm@6dcbbdfe7ba22f3e146203b9d8e0788fade063fb",
+  "candidate_family": "planner-optimization",
+  "decision": "SELECT",
+  "ctqs": {"reversibility": "high", "dependency_relief": "planner-policy", "authority_surface": "SELECT_ONLY"},
+  "selected_capabilities": ["pareto-frontier", "budget-admission", "heuristic-consistency", "minimax-regret", "rollout-consensus", "failure-dominant-qualification"],
+  "authority": "SELECT",
+  "actuation_performed": false
+}

@@ -1,7 +1,7 @@
 # ARD v26.9.18 — GALL-019: Compliance Predictor Reference
 
 **Status:** FINAL_SPEC — closed for v26.9.24  
-**Implementation standing:** OPEN in PR #47 (gall/v26.9.18-final-specs @ 75b9e47b: lib/ex4pm/gall.ex + test/gall_v26_9_18_test.exs; not on main)  
+**Implementation standing:** IMPLEMENTED (reference scope) via PR #47 (gall/v26.9.18-final-specs; originally 75b9e47b, compile fixes + hardening at 8a68c2c9, court repair on top of b74753fd): lib/ex4pm/gall.ex, test/gall_v26_9_18_test.exs, test/gall_v26_9_18_hardening_test.exs, test/gall_v26_9_18_repair_test.exs, benchmark receipt benchmarks/gall_v26_9_18_bench_receipt.json. Majority baseline and 1R selected model with held-out precision/recall/FP/FN/calibration; label, temporal and subject leakage refused. Adversarial GALL-015/017 corpus cases (FR7) not yet wired into the predictor.  
 **Release:** v26.9.18  
 **Repository:** `seanchatmangpt/ex4pm`  
 **Owner:** ex4pm  
