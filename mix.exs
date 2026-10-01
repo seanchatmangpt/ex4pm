@@ -41,6 +41,7 @@ defmodule Ex4pm.MixProject do
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
         "ex4pm.lint.truth": :test,
+        "ex4pm.exposure.court": :test,
         "ex4pm.crown": :test,
         "ex4pm.release.contract": :test,
         "ex4pm.rails.court": :test
@@ -70,6 +71,7 @@ defmodule Ex4pm.MixProject do
         "ex4pm.powl.court": :test,
         "ex4pm.sabotage.court": :test,
         "ex4pm.lint.truth": :test,
+        "ex4pm.exposure.court": :test,
         "ex4pm.crown": :test,
         "ex4pm.release.contract": :test,
         "ex4pm.rails.court": :test
@@ -268,6 +270,8 @@ defmodule Ex4pm.MixProject do
         "format --check-formatted",
         "compile --warnings-as-errors",
         "ex4pm.lint.truth",
+        # Exposure completeness (static layers; --require-real is the CI mode).
+        "ex4pm.exposure.court",
         # Real, automated determinism proof for every ggen_igniter-generated
         # file in priv/ggen/manifest.json (delete/regenerate/byte-diff) --
         # no-ops cleanly if the manifest doesn't exist yet, per the task's

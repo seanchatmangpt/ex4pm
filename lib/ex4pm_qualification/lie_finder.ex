@@ -24,6 +24,49 @@ defmodule Ex4pm.Qualification.LieFinder do
     Enum.flat_map(ex_files, &scan_file/1)
   end
 
+  @real_markers ~r/WasmArtifact|RealTransport|FerroplanTransport|real_wasm|real_ferroplan|ferroplan_wasm\.wasm|wasm4pm_ex4pm_bindings/
+  @skip_tag ~r/@(?:module|describe)?tag\s+(?::skip\b|skip:)/
+  @skip_guard ~r/skip_reason\(\)|EX4PM_WASM_REQUIRED/
+
+  @doc """
+  Rule `:skipped_real_exec`: scans `test/**/*_test.exs` for real-artifact tests
+  that carry a `skip` tag without the `EX4PM_WASM_REQUIRED` handling
+  (`Ex4pm.Test.WasmArtifact.skip_reason/0` raises under `EX4PM_WASM_REQUIRED=1`).
+  An unguarded skip lets a green run say nothing about real execution.
+  """
+  @spec scan_tests(String.t()) :: [finding()]
+  def scan_tests(root_dir \\ ".") do
+    root_dir
+    |> Path.join("test/**/*_test.exs")
+    |> Path.wildcard()
+    |> Enum.flat_map(&scan_test_source(&1, File.read!(&1)))
+  end
+
+  @doc "Pure form of `scan_tests/1` over one test file's source text."
+  @spec scan_test_source(String.t(), String.t()) :: [finding()]
+  def scan_test_source(path, content) do
+    if Regex.match?(@real_markers, content) and Regex.match?(@skip_tag, content) and
+         not Regex.match?(@skip_guard, content) do
+      line =
+        content
+        |> String.split("\n")
+        |> Enum.find_index(&Regex.match?(@skip_tag, &1))
+
+      [
+        %{
+          file: path,
+          line: line && line + 1,
+          rule: :skipped_real_exec,
+          message:
+            "real-artifact test is skipped without EX4PM_WASM_REQUIRED handling " <>
+              "(use Ex4pm.Test.WasmArtifact.skip_reason/0 so absence fails under REQUIRED=1)"
+        }
+      ]
+    else
+      []
+    end
+  end
+
   def scan_file(path) do
     content = File.read!(path)
 

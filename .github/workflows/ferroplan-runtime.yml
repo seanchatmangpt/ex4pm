@@ -1,0 +1,119 @@
+name: ferroplan runtime (real wasm32-wasip1 artifact)
+
+on:
+  pull_request:
+    paths:
+      - "lib/ex4pm/engine/ferroplan*.ex"
+      - "lib/ex4pm/engine/ferroplan/**"
+      - "lib/ex4pm_engine/wasm/ferroplan_transport.ex"
+      - "priv/ferroplan/**"
+      - "test/engine_ferroplan_test.exs"
+      - "test/wasm/ferroplan_transport_test.exs"
+      - "test/fixtures/ferroplan/**"
+      - ".github/workflows/ferroplan-runtime.yml"
+  push:
+    branches:
+      - main
+      - "feat/**"
+      - "fix/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ferroplan-real:
+    runs-on: ubuntu-latest
+    env:
+      MIX_ENV: test
+      EX4PM_SOURCE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.EX4PM_SOURCE_SHA }}
+
+      - name: Verify exact ex4pm source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EX4PM_SOURCE_SHA"
+
+      # The ferroplan source pin and artifact digest live only in the bundled MANIFEST.
+      - name: Read ferroplan source pin and artifact sha256 from priv/ferroplan/MANIFEST.json
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "FERROPLAN_SHA=$(jq -r .source.git_sha priv/ferroplan/MANIFEST.json)" >> "$GITHUB_ENV"
+          echo "MANIFEST_FERROPLAN_SHA256=$(jq -r .artifact.sha256 priv/ferroplan/MANIFEST.json)" >> "$GITHUB_ENV"
+          echo "FERROPLAN_BUILD_CMD=$(jq -r .build.command priv/ferroplan/MANIFEST.json)" >> "$GITHUB_ENV"
+
+      - name: Checkout exact ferroplan source (github.com/seanchatmangpt/ferroplan)
+        uses: actions/checkout@v4
+        with:
+          repository: seanchatmangpt/ferroplan
+          ref: ${{ env.FERROPLAN_SHA }}
+          path: .ci/ferroplan
+          fetch-depth: 1
+
+      - name: Verify exact ferroplan source identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C .ci/ferroplan rev-parse HEAD)" = "$FERROPLAN_SHA"
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-wasip1
+
+      - name: Build ferroplan-wasm for wasm32-wasip1 (command from MANIFEST)
+        shell: bash
+        working-directory: .ci/ferroplan
+        run: |
+          set -euo pipefail
+          test "$FERROPLAN_BUILD_CMD" = "cargo build -p ferroplan-wasm --release --target wasm32-wasip1"
+          cargo build -p ferroplan-wasm --release --target wasm32-wasip1
+
+      - name: Compare built sha256 to the priv/ferroplan/MANIFEST.json pin
+        shell: bash
+        run: |
+          set -euo pipefail
+          built=".ci/ferroplan/target/wasm32-wasip1/release/ferroplan_wasm.wasm"
+          sha256sum "$built" | awk '{print $1}' > .ci/ferroplan-wasm.sha256
+          echo "built    = $(cat .ci/ferroplan-wasm.sha256)"
+          echo "manifest = $MANIFEST_FERROPLAN_SHA256"
+          test "$(cat .ci/ferroplan-wasm.sha256)" = "$MANIFEST_FERROPLAN_SHA256"
+          # the bundled artifact is the one the tests below run
+          echo "$MANIFEST_FERROPLAN_SHA256  priv/ferroplan/ferroplan_wasm.wasm" | sha256sum -c -
+
+      - uses: erlef/setup-beam@v1
+        with:
+          elixir-version: '1.18.4'
+          otp-version: '27.3.4'
+
+      - name: Install Hex and Rebar
+        run: |
+          mix local.hex --force
+          mix local.rebar --force
+
+      - name: Resolve exact ex4pm lock and compile
+        run: |
+          mix deps.get --check-locked
+          mix compile --warnings-as-errors
+
+      # Tests still tagged :live_external read a local ferroplan checkout and stay
+      # excluded until moved onto committed fixtures (test/fixtures/ferroplan).
+      - name: Real ferroplan execution tests
+        run: mix test test/engine_ferroplan_test.exs test/wasm/ferroplan_transport_test.exs
+
+      - name: Exposure court, real execution mode
+        run: mix ex4pm.exposure.court --require-real
+
+      - name: Upload ferroplan receipt evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ex4pm-ferroplan-${{ env.EX4PM_SOURCE_SHA }}
+          path: |
+            .ci/ferroplan-wasm.sha256
+            .ci/ferroplan/target/wasm32-wasip1/release/ferroplan_wasm.wasm
+          if-no-files-found: error
+          retention-days: 14
