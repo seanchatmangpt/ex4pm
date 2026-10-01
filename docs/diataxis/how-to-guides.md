@@ -22,8 +22,12 @@ curl -X POST http://127.0.0.1:30080/api/v1/ocel/events \
 What happens on the server, in order:
 
 1. `Ex4pm.Stream.Ingest.ingest_envelope/2` (`lib/ex4pm/stream`) validates the
-   envelope via `Ex4pm.OCEL.validate_envelope/1`, checks idempotency (non-negative
-   `sequence`), normalizes into a canonical `%Ex4pm.EventLog{}`, forwards events to
+   envelope via `Ex4pm.OCEL.validate_envelope/1` and runs pure validation checks
+   (non-negative `sequence` via `check_sequence/1`). If an outcome receipt already
+   exists for the envelope's normalized subject content hash, it short-circuits to
+   `{:ok, %{status: :duplicate_ignored, ..., original_receipt_hash: h}}` — no second
+   OCEL event, no second receipt, no `Ex4pm.Engine.OnlineMiner` forward. Otherwise it
+   normalizes into a canonical `%Ex4pm.EventLog{}`, forwards events to
    `Ex4pm.Engine.OnlineMiner`, and records pending+outcome ingestion receipts via
    `Ex4pm.Evidence.Store`.
 2. The controller projects the resulting log or refusal into the domain layer via
@@ -190,7 +194,10 @@ Igniter-based codegen task that scaffolds
 `lib/ex4pm_engine/wasm/<algorithm_id>.ex` defining
 `Ex4pmEngine.Wasm.<CamelizedId>` with `algorithm_id/0`, `export/0`, `execute/2`
 wired through `Ex4pm.Engine.Wasm.execute/3` — following the
-`Ex4pmEngine.Wasm.Mean` reference pattern.
+`Ex4pmEngine.Wasm.Mean` reference pattern. The task is Igniter-based only when
+`igniter` is loaded (the dep is `:dev`/`:test`-only): under `MIX_ENV=prod`
+compilation succeeds and invoking the task raises a clear error instead
+(`0834d78`).
 
 ### Add a fully custom engine module
 

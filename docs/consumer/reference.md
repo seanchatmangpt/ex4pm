@@ -118,12 +118,18 @@ Normalizes OCEL-v2-tolerant raw event-log payloads into the canonical
 into per-object-type traces. Also defines the public structs (`Ex4pm.Event`,
 `Ex4pm.ObjectRef`, `Ex4pm.ObjectRelationship`, `Ex4pm.EventRelationship`,
 `Ex4pm.EventLog`) that a consumer constructs or pattern-matches against directly.
+`%Ex4pm.ObjectRef{}`'s `attributes` field is a real OCEL 2.0 value-time log, not a
+single snapshot: `%{name => [%{value: v, time: t}, ...]}`, one entry per admitted
+`{value, time}` pair for that attribute, `nil`-time entries (plain-map attributes
+with no explicit per-value timestamp) first, ascending by `time`; OCEL 2.0
+list-shape repeated attribute names append entries rather than last-one-wins.
 
 | Function | Purpose |
 | --- | --- |
 | `normalize/1` | Normalizes a raw OCEL-v2-like map (or an already-constructed `%Ex4pm.EventLog{}`) into the canonical IR; returns `{:ok, %Ex4pm.EventLog{}}` or `{:error, %Ex4pm.Refusal{}}`. |
 | `flatten/2` | Flattens an `%Ex4pm.EventLog{}` (`log`, `object_type \\ nil`) into per-object event traces filtered by `object_type`, or the whole sorted event list when `object_type` is `nil`; returns `{:ok, traces}` or `{:error, %Ex4pm.Refusal{}}`. |
 | `validate_envelope/1` | Validates a batch ingestion envelope map (`schema`, `producer`, `sequence`, `events`, `objects`, `object_relationships`); returns a normalized envelope map or `{:error, %Ex4pm.Refusal{}}`. |
+| `Ex4pm.ObjectRef.attribute_at/3` | Resolves one object attribute's value as of a timestamp (`object_ref`, `name`, `as_of \\ nil`) by scanning its value-time log for the latest entry whose `time` is `nil` or `<= as_of`; omitting `as_of` returns the latest known value; returns `nil` for an unknown attribute or no entry at/before `as_of`. |
 
 ## Ex4pm.OCEL2
 

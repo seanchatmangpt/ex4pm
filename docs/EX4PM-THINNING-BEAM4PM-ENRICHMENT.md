@@ -87,6 +87,8 @@ Separately, `lib/wasm4pm_compat/ash_types.ex` (209 LOC, `Wasm4pmCompat.AshTypes.
 
 ## 3a. Network-backed candidate already carries live drift verification
 
+> **Status 2026-09-24: NOT landed on `feat/a2a-client-additive-path` — implemented only on worktree branch `worktree-wf_ae9bd890-20d-1` (`924db0a`). Treat as design intent until merged.**
+
 `Ex4pm.Engine.Beam4pm` (`lib/ex4pm/engine/beam4pm.ex`, `priv/ggen/templates/beam4pm.ex.eex`) — the
 network-backed engine candidate this document's §3 "New in ex4pm" describes — is not purely
 speculative target-state anymore. As of this session it has grown an opt-in

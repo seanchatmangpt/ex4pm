@@ -33,11 +33,20 @@ The engine registry preserves these candidates simultaneously:
 
 Selection is capability- and evidence-driven. An unavailable edge yields a typed standing/refusal instead of silently disappearing.
 
+## Installation
+
+```elixir
+def deps do
+  [{:ex4pm, "~> 26.9.30"}]
+end
+```
+
 ## Library layout
 
 ex4pm is a single flat, hex-publishable Mix library (app `:ex4pm`) — no separate OTP apps.
 `lib/ex4pm/` is organized into namespaced module directories:
 
+- `lib/ex4pm/aloop.ex` - independent online process intelligence over ALOOP OCEL event logs (episodes, loop depth/recurrence, causal edges, DFG/variants/precision, conformance, analysis receipts);
 - `lib/ex4pm/contracts.ex` - canonical ontology, SHACL, WIT component contract, and receipt schema;
 - `lib/ex4pm/core/` - canonical observation IR, OCEL/XES normalization, POWL, capabilities, hashing;
 - `lib/ex4pm/evidence/` - receipts, replay, receipt store, BRCE;

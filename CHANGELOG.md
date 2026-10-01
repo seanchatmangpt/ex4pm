@@ -12,6 +12,61 @@ explicitly in a "Public contract" subsection, including an explicit
 "UNCHANGED" statement when a release does not touch it. Don't assume
 silence means unchanged; state it.
 
+## [Unreleased]
+
+## [26.9.30] - 2026-09-30
+
+Version bump 26.9.24 -> 26.9.30 for Hex dry-run publish readiness; package `files`
+now includes README.md, CHANGELOG.md and LICENSE. Contents of the former Unreleased
+section ship in this release.
+
+### Public contract
+
+UNCHANGED by the version bump itself (see entries below for contract notes).
+
+### Added
+
+- **`Ex4pm.Aloop` module added (`64c157d`).** Independent online process intelligence
+  over ALOOP OCEL 2.0 event logs: ingest/episode segmentation, loop-depth/recurrence,
+  human causal edges, provider replacement with substitution-equivalence verdicts,
+  orphan-DO and unconsumed-receipt detection, DFG/variants/precision, conformance
+  divergences, repair/replan chains, and a deterministic JSON-encodable
+  `analysis_receipt/1`.
+
+### Changed
+
+- **Duplicate ingestion envelopes are now short-circuited, not re-ingested.**
+  `Ex4pm.Stream.Ingest.ingest_envelope/1,2` detects a re-submitted envelope by its
+  normalized subject content hash (`log.subject.hash`, deterministic and invariant
+  across retries) and returns `{:ok, %{status: :duplicate_ignored, ...,
+  original_receipt_hash: h}}` — no second OCEL event, no second receipt, no
+  `Ex4pm.Engine.OnlineMiner` forward. The `sequence` check is now a pure validation
+  check (`check_sequence/1`); it no longer carries idempotency semantics
+  (`8f5d524`).
+- **`Ex4pm.ObjectRef.attributes` is a real OCEL 2.0 value-time log, not a snapshot.**
+  `%{name => [%{value: v, time: t}, ...]}`, one entry per admitted `{value, time}`
+  pair, `nil`-time entries first and ascending by `time`; OCEL 2.0 list-shape
+  repeated attribute names append entries rather than last-one-wins. New
+  `Ex4pm.ObjectRef.attribute_at/3` resolves a value as of a timestamp (`59501af`).
+
+### Public contract
+
+- `Ex4pm.Stream.Ingest.ingest_envelope/1,2` (`lib/ex4pm/stream/ingest.ex`) —
+  **CHANGED** (`8f5d524`): signature and options unchanged, but the success result
+  on the duplicate path is now `{:ok, %{status: :duplicate_ignored, subject_hash:
+  <hash>, event_count: <n>, object_count: <n>, sequence: <n>, agent_id: <id>,
+  run_id: <id>, original_receipt_hash: <hash>}}` instead of a second full ingest
+  result; the first-ingest success result shape is unchanged.
+- `Ex4pm.OCEL.validate_envelope/1` (`lib/ex4pm/ocel.ex`) — required envelope keys
+  (`schema`, `producer` map, integer `sequence`, `events` list/map) **UNCHANGED**;
+  the `59501af` change alters the `%Ex4pm.ObjectRef{}` `attributes` field
+  representation produced by normalization, not envelope validation.
+- `Ex4pm.Evidence.BRCE.execute/4` (`lib/ex4pm/evidence.ex`) — authority-map shape
+  **UNCHANGED**.
+- `Ex4pm.Aloop` (`lib/ex4pm/aloop.ex`) — **ADDED** (`64c157d`): new public module,
+  24 public functions from `event_classes/0` through `analysis_receipt/1`; additive
+  only — the three contract surfaces above are untouched.
+
 ## [26.9.9] - 2026-09-09
 
 ### Changed
