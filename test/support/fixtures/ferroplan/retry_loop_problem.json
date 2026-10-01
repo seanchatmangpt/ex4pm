@@ -1,0 +1,9 @@
+{
+  "states": [{"id": "s0"}, {"id": "g", "facts": ["done"]}],
+  "initial_states": ["s0"],
+  "goal": {"facts": ["done"]},
+  "transitions": [
+    {"action": "flip", "from": "s0", "to": "g", "probability_ppm": 500000},
+    {"action": "flip", "from": "s0", "to": "s0", "probability_ppm": 500000}
+  ]
+}
