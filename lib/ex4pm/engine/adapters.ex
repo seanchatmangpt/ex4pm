@@ -305,3 +305,133 @@ defmodule Ex4pm.Engine.Remote do
 
   defp field(map, key), do: Map.get(map, key) || Map.get(map, Atom.to_string(key))
 end
+
+defmodule Ex4pm.Engine.WasmRemote do
+  @moduledoc """
+  Network-backed WASM execution candidate (docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md
+  Phase 1, §6). Additive alongside the existing in-process `Ex4pm.Engine.Wasm` and
+  `Ex4pm.Engine.CmcaWasm` candidates — does not replace either, and is not in the
+  default preference table (`Ex4pm.Engine.Registry`'s `preference/1`), so it is only
+  selected via an explicit `engine: :wasm_remote` opt.
+
+  Modeled directly on `Ex4pm.Engine.Remote`: an injected `:wasm_remote_fun` 2-arity
+  callback (not a hardcoded HTTP client), `{:ok, value, identity}` carrying
+  `source_sha`/`image_digest`/`transport`/`receipt_verified`, and the same
+  exact-identity admission gate (`:alive` vs `:partial_alive`).
+
+  Tradeoff note: `admit_identity/2`/`exact_identity?/1`/`field/2` below are a
+  deliberate near-duplicate of `Ex4pm.Engine.Remote`'s private helpers, not a shared
+  extraction. `Ex4pm.Engine.Remote`'s identity refusal is typed `:remote_identity_mismatch`
+  and its unconfigured refusal `:remote_unavailable`; this module needs its own typed
+  atoms (`:wasm_remote_identity_mismatch`, `:wasm_remote_unavailable`) so a caller can
+  distinguish which candidate refused. Extracting a shared helper would need either a
+  refusal-atom parameter threaded through `Ex4pm.Engine.Remote`'s private functions (a
+  real refactor of code this task is scoped not to touch) or a behaviour-based
+  extraction; the minimal safe choice here is duplication over refactoring a sibling
+  module out of scope.
+  """
+  @behaviour Ex4pm.Engine
+
+  alias Ex4pm.Engine.Result
+  alias Ex4pm.Refusal
+
+  @impl true
+  def id, do: :wasm_remote
+  @impl true
+  def supports?(_operation, opts), do: is_function(Keyword.get(opts, :wasm_remote_fun), 2)
+  @impl true
+  def available?(opts), do: supports?(:any, opts)
+
+  @impl true
+  def execute(operation, subject, opts) do
+    case Keyword.get(opts, :wasm_remote_fun) do
+      fun when is_function(fun, 2) ->
+        try do
+          case fun.(operation, subject) do
+            {:ok, value, identity} ->
+              with(
+                :ok <- admit_identity(identity, Keyword.get(opts, :wasm_remote_image_digest)),
+                do: ok(operation, subject, value, identity)
+              )
+
+            {:ok, value} ->
+              ok(operation, subject, value, nil)
+
+            {:error, :timeout} ->
+              {:error, timeout_refusal(operation)}
+
+            {:error, reason} ->
+              {:error, reason}
+
+            value ->
+              ok(operation, subject, value, nil)
+          end
+        catch
+          :exit, {:timeout, _} -> {:error, timeout_refusal(operation)}
+        end
+
+      _ ->
+        {:error,
+         Refusal.new(:wasm_remote_unavailable, "wasm remote engine requires an explicit callback")}
+    end
+  end
+
+  defp timeout_refusal(operation) do
+    Refusal.new(:wasm_remote_timeout, "wasm remote engine call timed out",
+      details: %{operation: operation}
+    )
+  end
+
+  defp ok(operation, subject, value, identity) do
+    exact? = exact_identity?(identity)
+
+    {:ok,
+     %Result{
+       engine: :wasm_remote,
+       operation: operation,
+       algorithm: :wasm_remote,
+       subject_hash: Ex4pm.Core.Hash.digest(subject),
+       standing: if(exact?, do: :alive, else: :partial_alive),
+       value: value,
+       evidence: %{
+         executed: true,
+         transport: if(identity, do: field(identity, :transport), else: :callback),
+         remote_identity: identity || :unproven,
+         exact_artifact: exact?
+       }
+     }}
+  end
+
+  defp admit_identity(identity, nil) when is_map(identity), do: :ok
+  defp admit_identity(nil, nil), do: :ok
+
+  defp admit_identity(identity, expected) when is_map(identity) do
+    observed = field(identity, :image_digest)
+
+    if observed == expected,
+      do: :ok,
+      else:
+        {:error,
+         Refusal.new(
+           :wasm_remote_identity_mismatch,
+           "wasm remote image digest does not match admitted subject",
+           details: %{expected: expected, observed: observed}
+         )}
+  end
+
+  defp admit_identity(_identity, expected),
+    do:
+      {:error,
+       Refusal.new(:wasm_remote_identity_mismatch, "wasm remote exact identity is missing",
+         details: %{expected: expected}
+       )}
+
+  defp exact_identity?(identity) do
+    is_map(identity) and field(identity, :observed) == true and
+      field(identity, :transport) in [:tls, :https, :mtls, "tls", "https", "mtls"] and
+      is_binary(field(identity, :source_sha)) and is_binary(field(identity, :image_digest)) and
+      field(identity, :receipt_verified) == true
+  end
+
+  defp field(map, key), do: Map.get(map, key) || Map.get(map, Atom.to_string(key))
+end
