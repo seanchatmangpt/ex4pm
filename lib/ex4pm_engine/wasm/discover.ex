@@ -1,10 +1,10 @@
 defmodule Ex4pmEngine.Wasm.Discover do
   @moduledoc """
-  wasm4pm-ex4pm-bindings `discover` adapter -- Phase 1 (process mining core),
-  thin wrapper over an already-implemented, plain (non-wasm_bindgen) pub
-  fn already present in the `wasm4pm` crate. See
-  `~/wasm4pm/crates/wasm4pm-ex4pm-bindings/src/lib.rs` for the
-  real Rust implementation this binds.
+  wasm4pm-ex4pm-bindings `discover` adapter -- hand-written, not
+  generated. Thin wrapper over an already-implemented, plain
+  (non-wasm_bindgen) pub fn already present in the `wasm4pm-ex4pm-bindings`
+  crate. See `~/wasm4pm/crates/wasm4pm-ex4pm-bindings` for the real Rust
+  implementation this binds.
 
   See `Ex4pmEngine.Wasm.Adapter` for the shared six-state standing shape.
   Injected transport key: `:discover_wasm_fun`.
