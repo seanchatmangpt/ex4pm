@@ -33,7 +33,15 @@ defmodule Ex4pmEngine.Wasm.Adapter do
   # registered in `Ex4pmEngine.Wasm.RealTransport.algo_specs/0`. A rebuild
   # from an earlier SHA has neither the allocator nor the Phase-4 exports
   # and cannot serve `RealTransport` at all.
-  @wasm4pm_source_sha "5bb39674421a4d37d1e0fbaa34125d7af354415c"
+  #
+  # Updated 2026-10-01: re-pinned to wasm4pm main b72b6bc9679d5eb7228b33f61c900835afefe72d
+  # (v26.9.30 release merge). That tree carries the zero-import artifact build
+  # (`crates/wasm4pm-ex4pm-bindings/scripts/build-wasm.sh`: 0 host imports,
+  # 71 exports) whose digest `priv/wasm4pm/MANIFEST.json` pins, and the
+  # cross-repo CI workflow builds and reports exactly this SHA. The 5bb39674
+  # pin above no longer describes the admitted source: bindings sources changed
+  # after it (phase4_stats.rs, Cargo.toml, build script).
+  @wasm4pm_source_sha "b72b6bc9679d5eb7228b33f61c900835afefe72d"
   @protocol "wasm4pm.ex4pm-bindings/v1"
 
   def wasm4pm_source_sha, do: @wasm4pm_source_sha
