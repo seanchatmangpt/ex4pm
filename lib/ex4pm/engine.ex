@@ -39,7 +39,7 @@ defmodule Ex4pm.Engine.Registry do
   @moduledoc "Preserves the lawful engine graph and performs explicit/evidence-ranked selection."
 
   alias Ex4pm.Core.Capability
-  alias Ex4pm.Engine.{Beam, Beam4pm, CmcaWasm, Ex4pmPlan, Nif, Remote, Wasm, WasmRemote}
+  alias Ex4pm.Engine.{Beam, Beam4pm, CmcaWasm, Ex4pmPlan, Ferroplan, Nif, Remote, Wasm, WasmRemote}
 
   alias Ex4pmEngine.Wasm.{
     Align,
@@ -97,7 +97,10 @@ defmodule Ex4pm.Engine.Registry do
     # reachable via an explicit `engine: :beam4pm` opt or its own admitted
     # operations, none of which any existing candidate above also claims.
     Beam4pm,
-    WasmRemote
+    WasmRemote,
+    # Native ferroplan engine: explicit-only (`engine: :ferroplan`), no ranked
+    # preference; falls to the default (99) clause below.
+    Ferroplan
   ]
 
   def engines, do: @engines
@@ -211,7 +214,7 @@ defmodule Ex4pm.Engine.Registry do
   defp preference(:remote), do: 24
   # Phase 1 additive candidate (docs/EX4PM-THINNING-BEAM4PM-ENRICHMENT.md §6):
   # not ranked into the implicit-selection preference table yet — only reachable
-  # via an explicit `engine: :wasm_remote` opt. Falls to the default (_ -> 99)
+  # via an explicit `engine: :wasm_remote` opt (as is :ferroplan, documented rank 99). Falls to the default (_ -> 99)
   # clause deliberately; flipping this into the ranked table is Phase 2, out of
   # scope here.
   defp preference(_), do: 99

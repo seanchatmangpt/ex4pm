@@ -97,7 +97,8 @@ defmodule Ex4pm.EngineTest do
              # :discover (see test/engine_beam4pm_test.exs for its real
              # admitted operations).
              :beam4pm,
-             :wasm_remote
+             :wasm_remote,
+             :ferroplan
            ]
 
     assert Enum.find(candidates, &(&1.id == :beam)).standing == :partial_alive

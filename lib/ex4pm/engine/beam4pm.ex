@@ -19,8 +19,6 @@ defmodule Ex4pm.Engine.Beam4pm do
 
       * `:beam4pm_conformance_results` -> `GET /conformance_result` (action `read`)
     * `:beam4pm_ocel_events` -> `GET /ocel_event` (action `read`)
-    * `:ferroplan_fond_policy` -> `POST /fond_policy` (action `create`) (forward_declared)
-    * `:ferroplan_hierarchical_plan` -> `POST /hierarchical_plan` (action `create`) (forward_declared)
 
   ## Honest status
 
@@ -54,9 +52,7 @@ defmodule Ex4pm.Engine.Beam4pm do
 
   @route_table %{
     :beam4pm_conformance_results => %{json_api_type: "conformance_result", action: "read", http_method: :get, status: :live},
-    :beam4pm_ocel_events => %{json_api_type: "ocel_event", action: "read", http_method: :get, status: :live},
-    :ferroplan_fond_policy => %{json_api_type: "fond_policy", action: "create", http_method: :post, planning_type: :fond, status: :forward_declared},
-    :ferroplan_hierarchical_plan => %{json_api_type: "hierarchical_plan", action: "create", http_method: :post, planning_type: :hierarchical, status: :forward_declared}
+    :beam4pm_ocel_events => %{json_api_type: "ocel_event", action: "read", http_method: :get, status: :live}
   }
 
   @impl true
