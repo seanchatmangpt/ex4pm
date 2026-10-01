@@ -100,3 +100,7 @@ k8s/secret.yaml
 # state) -- matches beam4pm's own .gitignore convention exactly.
 .ggen_igniter/
 .ggen_igniter_tmp/
+
+# Per-lane build roots and self-referential symlink
+/_build-*/
+/ex4pm
