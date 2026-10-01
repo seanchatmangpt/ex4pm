@@ -85,8 +85,8 @@ defmodule Ex4pmEngine.Reactors.WasmCapabilitiesReactor do
 
   ## Output (`:final`)
 
-  `%{results: %{<algorithm_id> => %{standing:, value:/reason:, ...}},
-    standing: :alive | :partial_alive | :blocked | :build_broken |
+  `%{results: %{<algorithm_id> => %{standing:, value:/reason:, receipt_hash:, ...}},
+    receipts: %{<algorithm_id> => receipt_hash}, standing: :alive | :partial_alive | :blocked | :build_broken |
     :unsupported}` -- `standing` is the real fold (`Ex4pm.Standing.min/2`,
   the same ALIVE > PARTIAL_ALIVE > BLOCKED > BUILD_BROKEN >
   UNSUPPORTED/UNKNOWN lattice `apps/ex4pm_qualification`'s Crown/Verifier
@@ -121,9 +121,35 @@ defmodule Ex4pmEngine.Reactors.WasmCapabilitiesReactor do
       standings = results_by_algo |> Map.values() |> Enum.map(&Map.fetch!(&1, :standing))
       overall = Enum.reduce(standings, :alive, &Ex4pm.Standing.min/2)
 
-      {:ok, %{results: results_by_algo, standing: overall}}
+      # Persist one content-addressed receipt hash per algorithm in the result
+      # map itself (no Ash row): identity = algorithm + observed request/result
+      # digests + standing. Algorithms without evidence (blocked/unsupported)
+      # carry `receipt_hash: nil` rather than a fabricated hash.
+      results =
+        Map.new(results_by_algo, fn {algo, result} ->
+          hash = Ex4pmEngine.Reactors.WasmCapabilitiesReactor.receipt_hash(algo, result)
+          {algo, Map.put(result, :receipt_hash, hash)}
+        end)
+
+      receipts =
+        for {algo, %{receipt_hash: hash}} <- results, is_binary(hash), into: %{}, do: {algo, hash}
+
+      {:ok, %{results: results, receipts: receipts, standing: overall}}
     end)
   end
 
   return(:final)
+
+  @doc false
+  def receipt_hash(algo, %{evidence: %{request_digest: req, result_digest: res}} = result)
+      when is_binary(req) and is_binary(res) do
+    Ex4pm.Core.Hash.digest(%{
+      algorithm: algo,
+      request_digest: req,
+      result_digest: res,
+      standing: result.standing
+    })
+  end
+
+  def receipt_hash(_algo, _result), do: nil
 end

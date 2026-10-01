@@ -75,6 +75,35 @@ defmodule Ex4pm.Information.Registry do
       },
       options: %{}
     },
+    "engine.wasm.run" => %{
+      handler: :engine_wasm_run,
+      description:
+        "Run one admitted wasm4pm algorithm (closed algorithm list) with a receipted, replay-verified result.",
+      inputs: %{
+        "algorithm" => %{type: :string, required?: true},
+        "request" => %{type: :map, required?: true}
+      },
+      options: %{}
+    },
+    "engine.ferroplan.run" => %{
+      handler: :engine_ferroplan_run,
+      description:
+        "Run one admitted ferroplan operation (closed operation list); candidate output, never actuation.",
+      inputs: %{
+        "operation" => %{type: :string, required?: true},
+        "domain" => %{type: :string, required?: false},
+        "problem" => %{type: :string, required?: false},
+        "limits" => %{type: :map, required?: false}
+      },
+      options: %{}
+    },
+    "engine.standing" => %{
+      handler: :engine_standing,
+      description:
+        "Observe wasm4pm and ferroplan engine standing by executing one cheap admitted operation on each.",
+      inputs: %{},
+      options: %{}
+    },
     "ash.catalog" => %{
       handler: :ash_catalog,
       description: "Describe Ash resources and public actions without executing an action.",

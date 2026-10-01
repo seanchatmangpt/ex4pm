@@ -12,6 +12,24 @@ defmodule Ex4pm.Information.Handlers do
 
   @max_file_bytes 67_108_864
 
+  # Closed, compile-time engine/operation tables. External strings are only ever
+  # looked up here; they are never converted into atoms or modules.
+  @wasm_algos Map.new(Ex4pmEngine.Wasm.AlgoRegistry.algo_specs(), fn spec ->
+                {Atom.to_string(spec.algorithm_id), {spec.algorithm_id, spec.module.id()}}
+              end)
+  @wasm_engine_ids Map.new(@wasm_algos, fn {_name, {_algo, engine_id}} ->
+                     {Atom.to_string(engine_id), engine_id}
+                   end)
+  @ferroplan_ops %{
+    "plan" => :ferroplan_plan,
+    "plan_production" => :ferroplan_plan_production,
+    "readiness" => :ferroplan_readiness,
+    "version" => :ferroplan_version,
+    "hierarchical_plan" => :ferroplan_hierarchical_plan,
+    "fond_policy" => :ferroplan_fond_policy,
+    "hddl_solve" => :ferroplan_hddl_solve
+  }
+
   def execute(:system_doctor, %Admitted{}) do
     candidates =
       [:discover, :conform, :simulate, :optimize, :plan]
@@ -48,6 +66,68 @@ defmodule Ex4pm.Information.Handlers do
       value = operation |> Ex4pm.capabilities() |> Enum.map(&Protocol.json_safe/1)
       ok(value, :partial_alive, [], %{operation: operation, selected: false})
     end
+  end
+
+  def execute(:engine_wasm_run, %Admitted{input: input}) do
+    with {:ok, {algorithm, engine_id}} <- wasm_algorithm(input["algorithm"]),
+         {:ok, result} <- Ex4pm.Engine.execute(algorithm, input["request"], engine: engine_id) do
+      engine_ok(result)
+    end
+  end
+
+  def execute(:engine_ferroplan_run, %Admitted{input: input}) do
+    with {:ok, operation} <- ferroplan_operation(input["operation"]),
+         subject = ferroplan_subject(input),
+         {:ok, result} <- Ex4pm.Engine.execute(operation, subject, engine: :ferroplan) do
+      engine_ok(result)
+    end
+  end
+
+  def execute(:engine_standing, %Admitted{}) do
+    probes = [
+      {:wasm4pm, :mean, %{data: [1.0, 2.0, 3.0]}, :wasm_mean},
+      {:ferroplan, :ferroplan_version, %{}, :ferroplan}
+    ]
+
+    engines =
+      Map.new(probes, fn {name, operation, subject, engine_id} ->
+        case Ex4pm.Engine.execute(operation, subject, engine: engine_id) do
+          {:ok, %Ex4pm.Engine.Result{} = result} ->
+            {name,
+             %{
+               standing: result.standing,
+               executed: true,
+               operation: operation,
+               evidence: Protocol.json_safe(result.evidence)
+             }}
+
+          {:error, reason} ->
+            {name,
+             %{
+               standing: :blocked,
+               executed: false,
+               operation: operation,
+               refusal: Protocol.json_safe(reason)
+             }}
+        end
+      end)
+
+    standing =
+      engines
+      |> Map.values()
+      |> Enum.map(& &1.standing)
+      |> Enum.reduce(:alive, &Ex4pm.Standing.min/2)
+
+    ok(
+      %{
+        engines: engines,
+        registered_wasm_algorithms: map_size(@wasm_algos),
+        registered_engines: Ex4pm.Engine.Registry.engines() |> Enum.map(& &1.id())
+      },
+      standing,
+      [],
+      %{executed_probes: Enum.map(probes, &elem(&1, 1)), actuation_performed: false}
+    )
   end
 
   def execute(:ash_catalog, %Admitted{}) do
@@ -200,12 +280,67 @@ defmodule Ex4pm.Information.Handlers do
   defp engine_atom("wasm"), do: {:ok, :wasm}
   defp engine_atom("nif"), do: {:ok, :nif}
   defp engine_atom("remote"), do: {:ok, :remote}
+  defp engine_atom("ferroplan"), do: {:ok, :ferroplan}
+
+  defp engine_atom(other) when is_binary(other) and is_map_key(@wasm_engine_ids, other),
+    do: {:ok, Map.fetch!(@wasm_engine_ids, other)}
 
   defp engine_atom(other) do
     {:error,
      Refusal.new(:unknown_engine, "requested engine is not in the admitted DfCM engine graph",
-       details: %{engine: other, admitted: ~w(auto beam ex4pm_plan wasm nif remote)}
+       details: %{
+         engine: other,
+         admitted:
+           ~w(auto beam ex4pm_plan wasm nif remote ferroplan) ++
+             Enum.sort(Map.keys(@wasm_engine_ids))
+       }
      )}
+  end
+
+  defp wasm_algorithm(name) when is_binary(name) and is_map_key(@wasm_algos, name),
+    do: {:ok, Map.fetch!(@wasm_algos, name)}
+
+  defp wasm_algorithm(other) do
+    {:error,
+     Refusal.new(:unknown_engine, "requested wasm algorithm is not in the admitted registry",
+       details: %{algorithm: other, admitted: Enum.sort(Map.keys(@wasm_algos))}
+     )}
+  end
+
+  defp ferroplan_operation(name) when is_binary(name) and is_map_key(@ferroplan_ops, name),
+    do: {:ok, Map.fetch!(@ferroplan_ops, name)}
+
+  defp ferroplan_operation(other) do
+    {:error,
+     Refusal.new(:unknown_engine, "requested ferroplan operation is not admitted",
+       details: %{operation: other, admitted: Enum.sort(Map.keys(@ferroplan_ops))}
+     )}
+  end
+
+  defp ferroplan_subject(input) do
+    [domain: "domain", problem: "problem", limits: "limits"]
+    |> Enum.reduce(%{}, fn {key, field}, acc ->
+      case Map.get(input, field) do
+        nil -> acc
+        value -> Map.put(acc, key, value)
+      end
+    end)
+  end
+
+  defp engine_ok(%Ex4pm.Engine.Result{} = result) do
+    evidence = result.evidence
+
+    receipts =
+      [Map.get(evidence, :request_digest), Map.get(evidence, :result_digest)]
+      |> Enum.filter(&is_binary/1)
+
+    ok(Protocol.json_safe(result.value), result.standing, receipts, %{
+      engine: result.engine,
+      operation: result.operation,
+      subject_hash: result.subject_hash,
+      evidence: Protocol.json_safe(evidence),
+      actuation_performed: false
+    })
   end
 
   defp algorithm_atom("dfg"), do: {:ok, :dfg}
