@@ -30,6 +30,8 @@ defmodule Ex4pmEngine.Wasm.FerroplanTransportTest do
     assert map_size(m) > 0
   end
 
+  # reads PDDL examples from a local ferroplan checkout (@examples); not in CI
+  @tag :live_external
   test "real PDDL plan solves the logistics p1 problem", %{pid: pid} do
     domain = File.read!(Path.join(@examples, "domain.pddl"))
     problem = File.read!(Path.join(@examples, "p1.pddl"))
@@ -80,6 +82,8 @@ defmodule Ex4pmEngine.Wasm.FerroplanTransportTest do
     refute d.message =~ ~r/unknown op/i
   end
 
+  # reads PDDL examples from a local ferroplan checkout (@examples); not in CI
+  @tag :live_external
   test "a timeout discards the instance with engine_restarted", %{pid: pid} do
     domain = File.read!(Path.join(@examples, "domain.pddl"))
     problem = File.read!(Path.join(@examples, "p1.pddl"))

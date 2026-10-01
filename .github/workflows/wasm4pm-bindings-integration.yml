@@ -68,8 +68,10 @@ jobs:
           set -euo pipefail
           test "$(git -C .ci/wasm4pm rev-parse HEAD)" = "$WASM4PM_BINDINGS_SHA"
 
-      - uses: dtolnay/rust-toolchain@stable
+      # Must match wasm4pm's rust-toolchain.toml pin (nightly-2026-04-15).
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: nightly-2026-04-15
           targets: wasm32-unknown-unknown
 
       - name: Run native crate tests
