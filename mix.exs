@@ -205,6 +205,16 @@ defmodule Ex4pm.MixProject do
     ]
   end
 
+  defp falsify_wasm(args) do
+    {_, code} =
+      System.cmd("bash", ["scripts/falsify-wasm-e2e.sh" | args],
+        into: IO.stream(:stdio, :line),
+        stderr_to_stdout: true
+      )
+
+    if code != 0, do: Mix.raise("falsify.wasm failed with exit #{code}")
+  end
+
   defp aliases do
     [
       verify: [
@@ -232,7 +242,10 @@ defmodule Ex4pm.MixProject do
       "test.integration": [
         "test --include integration"
       ],
-      chicago: ["test --only chicago --seed 0"]
+      chicago: ["test --only chicago --seed 0"],
+      # Real end-to-end WASM falsifier: regen -> build wasm32 -> real Wasmex tests.
+      # Exit codes documented in scripts/falsify-wasm-e2e.sh.
+      "falsify.wasm": [&falsify_wasm/1]
     ]
   end
 end

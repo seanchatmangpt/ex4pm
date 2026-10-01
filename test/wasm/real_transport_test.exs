@@ -5,27 +5,59 @@ defmodule Ex4pmEngine.Wasm.RealTransportTest do
   `Wasmex` instance -- alloc, write, call, read, free, all against real
   linear memory -- rather than a fixture closure.
 
-  Named, honest skip (not a silent pass) when the real artifact hasn't been
-  built on this machine, per this repo's own Chicago-testing discipline:
-  real collaborators, or a clearly-stated reason why not.
+  Artifact location: `EX4PM_WASM_ARTIFACT`, defaulting to the canonical
+  `~/wasm4pm` release build. When the artifact is absent:
+
+    * `EX4PM_WASM_REQUIRED=1` -> every test FAILS (a vacuous pass is a
+      defect; `scripts/falsify-wasm-e2e.sh` sets this).
+    * unset -> a named, visible module-level skip (not a silent pass).
   """
   use ExUnit.Case, async: true
 
   alias Ex4pmEngine.Wasm.RealTransport
 
-  @artifact_path Path.expand(
-                   "~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm"
-                 )
+  @artifact_path System.get_env("EX4PM_WASM_ARTIFACT") ||
+                   Path.expand(
+                     "~/wasm4pm/target/wasm32-unknown-unknown/release/wasm4pm_ex4pm_bindings.wasm"
+                   )
+  required? = System.get_env("EX4PM_WASM_REQUIRED") == "1"
 
   # ExUnit setup callbacks may only return :ok, a keyword, or a map; an absent
-  # artifact is a named, visible module-level skip (not a silent pass).
-  unless File.regular?(@artifact_path) do
+  # artifact is a named, visible module-level skip (not a silent pass) unless
+  # EX4PM_WASM_REQUIRED=1, in which case setup flunks below.
+  if not File.regular?(@artifact_path) and not required? do
     @moduletag skip: "wasm artifact not built: #{@artifact_path}"
   end
 
   setup do
-    {:ok, instance} = RealTransport.start(@artifact_path)
-    {:ok, instance: instance}
+    unless File.regular?(@artifact_path) do
+      flunk(
+        "REFUSED_ARTIFACT_MISSING: EX4PM_WASM_REQUIRED=1 but wasm artifact absent: #{@artifact_path}"
+      )
+    end
+
+    # Digest pin for admission: EX4PM_WASM_SHA256 when set (the falsify script
+    # exports the sha256 of the artifact it built); otherwise the artifact's
+    # own sha256. This test proves the real ABI transport, not artifact
+    # provenance -- provenance pinning is Admission's own court.
+    pin =
+      case System.get_env("EX4PM_WASM_SHA256") do
+        hex when hex in [nil, ""] ->
+          :crypto.hash(:sha256, File.read!(@artifact_path)) |> Base.encode16(case: :lower)
+
+        hex ->
+          hex
+      end
+
+    start_opts = [expected_sha256: pin]
+
+    case RealTransport.start(@artifact_path, start_opts) do
+      {:ok, instance} ->
+        {:ok, instance: instance}
+
+      {:error, reason} ->
+        flunk("REFUSED_ARTIFACT_UNLOADABLE: #{@artifact_path}: #{inspect(reason)}")
+    end
   end
 
   @tag :real_wasm

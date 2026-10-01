@@ -76,8 +76,13 @@ jobs:
         run: cargo test -p wasm4pm-ex4pm-bindings
         working-directory: .ci/wasm4pm
 
-      - name: Build real wasm32-unknown-unknown release artifact
-        run: cargo build -p wasm4pm-ex4pm-bindings --target wasm32-unknown-unknown --release
+      # The committed build script links the staticlib with rust-lld and exports
+      # only the crate's `export_name` allowlist, producing a zero-import
+      # artifact at the same path a plain `cargo build` used. It fails if the
+      # output has any wasm imports or a missing export. (Exact SHA pin above
+      # is unchanged; the pinned commit must contain this script.)
+      - name: Build real wasm32-unknown-unknown release artifact (build-wasm.sh)
+        run: bash crates/wasm4pm-ex4pm-bindings/scripts/build-wasm.sh
         working-directory: .ci/wasm4pm
 
       - name: Hash the exact WASM artifact
