@@ -9,7 +9,9 @@ defmodule Ex4pm.MixProject do
   # mix.exs (which runs this module body) before compiling its lib/, whether
   # ex4pm is the top-level project or a `path:`/hex dependency of another
   # app. A consumer that has already set this value keeps their own choice.
-  if is_nil(Application.get_env(:ash, :default_string_length_count)) do
+  # Read dynamically: Application.compile_env/3 does not apply inside mix.exs, and the
+  # direct get_env/2 call trips Elixir's module-body lint under --warnings-as-errors.
+  if is_nil(apply(Application, :get_env, [:ash, :default_string_length_count])) do
     Application.put_env(:ash, :default_string_length_count, :codepoints)
   end
 
