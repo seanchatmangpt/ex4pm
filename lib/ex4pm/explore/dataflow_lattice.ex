@@ -5,8 +5,8 @@ defmodule Ex4pm.Explore.DataflowLattice do
     Map.merge(left, right, fn _key, a, b -> join_value(a, b) end)
   end
 
-  def monotone?(before, after) when is_map(before) and is_map(after) do
-    Enum.all?(before, fn {key, value} -> Map.has_key?(after, key) and subset?(value, Map.fetch!(after, key)) end)
+  def monotone?(prior, later) when is_map(prior) and is_map(later) do
+    Enum.all?(prior, fn {key, value} -> Map.has_key?(later, key) and subset?(value, Map.fetch!(later, key)) end)
   end
 
   defp join_value(%MapSet{} = a, %MapSet{} = b), do: MapSet.union(a, b)
