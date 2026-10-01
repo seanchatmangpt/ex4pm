@@ -205,11 +205,9 @@ defmodule Ex4pm.EngineTest do
 
   describe "zero-config wasm fallback does not displace :beam implicitly" do
     @describetag :real_wasm
-    @describetag skip:
-                   if(Ex4pm.Test.WasmArtifact.available?(),
-                     do: false,
-                     else: "wasm4pm artifact not available (set EX4PM_WASM_ARTIFACT)"
-                   )
+    # nil when the artifact exists; a named skip when absent; raises under
+    # EX4PM_WASM_REQUIRED=1 so absence FAILS instead of skipping silently.
+    @describetag skip: Ex4pm.Test.WasmArtifact.skip_reason() || false
 
     test "implicit :discover selection stays on :beam; prefer_wasm opts in" do
       assert {:ok, Ex4pm.Engine.Beam} = Engine.select(:discover, [])

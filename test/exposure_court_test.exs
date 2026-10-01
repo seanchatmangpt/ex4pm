@@ -41,11 +41,46 @@ defmodule Ex4pm.Qualification.ExposureCourtTest do
     test "static court admits the tree; every tolerated gap is a declared known gap" do
       assert {:ok, receipt} = Court.run()
       assert receipt.subjects == %{algorithms: 33, wasm_exports: 66, ferroplan_ops: 34}
-      assert length(Court.known_gaps()) <= 10, "known-gap list may only shrink"
+      assert length(Court.known_gaps()) <= 0, "known-gap list may only shrink"
 
       assert Enum.all?(Court.known_gaps(), fn {_layer, _matcher, owner} ->
                String.starts_with?(owner, "TODO owner=")
              end)
+    end
+
+    test "a stale known gap is itself refused (the list cannot hide a regression)" do
+      stale = {:no_real_test, {:ferroplan_op, "plan"}, "TODO owner=nobody"}
+
+      assert {:refused, [violation]} = Court.run(known_gaps: [stale])
+      assert violation.broken_term == "REFUSED_EXPOSURE_STALE_KNOWN_GAP"
+      assert {:known_gap, _} = violation.subject
+    end
+
+    test "session ops map onto Sessions/Session and every op has a real test", %{inputs: inputs} do
+      session_ops = Enum.filter(inputs.ferroplan_ops, &String.starts_with?(&1, "session_"))
+      assert length(session_ops) == 25
+
+      assert Enum.all?(session_ops, fn "session_" <> name ->
+               name in Ex4pm.Engine.Ferroplan.Session.ops()
+             end)
+
+      assert function_exported?(Ex4pm.Engine.Ferroplan.Sessions, :call, 4)
+
+      assert Enum.filter(
+               Court.violations(inputs),
+               &(&1.subject in for(o <- session_ops, do: {:ferroplan_op, o}))
+             ) == []
+    end
+
+    test "real tests of facade-named ops are detected (htn_plan -> hierarchical_plan)", %{
+      inputs: inputs
+    } do
+      for op <- ~w(plan_production htn_plan fond_policy hddl_solve explain) do
+        refute Enum.any?(
+                 Court.violations(inputs),
+                 &(&1.subject == {:ferroplan_op, op} and &1.layer == :no_real_test)
+               )
+      end
     end
 
     test "--require-real executes all 33 algorithms and the ferroplan core ops, all :alive" do
@@ -151,6 +186,31 @@ defmodule Ex4pm.Qualification.ExposureCourtTest do
         )
 
       assert {"REFUSED_EXPOSURE_NO_PUBLIC_FUNCTION", subject} in new2
+    end
+
+    test "session op unknown to Session.ops/0 -> adapter/engine-op/real-test refusals", %{
+      inputs: inputs
+    } do
+      new =
+        new_violations(
+          %{inputs | ferroplan_ops: ["session_bogus" | inputs.ferroplan_ops]},
+          inputs
+        )
+
+      subject = {:ferroplan_op, "session_bogus"}
+
+      for term <- ~w(NO_ADAPTER NO_ENGINE_OP NO_REAL_TEST) do
+        assert {"REFUSED_EXPOSURE_" <> term, subject} in new
+      end
+    end
+
+    test "removing the session tests -> NO_REAL_TEST for every session op", %{inputs: inputs} do
+      tests = Map.reject(inputs.tests, fn {path, _} -> String.contains?(path, "session") end)
+      new = new_violations(%{inputs | tests: tests}, inputs)
+
+      for "session_" <> _ = op <- inputs.ferroplan_ops do
+        assert {"REFUSED_EXPOSURE_NO_REAL_TEST", {:ferroplan_op, op}} in new
+      end
     end
 
     test "--require-real with a bogus artifact path is refused, not skipped", %{inputs: inputs} do

@@ -18,14 +18,22 @@ defmodule Ex4pm.Qualification.ExposureCourt do
   Typed violations (`broken_term`): `REFUSED_EXPOSURE_NO_ADAPTER`,
   `..._NO_ENGINE_OP`, `..._NO_PUBLIC_FUNCTION`, `..._NO_DOC`,
   `..._NO_REAL_TEST`, `..._EXPORT_DRIFT`, `..._SKIPPED_REAL_EXEC`,
-  and, in `--require-real` mode, `..._NOT_ALIVE` / `..._ARTIFACT_MISSING`.
+  `..._STALE_KNOWN_GAP`, and, in `--require-real` mode, `..._NOT_ALIVE` / `..._ARTIFACT_MISSING`.
 
   The check functions (`violations/1`, `real_violations/2`) are pure over an
   inputs map, so the sabotage test can remove a subject and watch the court
   refuse. `run/1` additionally subtracts `known_gaps/0`: gaps that other work
   will close, each with an owner/phase. A violation outside that list is a new
   gap and refuses; list entries that no longer match any violation are
-  reported as stale (the list may only shrink).
+  themselves refused as stale (the list may only shrink).
+
+  Session ops (`session_*`) are exposed through
+  `Ex4pm.Engine.Ferroplan.Sessions`, not one function per op: the declared
+  mapping is adapter/engine op = `Ex4pm.Engine.Ferroplan.Session.ops/0`
+  contains the op (the GenServer that owns the wasm instance), public function
+  = `Sessions.call/4` (plus the named lifecycle function for new/fork/free),
+  real test = a ferroplan-marked test file that drives the op through the
+  `Sessions` API (`Sessions.call(id, :op, ...)` or a facade function).
   """
 
   alias Ex4pm.Qualification.ExposureCourt.CanonicalRequests
@@ -36,6 +44,7 @@ defmodule Ex4pm.Qualification.ExposureCourt do
           | {:wasm_export, String.t()}
           | {:ferroplan_op, String.t()}
           | {:test_file, String.t()}
+          | {:known_gap, String.t()}
   @type violation :: %{
           broken_term: String.t(),
           layer: atom(),
@@ -53,36 +62,22 @@ defmodule Ex4pm.Qualification.ExposureCourt do
     Ex4pm.Ferroplan.Session
   ]
 
+  @ferroplan_marker ~r/FerroplanTransport|Engine\.Ferroplan|real_ferroplan|ferroplan_wasm\.wasm/
+  @session_module Ex4pm.Engine.Ferroplan.Session
+  @sessions_module Ex4pm.Engine.Ferroplan.Sessions
+
   @function_aliases %{"htn_plan" => ["hierarchical_plan"], "hddl_solve" => ["hddl_solve"]}
 
   # -- known gaps ------------------------------------------------------------
   #
   # {layer, matcher, owner/phase}. matcher: {:algorithm, id} | {:ferroplan_op, op}
-  # | {:ferroplan_op_prefix, prefix} | {:all_algorithms}. Every entry is a
-  # TODO owned by another lane/phase; the list is itself checked (non-growing,
-  # stale entries reported). Do not add entries to make the court green.
-  @known_gaps [
-    # sessions lane (wave 2): 26 session_* ops have no engine op / facade yet
-    {:no_adapter, {:ferroplan_op_prefix, "session_"},
-     "TODO owner=wave2 sessions lane (Ex4pm.Engine.Ferroplan.Session)"},
-    {:no_engine_op, {:ferroplan_op_prefix, "session_"}, "TODO owner=wave2 sessions lane"},
-    {:no_public_function, {:ferroplan_op_prefix, "session_"}, "TODO owner=wave2 sessions lane"},
-    {:no_real_test, {:ferroplan_op_prefix, "session_"},
-     "TODO owner=wave2 sessions lane (real session tests)"},
-    # ferroplan real tests exist only for version/readiness/plan today; the rest
-    # read PDDL from a local checkout (@tag :live_external) or have no test.
-    {:no_real_test, {:ferroplan_op, "plan_production"},
-     "TODO owner=wave2 ferroplan fixture-test lane (committed fixtures, no :live_external)"},
-    {:no_real_test, {:ferroplan_op, "htn_plan"}, "TODO owner=wave2 ferroplan fixture-test lane"},
-    {:no_real_test, {:ferroplan_op, "fond_policy"},
-     "TODO owner=wave2 ferroplan fixture-test lane"},
-    {:no_real_test, {:ferroplan_op, "hddl_solve"},
-     "TODO owner=wave2 ferroplan fixture-test lane"},
-    {:no_real_test, {:ferroplan_op, "explain"}, "TODO owner=wave2 ferroplan fixture-test lane"},
-    # test/engine_test.exs skips real_wasm describe on absence without REQUIRED handling
-    {:skipped_real_exec, {:test_file_suffix, "test/engine_test.exs"},
-     "TODO owner=test-helper lane: use Ex4pm.Test.WasmArtifact.skip_reason/0"}
-  ]
+  # | {:ferroplan_op_prefix, prefix} | {:all_algorithms} | {:test_file_suffix, s}.
+  # Every entry is a TODO owned by another lane/phase. The list is itself
+  # checked: the cap test only lets it shrink, and an entry that no longer
+  # matches any violation is a STALE refusal (`REFUSED_EXPOSURE_STALE_KNOWN_GAP`),
+  # so the list can never hide a regression. Do not add entries to make the
+  # court green.
+  @known_gaps []
 
   @doc "Declared gaps `{layer, matcher, owner}` that `run/1` tolerates (and prints)."
   @spec known_gaps() :: [{atom(), tuple(), String.t()}]
@@ -263,6 +258,52 @@ defmodule Ex4pm.Qualification.ExposureCourt do
 
   # --- ferroplan layers
 
+  defp ferroplan_violations("session_" <> name = op, inputs) do
+    subj = {:ferroplan_op, op}
+    session_ok? = session_op?(name)
+    call_ok? = sessions_call?()
+
+    []
+    |> add(
+      not session_ok?,
+      v(
+        :no_adapter,
+        subj,
+        "#{inspect(@session_module)}.ops/0 does not list \"#{name}\" (the session GenServer " <>
+          "is the adapter for session_* ops)"
+      )
+    )
+    |> add(
+      not (session_ok? and call_ok?),
+      v(
+        :no_engine_op,
+        subj,
+        "session op \"#{name}\" not dispatchable through #{inspect(@sessions_module)}.call/4"
+      )
+    )
+    |> add(
+      not (call_ok? and sessions_function?(name)),
+      v(
+        :no_public_function,
+        subj,
+        "#{inspect(@sessions_module)}.call/4 (or its lifecycle function) is not exported"
+      )
+    )
+    |> add(
+      call_ok? and not fun_doc?({@sessions_module, :call, 4}),
+      v(:no_doc, subj, "#{inspect(@sessions_module)}.call/4 has no @doc")
+    )
+    |> add(
+      not session_real_test?(name, inputs.tests),
+      v(
+        :no_real_test,
+        subj,
+        "no ferroplan real-artifact test drives \"#{name}\" through #{inspect(@sessions_module)}"
+      )
+    )
+    |> Enum.reverse()
+  end
+
   defp ferroplan_violations(op, inputs) do
     subj = {:ferroplan_op, op}
     facts = ferroplan_facts(inputs.ferroplan_sources)
@@ -295,10 +336,61 @@ defmodule Ex4pm.Qualification.ExposureCourt do
       v(
         :no_real_test,
         subj,
-        "no test file references \"#{op}\" with a ferroplan real-artifact marker"
+        "no test file references \"#{op}\" (facade function, :ferroplan_#{op} or op string) " <>
+          "with a ferroplan real-artifact marker"
       )
     )
     |> Enum.reverse()
+  end
+
+  # --- session ops (declared mapping, verified against the live modules)
+
+  defp session_op?(name) do
+    Code.ensure_loaded?(@session_module) and function_exported?(@session_module, :ops, 0) and
+      name in @session_module.ops()
+  end
+
+  defp sessions_call?,
+    do: Code.ensure_loaded?(@sessions_module) and function_exported?(@sessions_module, :call, 4)
+
+  # lifecycle ops also have a dedicated function; the rest are reached via call/4
+  defp sessions_function?(name) when name in ~w(new fork free) do
+    Code.ensure_loaded?(@sessions_module) and
+      Enum.any?(1..3, &function_exported?(@sessions_module, String.to_atom(name), &1))
+  end
+
+  defp sessions_function?(_), do: true
+
+  # facade function names (besides call/4) that drive an op
+  @session_facades %{
+    "valid" => ["plan_valid?"],
+    "goal_met" => ["goal_met?"],
+    "think" => ["think"],
+    "observe" => ["observe"],
+    "suffix" => ["suffix"],
+    "advance" => ["advance"],
+    "new" => ["new"],
+    "fork" => ["fork"],
+    "free" => ["free"]
+  }
+
+  defp session_real_test?(name, tests) do
+    facades = Map.get(@session_facades, name, [])
+
+    facade_re =
+      if facades == [],
+        do: nil,
+        else: Regex.compile!("Sessions\\.(?:#{Enum.join(facades, "|")})\\(")
+
+    call_re =
+      Regex.compile!(
+        "Sessions\\.call\\(\\s*[^,()]+,\\s*(?::|\")(?:session_)?#{name}(?![a-z0-9_])"
+      )
+
+    Enum.any?(tests, fn {path, text} ->
+      real_test_file?(path) and Regex.match?(@ferroplan_marker, text) and
+        (Regex.match?(call_re, text) or (facade_re != nil and Regex.match?(facade_re, text)))
+    end)
   end
 
   @doc false
@@ -407,12 +499,21 @@ defmodule Ex4pm.Qualification.ExposureCourt do
     end
   end
 
-  @ferroplan_marker ~r/FerroplanTransport|Engine\.Ferroplan|real_ferroplan|ferroplan_wasm\.wasm/
-
+  # A real test drives the op by facade function (`Ferroplan.<fn>(`), by engine
+  # op atom (`:ferroplan_<fn>`) or by its manifest string -- the facade/engine
+  # names may differ from the ABI op (`htn_plan` -> `hierarchical_plan`).
   defp ferroplan_real_test?(op, tests) do
+    names = Enum.uniq([op | Map.get(@function_aliases, op, [])])
+    alt = Enum.map_join(names, "|", &Regex.escape/1)
+
+    drives =
+      Regex.compile!(
+        "\"#{Regex.escape(op)}\"|Ferroplan\\.(?:#{alt})\\(|:ferroplan_(?:#{alt})(?![a-z0-9_])"
+      )
+
     Enum.any?(tests, fn {path, text} ->
       real_test_file?(path) and Regex.match?(@ferroplan_marker, text) and
-        String.contains?(text, "\"#{op}\"")
+        Regex.match?(drives, text)
     end)
   end
 
@@ -573,7 +674,8 @@ defmodule Ex4pm.Qualification.ExposureCourt do
   # -- run --------------------------------------------------------------------
 
   @doc """
-  Runs the court. Options: `:require_real` (boolean), `:root`, plus the
+  Runs the court. Options: `:require_real` (boolean), `:root`, `:known_gaps` (test seam, defaults
+  to `known_gaps/0`), plus the
   artifact overrides accepted by `real_violations/2`.
 
   Returns `{:ok, receipt}` or `{:refused, violations}`; the receipt carries the
@@ -583,15 +685,16 @@ defmodule Ex4pm.Qualification.ExposureCourt do
   def run(opts \\ []) do
     inputs = load_inputs(opts)
     all = violations(inputs)
+    gaps = Keyword.get(opts, :known_gaps, @known_gaps)
 
     {real, executed} =
       if Keyword.get(opts, :require_real, false),
         do: real_violations(inputs, opts),
         else: {[], []}
 
-    {tolerated, new} = Enum.split_with(all, &known?/1)
-    stale = Enum.reject(@known_gaps, fn gap -> Enum.any?(all, &matches?(gap, &1)) end)
-    refused = new ++ real
+    {tolerated, new} = Enum.split_with(all, &known?(&1, gaps))
+    stale = Enum.reject(gaps, fn gap -> Enum.any?(all, &matches?(gap, &1)) end)
+    refused = new ++ real ++ Enum.map(stale, &stale_violation/1)
 
     if refused == [] do
       {:ok,
@@ -604,14 +707,22 @@ defmodule Ex4pm.Qualification.ExposureCourt do
          mode: if(Keyword.get(opts, :require_real, false), do: :require_real, else: :static),
          executed: executed,
          known_gaps: tolerated,
-         stale_known_gaps: stale
+         stale_known_gaps: []
        }}
     else
       {:refused, refused}
     end
   end
 
-  defp known?(violation), do: Enum.any?(@known_gaps, &matches?(&1, violation))
+  defp stale_violation({layer, matcher, owner} = gap) do
+    v(
+      :stale_known_gap,
+      {:known_gap, inspect(gap)},
+      "known gap #{inspect({layer, matcher})} (#{owner}) matches no violation: delete it"
+    )
+  end
+
+  defp known?(violation, gaps), do: Enum.any?(gaps, &matches?(&1, violation))
 
   defp matches?({layer, matcher, _owner}, %{layer: layer, subject: subject}),
     do: matcher_hit?(matcher, subject)
