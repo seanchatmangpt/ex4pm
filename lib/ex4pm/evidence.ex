@@ -101,12 +101,35 @@ defmodule Ex4pm.Evidence.Store do
   @impl true
   def init(_opts) do
     table = :ets.new(@table, [:set, :protected, {:read_concurrency, true}])
-    {:ok, %{table: table}}
+
+    subject_index =
+      :ets.new(:ex4pm_evidence_subject_index, [:bag, :protected, {:read_concurrency, true}])
+
+    parent_index =
+      :ets.new(:ex4pm_evidence_parent_index, [:bag, :protected, {:read_concurrency, true}])
+
+    {:ok, %{table: table, subject_index: subject_index, parent_index: parent_index}}
   end
 
   @impl true
   def handle_call({:put, %{hash: hash} = receipt}, _from, state) do
+    # Keep the secondary indexes exact even if a caller replaces an existing hash.
+    # Receipt hashes are content-addressed in normal use, so this is normally a
+    # no-op; handling replacement here keeps Store.put/2 total for receipt-shaped
+    # maps as well.
+    case :ets.lookup(state.table, hash) do
+      [{^hash, existing}] ->
+        delete_index_entry(state.subject_index, Map.get(existing, :subject_hash), hash)
+        delete_index_entry(state.parent_index, Map.get(existing, :parent_hash), hash)
+
+      [] ->
+        :ok
+    end
+
     true = :ets.insert(state.table, {hash, receipt})
+    insert_index_entry(state.subject_index, Map.get(receipt, :subject_hash), hash)
+    insert_index_entry(state.parent_index, Map.get(receipt, :parent_hash), hash)
+
     {:reply, {:ok, receipt}, state}
   end
 
@@ -121,24 +144,12 @@ defmodule Ex4pm.Evidence.Store do
   end
 
   def handle_call({:get_by_subject, subject_hash}, _from, state) do
-    receipts =
-      state.table
-      |> :ets.tab2list()
-      |> Enum.map(&elem(&1, 1))
-      |> Enum.filter(&(&1.subject_hash == subject_hash))
-      |> Enum.sort_by(& &1.started_at, :desc)
-
+    receipts = lookup_index(state.subject_index, subject_hash, state.table)
     {:reply, receipts, state}
   end
 
   def handle_call({:get_by_parent, parent_hash}, _from, state) do
-    receipts =
-      state.table
-      |> :ets.tab2list()
-      |> Enum.map(&elem(&1, 1))
-      |> Enum.filter(&(&1.parent_hash == parent_hash))
-      |> Enum.sort_by(& &1.started_at, :desc)
-
+    receipts = lookup_index(state.parent_index, parent_hash, state.table)
     {:reply, receipts, state}
   end
 
@@ -161,6 +172,32 @@ defmodule Ex4pm.Evidence.Store do
       |> Enum.take(limit)
 
     {:reply, receipts, state}
+  end
+
+  defp lookup_index(index, key, table) do
+    index
+    |> :ets.lookup(key)
+    |> Enum.flat_map(fn {^key, hash} ->
+      case :ets.lookup(table, hash) do
+        [{^hash, receipt}] -> [receipt]
+        [] -> []
+      end
+    end)
+    |> Enum.sort_by(& &1.started_at, :desc)
+  end
+
+  defp insert_index_entry(_index, nil, _hash), do: :ok
+
+  defp insert_index_entry(index, key, hash) do
+    true = :ets.insert(index, {key, hash})
+    :ok
+  end
+
+  defp delete_index_entry(_index, nil, _hash), do: :ok
+
+  defp delete_index_entry(index, key, hash) do
+    true = :ets.delete_object(index, {key, hash})
+    :ok
   end
 end
 
