@@ -94,6 +94,24 @@ package does not bundle the wasm artifact (see README).
   orphan-DO and unconsumed-receipt detection, DFG/variants/precision, conformance
   divergences, repair/replan chains, and a deterministic JSON-encodable
   `analysis_receipt/1`.
+- **`Ex4pm.EconomicISA` (`d1ff769`, PR #45).** Compact economic-activity instruction
+  set for nexus/edge execution: the common-path wire representation is exactly one
+  byte (`0x00` reserved UNKNOWN/NULL, `0xFF` escape prefix for extended semantic
+  identifiers) over nine sparse opcode ranges. `to_event/2` projects a byte activity
+  into the existing canonical OCEL-v2-compatible `Ex4pm.Event` IR (stamping
+  `economic_opcode`/`economic_category`/`economic_isa` attributes) — deliberately
+  no competing event-log format.
+- **`Ex4pm.Gall` (`8a68c2c` + `7c9d2f9` + `088df36`).** v26.9.18 GALL-015..020
+  process-law qualification surfaces: corpus identity (`Corpus` fixtures/manifest
+  digest), canonical POWL-like reference algebra with dual ingress — semantic spec
+  and WF-net (`Powl.from_semantic/1`, `Powl.from_wfnet/1`, `equivalent?/2`), OCPQ
+  reference evaluation (`Ocpq.evaluate/2`), rule-constrained discovery
+  (`Discovery.discover/2`), candidate-only compliance prediction with integer
+  `score_bp` scores (`Compliance.train/predict/evaluate`), and a deterministic
+  process-compute dispatcher (`Compute.select/2`, versioned selection digests).
+  Typed refusals throughout; the cross-language `Portable` envelope (RFC 8785
+  subset canonical JSON) carries `authority: "NONE"` — the namespace observes and
+  does not actuate.
 
 ### Changed
 

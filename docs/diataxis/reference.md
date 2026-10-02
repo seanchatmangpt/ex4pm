@@ -173,6 +173,21 @@ No Mix tasks defined in this namespace.
 
 No Mix tasks defined in this namespace (grep for `defmodule Mix.Tasks` returned zero matches).
 
+## lib/ex4pm/economic_isa.ex
+
+| Function | Purpose |
+| --- | --- |
+| `Ex4pm.EconomicISA.ranges/0` | The nine opcode ranges (`market` through `extension`); `0x00` reserved UNKNOWN/NULL, `0xFF` escape prefix |
+| `Ex4pm.EconomicISA.registry/0` | The seeded operation vocabulary (name/opcode/category); IDs intentionally sparse so ranges grow without renumbering already-emitted receipts |
+| `Ex4pm.EconomicISA.encode/1` (name) | Encodes an operation name (binary or atom) to its one-byte opcode; unknown input returns a typed `%Ex4pm.Refusal{}` |
+| `Ex4pm.EconomicISA.encode_extended/1` (semantic_id) | Encodes an extended semantic identifier (<= 65,535 bytes) behind the `0xFF` escape prefix |
+| `Ex4pm.EconomicISA.decode/1` (binary) | Decodes one opcode byte (or escape record) to `{:ok, %{name:, opcode:, category:}}`; `%Ex4pm.Refusal{}` (`:invalid_economic_opcode`) otherwise |
+| `Ex4pm.EconomicISA.lookup/1` (name_or_opcode) | Fetches the operation entry by atom name or integer opcode |
+| `Ex4pm.EconomicISA.category/1` (opcode) | Reserved category for any byte (`:unknown`, `:extended`, range category, `:unassigned`, or `:invalid`) |
+| `Ex4pm.EconomicISA.to_event/2` (activity, opts) | Projects a byte activity into the existing canonical OCEL event IR (`Ex4pm.Event`); requires `:id`/`:timestamp`, stamps `economic_opcode`/`economic_category`/`economic_isa` attributes; deliberately adds no competing event-log format |
+
+No Mix tasks defined in this namespace.
+
 ## lib/ex4pm/engine (module prefix `Ex4pm.Engine` / `Ex4pmEngine`, version 26.8.22)
 
 | Function | Purpose |
@@ -230,6 +245,23 @@ No Mix tasks defined in this namespace (grep for `defmodule Mix.Tasks` returned 
 | `Ex4pm.Evidence.Conformance.evaluate/3` | Alias/`defdelegate` to `Ex4pmEvidence.Conformance.evaluate/3` |
 
 No Mix tasks defined in this namespace (confirmed by grep — zero matches).
+
+## lib/ex4pm/gall.ex
+
+| Function | Purpose |
+| --- | --- |
+| `Ex4pm.Gall.digest/1` (value) | BEAM-local semantic digest (`sha256:` over the canonicalized term) |
+| `Ex4pm.Gall.typed_digest/1` (value) | Type-faithful digest: atom/string keys, tuples/lists and atom/string values stay distinct, so two terms a capability would compute differently never share an identity |
+| `Ex4pm.Gall.canonical/1` (value) | Canonical form: stringified, sorted map keys applied recursively over lists/tuples |
+| `Ex4pm.Gall.Portable.build/3`, `verify/1`, `check/1`, `digest/1`, `canonical_json/1`, `normalize/1` | Language-neutral GALL artifact envelope: RFC 8785 (JCS) subset canonical JSON independently recomputable by Rust/WASM/BEAM; every non-portable input refused with a typed error; grants no authority and carries no execution standing |
+| `Ex4pm.Gall.Corpus.fixtures/0`, `fixture!/1`, `manifest/0`, `manifest_digest/0` | Shared corpus identity: every qualified surface is exercised on the same corpus, not ad hoc inputs |
+| `Ex4pm.Gall.Powl.from_semantic/1`, `from_wfnet/1` | GALL-016 canonical POWL-like reference algebra with dual ingress (semantic spec or WF-net); `semantic_properties/1`, `equivalent?/2`, `structure/1` compare and decompose models |
+| `Ex4pm.Gall.Ocpq.evaluate/2` (log, query) | OCPQ reference evaluation over an OCEL event list; `{:error, :invalid_ocel}` on non-log input |
+| `Ex4pm.Gall.Discovery.discover/2` (traces, rules \\ []) | Rule-constrained process discovery; `{:error, :invalid_discovery_input}` on non-list input |
+| `Ex4pm.Gall.Compliance.train/2`, `predict/4`, `verify_model/1`, `split_by_subject/1`, `evaluate/1,3` | Candidate-only compliance prediction with integer `score_bp` scores and model verification |
+| `Ex4pm.Gall.Compute.version/0`, `capabilities/0`, `select/2` | Deterministic process-compute dispatcher: versioned capability selection with selection digests |
+
+No Mix tasks defined in this namespace.
 
 ## lib/ex4pm/information
 
