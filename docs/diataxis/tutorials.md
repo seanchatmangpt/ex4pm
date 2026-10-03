@@ -1,288 +1,138 @@
 # Tutorial: Your First ex4pm Session
 
-Learning-oriented walkthrough of the ex4pm evidence/BRCE calculus, end to end:
-`observation -> parse -> route -> admit | refuse -> construct -> BRCE -> DO -> receipt ->
-replay -> bounded standing`. Every command below is real and copy-pasteable against this
-repo (`/Users/sac/ex4pm`). Audience: an AI agent or engineer meeting the codebase for the
-first time who needs to discover every real capability, not just the happy path.
+Learning-oriented walkthrough of the ex4pm evidence calculus, end to end. Every
+command below is real and verified against `/Users/sac/ex4pm/lib/` and the
+passing assertions in `test/ex4pm_test.exs`. Audience: an engineer or agent
+meeting the library for the first time.
 
-Grounded in the public API of `lib/ex4pm.ex` (`Ex4pm`), `lib/ex4pm/core`, `lib/ex4pm/engine`,
-`lib/ex4pm/evidence`, and `lib/ex4pm/runtime`. See `../ROADMAP-xaas-integration.md` and the
-root `CLAUDE.md` for architectural context.
+The governing pipeline every state change passes through is
+`observation -> parse -> route -> admit | refuse -> construct -> BRCE -> DO ->
+receipt -> replay -> bounded standing` (see `explanation.md` in this directory).
 
 ## 1. Setup
+
+```elixir
+Mix.install([{:ex4pm, "~> 26.10"}])
+```
+
+Or, from a clone of this repository:
 
 ```bash
 cd /Users/sac/ex4pm
 mix deps.get
-```
-
-Start an interactive session with the whole library loaded:
-
-```bash
 iex -S mix
 ```
 
-Everything from here runs inside that `iex` shell unless marked `bash`.
+Everything below runs inside that `iex` shell.
 
-## 2. Ingest: turn raw observations into a canonical EventLog
+## 2. Ingest: raw observation to canonical EventLog
 
-`Ex4pm.ingest/2` normalizes a raw OCEL-v2-shaped map via `Ex4pm.OCEL.normalize/1` into the
-canonical `%Ex4pm.EventLog{}` IR (`lib/ex4pm/core`).
+`Ex4pm.ingest/2` (`lib/ex4pm.ex:84`) normalizes a raw OCEL-v2-shaped map via
+`Ex4pm.OCEL.normalize/1` (`lib/ex4pm/ocel.ex:103`) into one canonical
+`%Ex4pm.EventLog{}` struct (`lib/ex4pm/ocel.ex:72`). The raw shape is tolerant:
+events and objects may be maps keyed by id or lists; keys may be atoms or
+strings; an event's object references may arrive as `"objects"`, `"object_ids"`,
+or `"ocel:omap"` (`lib/ex4pm/ocel.ex` `extract_object_ids/1`, lines 309-334).
+
+The payload below is copied from the fixture in `test/ex4pm_test.exs` (`@raw`,
+lines 4-25) whose end-to-end test passes:
 
 ```elixir
 raw = %{
-  "eventTypes" => [%{"name" => "place_order"}, %{"name" => "ship_order"}],
-  "objectTypes" => [%{"name" => "order"}],
-  "events" => [
-    %{
-      "id" => "e1",
-      "type" => "place_order",
-      "time" => "2026-01-01T10:00:00Z",
-      "relationships" => [%{"objectId" => "o1", "qualifier" => "order"}]
-    },
-    %{
-      "id" => "e2",
-      "type" => "ship_order",
-      "time" => "2026-01-01T12:00:00Z",
-      "relationships" => [%{"objectId" => "o1", "qualifier" => "order"}]
-    }
-  ],
-  "objects" => [%{"id" => "o1", "type" => "order"}]
+  "objects" => %{
+    "o1" => %{"type" => "Order"},
+    "o2" => %{"type" => "Order"}
+  },
+  "events" => %{
+    "e1" => %{"activity" => "create", "timestamp" => "2026-01-01T00:00:00Z", "objects" => ["o1"]},
+    "e2" => %{"id" => "e2", "activity" => "ship", "timestamp" => "2026-01-01T00:01:00Z",
+             "objects" => ["o1"]},
+    "e3" => %{"activity" => "create", "timestamp" => "2026-01-01T00:02:00Z", "objects" => ["o2"]},
+    "e4" => %{"activity" => "ship", "timestamp" => "2026-01-01T00:04:00Z", "objects" => ["o2"]}
+  }
 }
-
 {:ok, log} = Ex4pm.ingest(raw)
-# log is a canonical %Ex4pm.EventLog{}
 ```
 
-To project the ingested dataset into the Ash domain layer at the same time:
+Missing `events`/`objects` keys produce a typed refusal
+(`:missing_events`, `:missing_objects`); a non-map input produces
+`:invalid_observation` (`lib/ex4pm/ocel.ex:101-126`).
+
+## 3. Discover: mine a model, receipted
 
 ```elixir
-{:ok, log} = Ex4pm.ingest(raw, project?: true)
+{:ok, discovery} = Ex4pm.discover(log, object_type: "Order")
+discovery.standing
+#=> :alive
 ```
 
-### 2a. Ingest a real XES sample instead
+`Ex4pm.discover/2` (`lib/ex4pm.ex:114`) runs `Ex4pm.Engine.execute(:discover,
+log, opts)`; with no explicit `:engine` the registry selects by evidence rank
+(`lib/ex4pm/engine.ex:105-152`) — `:beam` unless a wasm transport is explicit.
+The returned `%Ex4pm.Run{}` (`lib/ex4pm.ex:1-25`) carries `:standing`,
+`:value` (the discovered `%Ex4pm.POWL{}` model), a pending and an outcome
+`%Ex4pm.Evidence.Receipt{}` (`:pending`, `:receipt`), and the
+`%Ex4pm.Engine.Result{}`.
 
-`Ex4pm.ingest_xes/2` parses XES XML (DTD disabled) via `Ex4pm.XES.parse/2`, then normalizes
-through the same `Ex4pm.OCEL.normalize/1` path, tagging `source_format: :xes`.
+## 4. Replay the receipt chain
 
 ```elixir
-xml = File.read!("test/fixtures/sepsis.xes")
-{:ok, xes_log} = Ex4pm.ingest_xes(xml)
+{:ok, %{replay: :chain_match}} = Ex4pm.replay(discovery.receipt.hash)
 ```
 
-(If no fixture exists at that path, use `find test -iname "*.xes"` from `bash` to locate one,
-or supply any well-formed XES document you have on disk.)
+`Ex4pm.replay/2` (`lib/ex4pm.ex:465`) looks the receipt up in
+`Ex4pm.Evidence.Store` and verifies the parent chain via
+`Ex4pm.Evidence.Replay.Chain.verify/2`
+(`lib/ex4pm/evidence/replay_chain.ex:7-32`), returning `{:ok, %{replay:
+:chain_match, ...}}` on success. Unknown hashes refuse with `:receipt_not_found`.
 
-### 2b. Ingest via the CLI
-
-`Ex4pm.CLI.main/1` (`lib/ex4pm/cli.ex`) dispatches `doctor` (engine
-capabilities + contract standing), `contracts` (full verified contract JSON), `discover
-<file> [object-type]`, and `discover-xes <file> [case-object-type]` — each prints
-`run.standing` and `run.receipt.hash`.
-
-`mix escript.build` currently fails with `Could not generate escript, please set
-:main_module in your project configuration` — `mix.exs` has no `escript:` project key
-pointing at `Ex4pm.CLI`, so no `./ex4pm` binary exists yet. Until that's added, invoke the
-CLI module directly instead:
-
-```bash
-mix run -e 'Ex4pm.CLI.main(["doctor"])'
-mix run -e 'Ex4pm.CLI.main(["discover", "path/to/ocel-v2.json", "order"])'
-```
-
-## 3. Discover: mine a process model from the EventLog
-
-`Ex4pm.discover/2` resolves the subject to an `EventLog`, runs `Engine.execute(:discover, log,
-opts)` through the evidence-ranked candidate engines (`lib/ex4pm/engine`), and wraps the
-result in a receipted `%Ex4pm.Run{}` — a pending and an outcome receipt are written to the
-configured `Ex4pm.Evidence.Store` before the call returns.
+## 5. Conform, simulate, optimize
 
 ```elixir
-run = Ex4pm.discover(log)
-run.standing        # :alive | :partial_alive | :blocked | ...
-run.value           # the discovered process model
-run.receipt          # %Ex4pm.Evidence.Receipt{} outcome
-run.engine_result    # %Ex4pm.Engine.Result{}
+{:ok, conformance} = Ex4pm.conform(log, discovery.value, object_type: "Order")
+conformance.value.fitness
+#=> 1.0
+
+{:ok, simulation} = Ex4pm.simulate(discovery.value)
+simulation.value.paths
+#=> [["create", "ship"]]
+
+{:ok, optimization} = Ex4pm.optimize(log, discovery.value)
+[%{mode: :construct_only} | _] = optimization.value.candidates
 ```
 
-Inspect which engines are even eligible to run `:discover` before committing to one:
+All three are CONSTRUCT-only: they record a pending and an outcome receipt
+through `Ex4pm.Evidence.Store` (`lib/ex4pm/evidence.ex:78-202`) and never touch
+the world.
+
+## 6. Operate: the only DO path
 
 ```elixir
-Ex4pm.capabilities(:discover)
-# => list of %Ex4pm.Core.Capability{} — one per registered engine's standing
+{:ok, model} = Ex4pm.POWL.new([%{id: "a"}, %{id: "b"}], [{"a", "b"}])
+
+# Refusal without authority:
+{:error, %{failure: %Ex4pm.Refusal{code: :authority_required}}} =
+  Ex4pm.operate(model, nil)
+
+# Execution with explicit DO capability:
+{:ok, %{standing: :alive, execution: execution}} =
+  Ex4pm.operate(model, %{id: "operator", capabilities: [:do]})
+length(execution.receipt_hashes)
+#=> 2
 ```
 
-Force a specific engine (see `Ex4pm.Engine.Registry.engines/0` for the full candidate list —
-`:beam`, `:ex4pm_plan`, `:cmca_wasm`, `:wasm`, `:nif`, `:remote`, plus ~18 wasm4pm wrappers):
+`Ex4pm.operate/3` (`lib/ex4pm.ex:422-442`) accepts a `%Ex4pm.POWL{}` (compiled
+via `Ex4pm.Runtime.compile/1`, `lib/ex4pm/runtime.ex:19`) or an already
+compiled `%Ex4pm.Runtime.Plan{}`; anything else refuses with
+`:invalid_operable_subject`. Every task callback crosses
+`Ex4pm.Evidence.BRCE.execute/5` (`lib/ex4pm/evidence.ex:265`), which first
+admits the authority map (`Ex4pm.Evidence.BRCE.admit/2`,
+`lib/ex4pm/evidence.ex:277-298`): the authority must carry `capabilities:
+[:do | ...]` or `allow: [...]` naming the operation. `:authority_denied`,
+`:authority_required` are the refusal codes.
 
-```elixir
-run = Ex4pm.discover(log, engine: :beam)
-```
+## 7. Where to go next
 
-## 4. Conform: check the EventLog against the discovered model
-
-`Ex4pm.conform/3` runs `Engine.execute(:conform, {log, model}, opts)`.
-
-```elixir
-conform_run = Ex4pm.conform(log, run.value)
-conform_run.standing
-conform_run.value   # conformance result (fitness/precision-style output from the engine)
-```
-
-For the full 5-axis conformance vector (fitness, precision, policy_conformance,
-lifecycle_conformance, causal_conformance, overall_score) with structured violations, call the
-evidence-layer function directly:
-
-```elixir
-{:ok, vector} = Ex4pmEvidence.Conformance.evaluate(log, run.value)
-# or via the Ex4pm.Evidence.* alias:
-{:ok, vector} = Ex4pm.Evidence.Conformance.evaluate(log, run.value)
-```
-
-## 5. Simulate: run the model forward
-
-`Ex4pm.simulate/2` runs `Engine.execute(:simulate, model, opts)`, keyed by
-`Ex4pm.Core.Hash.digest(model)`.
-
-```elixir
-sim_run = Ex4pm.simulate(run.value)
-sim_run.standing
-sim_run.value
-```
-
-## 6. Optimize: propose candidate interventions
-
-`Ex4pm.optimize/3` runs `Engine.execute(:optimize, {log, model}, opts)`; candidate
-interventions can optionally be projected into the domain layer.
-
-```elixir
-opt_run = Ex4pm.optimize(log, run.value)
-opt_run.value   # candidate interventions
-```
-
-## 7. Plan: analytical CONSTRUCT via the pinned ex4pm-plan bridge
-
-`Ex4pm.plan/2` requires a map `problem`. It defaults `engine: :ex4pm_plan` and runs
-`Engine.execute(:plan, problem, opts)` — a receipted analytical CONSTRUCT with no ambient
-cloud credentials. Non-map input is refused.
-
-```elixir
-plan_run = Ex4pm.plan(%{
-  domain: "order_fulfillment",
-  initial_state: %{order: :placed},
-  goal_state: %{order: :shipped}
-})
-plan_run.standing
-```
-
-If the `:ex4pm_plan` bridge is not configured/available in your environment, expect
-`:partial_alive` or a typed refusal rather than a crash — this is the intended evidence
-behavior, not a bug: see `Ex4pm.Engine.Ex4pmPlan` (`lib/ex4pm/engine`).
-
-## 8. Operate: the sole DO-authority path (BRCE-gated)
-
-`Ex4pm.operate/3` is the **only** function in this codebase that crosses into BRCE-gated DO
-execution. It requires an explicit `authority` map and a `%Ex4pm.POWL{}` (or a precompiled
-`%Ex4pm.Runtime.Plan{}`) as the subject.
-
-### 8a. Build a POWL model
-
-```elixir
-{:ok, powl} = Ex4pm.POWL.new(
-  [%{id: "place_order", intent: fn -> {:ok, :placed} end},
-   %{id: "ship_order", intent: fn -> {:ok, :shipped} end}],
-  [{"place_order", "ship_order"}]
-)
-Ex4pm.POWL.layers(powl)   # topological execution layers
-```
-
-### 8b. Compile and execute under explicit authority
-
-```elixir
-authority = %{capabilities: [:do]}
-
-{:ok, plan} = Ex4pm.Runtime.compile(powl)
-{:ok, execution} = Ex4pm.operate(powl, authority)
-```
-
-Internally, `Ex4pm.operate/3` calls `Ex4pm.Runtime.compile/1` then `Ex4pm.Runtime.execute/3`,
-which routes **every individual POWL task** through `Ex4pm.Evidence.BRCE.execute/5` — no task
-callback runs without a pending receipt written before invocation and an outcome receipt
-(`:alive` on success, `:blocked` on exception/throw) written after. Omitting `:do` from
-`authority[:capabilities]` (and no matching `:allow` entry) causes `BRCE.admit/2` to refuse
-with `:authority_denied` or `:authority_required` before anything executes.
-
-## 9. Replay: independently verify a receipt
-
-Every receipted operation above (`discover`/`conform`/`simulate`/`optimize`/`plan`/`operate`)
-writes receipts you can independently re-verify without trusting the stored standing field.
-
-```elixir
-hash = run.receipt.hash
-{:ok, verified} = Ex4pm.replay(hash)
-```
-
-`Ex4pm.replay/2` looks the receipt up in the configured `Ex4pm.Evidence.Store` and verifies it
-via `Ex4pm.Evidence.Replay.Chain.verify/2`, which independently recomputes the outcome
-receipt's hash, fetches and verifies its pending parent, and confirms subject/operation/
-authority correspondence between the two — catching tampering or parent mismatch, not just a
-missing row.
-
-## 10. Differential check: cross-verify two engines agree
-
-```elixir
-Ex4pm.differential(:discover, log, :beam, :wasm)
-```
-
-`Ex4pm.differential/5` delegates to `Ex4pm.Engine.Differential.compare/5`, running the same
-operation/subject through two named engines and diffing their results — useful whenever more
-than one engine candidate reports `:alive`/`:partial_alive` for the same operation.
-
-## 11. Contracts: verify the semantic surface is intact
-
-Before trusting any of the above, you can independently attest the ontology/SHACL/WIT/receipt
-schema bundle is present and unmodified:
-
-```elixir
-Ex4pm.contracts()
-# => {:ok, %{version: "0.1.0", artifacts: ..., contract_hash: "sha256:...", standing: :alive}}
-```
-
-This delegates to `Ex4pm.Contracts.verify/0` (`lib/ex4pm/contracts.ex`), which re-reads all four
-canonical artifacts from disk, hashes them, and checks each for required terms (e.g. the WIT
-world must contain `discover:`, `conform:`, `simulate:`).
-
-## 12. What a successful run looks like
-
-A complete session that touches every phase of the calculus produces, in order:
-
-1. `{:ok, %Ex4pm.EventLog{}}` from `Ex4pm.ingest/2` or `Ex4pm.ingest_xes/2`.
-2. A `%Ex4pm.Run{standing: :alive, ...}` from `Ex4pm.discover/2`, with a non-nil
-   `run.receipt.hash`.
-3. `%Ex4pm.Run{}` results from `Ex4pm.conform/3`, `Ex4pm.simulate/2`, `Ex4pm.optimize/3`, each
-   independently receipted (check `run.receipt.hash` differs per call, chained via
-   `parent_hash` back to their own pending receipts).
-4. A `%Ex4pm.Run{}` (or typed refusal, if `:ex4pm_plan` is unconfigured) from `Ex4pm.plan/2`.
-5. `{:ok, execution}` from `Ex4pm.operate/3` — the *only* step above that actually invoked DO
-   callbacks, each one individually receipted via `Ex4pm.Evidence.BRCE.execute/5`.
-6. `{:ok, verified}` from `Ex4pm.replay/2` for at least one receipt hash collected above,
-   confirming the chain independently re-derives rather than merely re-reads.
-
-If any step instead returns `{:error, %Ex4pm.Refusal{}}`, that is not a failure of the
-tutorial — refusals are typed, first-class evidence outcomes in this codebase (see
-`Ex4pm.Refusal.new/3`, `lib/ex4pm/core`). Read the `.code` and `.message` fields; they name
-exactly which admission check failed (e.g. `:invalid_planning_problem`,
-`:invalid_operable_subject`, `:authority_denied`, `:receipt_not_found`).
-
-## See Also
-
-- `../ROADMAP-xaas-integration.md` — external integration requirements referencing
-  `Ex4pm.OCEL.validate_envelope/1` and the `POST /api/v1/ocel/events` HTTP ingress
-- `AGENTS.md` (repo root) — the full observation -> ... -> bounded standing contract
-- `docs/ARCHITECTURE.md` (repo root) — architectural detail behind this tutorial
-- `docs/CHICAGO.md` (repo root) — the Chicago-school testing discipline enforced by
-  `mix chicago` and `ex4pm.audit.chicago`, relevant when writing tests against the flows above
-- `lib/ex4pm/qualification` — `mix ex4pm.lint.truth`, `mix ex4pm.powl.court`,
-  `mix ex4pm.sabotage.court`, `mix ex4pm.crown` — the anti-overclaiming qualification suite
-  that independently re-verifies claims like the ones this tutorial walks through
+- Problem-oriented recipes: `how-to-guides.md`
+- Full function index: `reference.md`
+- Why receipts, standing, and BRCE: `explanation.md`
