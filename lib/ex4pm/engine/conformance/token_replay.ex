@@ -71,7 +71,7 @@ defmodule Ex4pm.Engine.Conformance.TokenReplay do
       Enum.reduce(trace, {0, 0, MapSet.new()}, fn activity,
                                                   {consumed_acc, missing_acc, frozen_acc} ->
         cond do
-          not MapSet.member?(MapSet.new(Map.keys(leaves)), activity) ->
+          not Map.has_key?(leaves, activity) ->
             # Activity not in the model at all: unexpected, counted as missing.
             {consumed_acc, missing_acc + 1, frozen_acc}
 

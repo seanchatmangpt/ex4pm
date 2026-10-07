@@ -107,7 +107,10 @@ defmodule Ex4pm.Runtime.PowlExecutor do
 
   defp produce(marking, outputs) do
     Enum.reduce(outputs, marking, fn place, acc ->
-      Map.update(acc, place, 1, &(&1 + 1))
+      case Map.fetch(acc, place) do
+        :error -> Map.put(acc, place, 1)
+        {:ok, v} -> Map.put(acc, place, v + 1)
+      end
     end)
   end
 end

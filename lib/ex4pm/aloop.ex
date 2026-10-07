@@ -130,7 +130,10 @@ defmodule Ex4pm.Aloop do
     |> Enum.sort_by(&event_sort_key/1)
     |> Enum.reduce(%{}, fn event, acc ->
       ep = Enum.find(event.object_ids, &MapSet.member?(episode_ids, &1)) || @no_episode
-      Map.update(acc, ep, [event], &[event | &1])
+      case Map.fetch(acc, ep) do
+        :error -> Map.put(acc, ep, [event])
+        {:ok, l} -> Map.put(acc, ep, [event | l])
+      end
     end)
     |> Map.new(fn {ep, events} -> {ep, Enum.reverse(events)} end)
   end

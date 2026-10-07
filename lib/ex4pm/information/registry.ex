@@ -484,7 +484,12 @@ defmodule Ex4pm.Information.Registry do
       {name,
        field
        |> Map.take([:type, :required?, :default, :constraints])
-       |> Map.update(:type, nil, &inspect/1)}
+       |> then(fn field ->
+         case Map.fetch(field, :type) do
+           :error -> Map.put(field, :type, nil)
+           {:ok, t} -> Map.put(field, :type, inspect(t))
+         end
+       end)}
     end)
   end
 

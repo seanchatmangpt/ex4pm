@@ -203,7 +203,11 @@ defmodule Ex4pm.Engine.OnlineMiner do
     activity = event.activity
 
     # 1. Update activity frequencies
-    new_activity_counts = Map.update(state.activity_counts, activity, 1, &(&1 + 1))
+    new_activity_counts =
+      case Map.fetch(state.activity_counts, activity) do
+        :error -> Map.put(state.activity_counts, activity, 1)
+        {:ok, v} -> Map.put(state.activity_counts, activity, v + 1)
+      end
 
     # 2. Update agent trace and DFG edges
     trace = Map.get(state.traces, run_id, [])
@@ -214,7 +218,11 @@ defmodule Ex4pm.Engine.OnlineMiner do
       case trace do
         [] ->
           # First event in this trace
-          updated_starts = Map.update(state.starts, activity, 1, &(&1 + 1))
+          updated_starts =
+          case Map.fetch(state.starts, activity) do
+            :error -> Map.put(state.starts, activity, 1)
+            {:ok, v} -> Map.put(state.starts, activity, v + 1)
+          end
           {state.dfg_edges, updated_starts, state.conformance_stats, state.deviations}
 
         [prev_event | _] ->
@@ -223,19 +231,26 @@ defmodule Ex4pm.Engine.OnlineMiner do
           duration = calculate_duration_ms(prev_event.timestamp, event.timestamp)
 
           updated_edges =
-            Map.update(
-              state.dfg_edges,
-              edge,
-              %{count: 1, total_ms: duration, min_ms: duration, max_ms: duration},
-              fn stats ->
-                %{
-                  count: stats.count + 1,
-                  total_ms: stats.total_ms + duration,
-                  min_ms: min(stats.min_ms, duration),
-                  max_ms: max(stats.max_ms, duration)
-                }
-              end
-            )
+            case Map.fetch(state.dfg_edges, edge) do
+              :error ->
+                Map.put(
+                  state.dfg_edges,
+                  edge,
+                  %{count: 1, total_ms: duration, min_ms: duration, max_ms: duration}
+                )
+
+              {:ok, stats} ->
+                Map.put(
+                  state.dfg_edges,
+                  edge,
+                  %{
+                    count: stats.count + 1,
+                    total_ms: stats.total_ms + duration,
+                    min_ms: min(stats.min_ms, duration),
+                    max_ms: max(stats.max_ms, duration)
+                  }
+                )
+            end
 
           # Check conformance against canonical model
           is_conformant = is_transition_lawful?(edge, state.canonical_flow)
@@ -257,7 +272,10 @@ defmodule Ex4pm.Engine.OnlineMiner do
             if is_conformant do
               state.deviations
             else
-              Map.update(state.deviations, edge, 1, &(&1 + 1))
+              case Map.fetch(state.deviations, edge) do
+                :error -> Map.put(state.deviations, edge, 1)
+                {:ok, v} -> Map.put(state.deviations, edge, v + 1)
+              end
             end
 
           {updated_edges, state.starts, updated_conf, updated_devs}
@@ -331,7 +349,10 @@ defmodule Ex4pm.Engine.OnlineMiner do
         variants
       end
 
-    Map.update(v1, new_path, 1, &(&1 + 1))
+    case Map.fetch(v1, new_path) do
+      :error -> Map.put(v1, new_path, 1)
+      {:ok, v} -> Map.put(v1, new_path, v + 1)
+    end
   end
 
   defp is_transition_lawful?({from, to}, canonical_flow) do

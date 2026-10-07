@@ -1,0 +1,151 @@
+# AIRo risk description — ex4pm (lane W645b, AIRo wiring wave)
+#
+# Subject: the ex4pm process-mining oracle as an airo:AISystem.
+# Vocabulary: AIRo 1.0, sha256 6274d2d8711e046cf38f1b5b2980188094d4aa87b5af79804005a06468fd8469
+# (verified vendored copy: /Users/sac/xaas/priv/semantic/airo/airo.ttl, W600 receipt).
+#
+# Likelihood/Severity: honest qualitative self-assessment (LOW/MEDIUM/HIGH),
+# asserted against the AIRo classes airo:Likelihood / airo:Severity as
+# self-assessed individuals (W614 idiom), not measured frequencies.
+
+@prefix airo: <https://w3id.org/airo#> .
+@prefix ex4airo: <https://w3id.org/ex4pm/airo/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+### ------------------------------------------------------------------
+### The AI system
+### ------------------------------------------------------------------
+
+ex4airo:Ex4pmProcessMiningOracle a airo:AISystem ;
+    rdfs:label """ex4pm process-mining oracle"""@en ;
+    rdfs:comment
+        """POWL mining, conformance checking (alignment and token-replay), and the
+         independent declarative reference oracle that qualifies them."""@en ;
+    airo:isProvidedBy ex4airo:Ex4pmProvider ;
+    airo:hasRisk ex4airo:RiskMapUpdateAbsentKeyDeviation ,
+                 ex4airo:RiskConformanceSplit ,
+                 ex4airo:RiskReferenceOracleTruncation ;
+    airo:hasRiskControl ex4airo:ControlDualSafePatches ,
+                        ex4airo:ControlOracleCanary ,
+                        ex4airo:ControlTestSuite ,
+                        ex4airo:ControlPowlConformanceModule .
+
+ex4airo:Ex4pmProvider a airo:AIProvider ;
+    rdfs:label """ex4pm maintainers (lane W645b, uncommitted working tree)"""@en .
+
+### ------------------------------------------------------------------
+### Risk sources (real, documented items)
+### ------------------------------------------------------------------
+
+ex4airo:RiskMapUpdateAbsentKeyDeviation a airo:RiskSource , airo:Hazard , airo:Risk ;
+    rdfs:label """otp-29 Map.update/4 absent-key deviation"""@en ;
+    rdfs:comment
+        """On the pinned otp-29 toolchain, Map.update/3-arity semantics for absent
+         keys deviate from the historical runtime (fun skipped on absent key).
+         35 mining sites (w525d census: VectorClock.tick, ObjectEvent.index,
+         Markov.fit, InductiveMiner.directly_follows_graph, ...) relied on the
+         deviation; a silent toolchain fix would flip visit-count and seeding
+         behavior across the engine."""@en ;
+    airo:hasConsequence ex4airo:ConsequenceWrongMiningCounts ;
+    airo:hasLikelihood ex4airo:LikelihoodMedium ;
+    airo:hasSeverity ex4airo:SeverityHigh .
+
+ex4airo:ConsequenceWrongMiningCounts a airo:Consequence ;
+    rdfs:comment """Corrupted DFG/Markov/visit counts -> wrong mined models and wrong conformance verdicts."""@en ;
+    airo:hasImpact ex4airo:ImpactWrongConformanceVerdicts .
+
+ex4airo:ImpactWrongConformanceVerdicts a airo:Impact ;
+    rdfs:comment """Downstream qualification decisions accept or reject models on wrong evidence."""@en .
+
+ex4airo:RiskConformanceSplit a airo:RiskSource , airo:Hazard , airo:Risk ;
+    rdfs:label """alignment vs token-replay conformance split"""@en ;
+    rdfs:comment
+        """Two independent conformance engines (A* optimal alignment,
+         lib/ex4pm_engine/alignment.ex; token replay,
+         lib/ex4pm_engine/conformance/token_replay.ex) can disagree on fitness
+         for the same (trace, model) pair; a silent drift between them would
+         produce verdicts with no cross-check."""@en ;
+    airo:hasConsequence ex4airo:ConsequenceWrongMiningCounts ;
+    airo:hasLikelihood ex4airo:LikelihoodMedium ;
+    airo:hasSeverity ex4airo:SeverityMedium .
+
+ex4airo:RiskReferenceOracleTruncation a airo:RiskSource , airo:Hazard , airo:Risk ;
+    rdfs:label """reference-oracle trace-language truncation"""@en ;
+    rdfs:comment
+        """Ex4pm.Qualification.Powl.ReferenceOracle.language/2 enumerates a bounded
+         trace language via choice-graph visitation (visit census under
+         Map.update). Early bound exhaustion would truncate the trace set and
+         under-approximate the language, weakening the oracle's independence
+         guarantee. Pinned by W609 at the exact visit-census site."""@en ;
+    airo:hasConsequence ex4airo:ConsequenceUnderApproximatedLanguage ;
+    airo:hasLikelihood ex4airo:LikelihoodLow ;
+    airo:hasSeverity ex4airo:SeverityHigh .
+
+ex4airo:ConsequenceUnderApproximatedLanguage a airo:Consequence ;
+    rdfs:comment """Bounded language enumeration misses legal traces; the oracle under-covers the implementation."""@en ;
+    airo:hasImpact ex4airo:ImpactWrongConformanceVerdicts .
+
+### ------------------------------------------------------------------
+### Risk controls (the real gates)
+### ------------------------------------------------------------------
+
+ex4airo:ControlDualSafePatches a airo:RiskControl ;
+    rdfs:label """W604 dual-safe patches (35 sites)"""@en ;
+    rdfs:comment
+        """35 dual-safe case/fetch patches at the absent-key-reliant Map.update/4
+         sites (w525d census), landing on the one canonical checkout as
+         uncommitted RiskControls; regression-pinned by an 8-test court."""@en ;
+    airo:mitigatesRiskConcept ex4airo:RiskMapUpdateAbsentKeyDeviation ,
+                              ex4airo:RiskReferenceOracleTruncation ;
+    airo:hasDocumentation "test/w604_map_update_dual_safe_test.exs"^^xsd:anyURI .
+
+ex4airo:ControlOracleCanary a airo:RiskControl ;
+    rdfs:label """W609 oracle-site fix + choice-graph canary"""@en ;
+    rdfs:comment
+        """Reference-oracle visit-census site fixed with the dual-safe idiom and
+         pinned by a canary that fails loudly on bound-exhaustion regression:
+         repeated-node choice-graph language must extend with the bound
+         (test/w609_oracle_site_test.exs)."""@en ;
+    airo:mitigatesRiskConcept ex4airo:RiskReferenceOracleTruncation ;
+    airo:detectsRiskConcept ex4airo:RiskMapUpdateAbsentKeyDeviation ;
+    airo:hasDocumentation "test/w609_oracle_site_test.exs"^^xsd:anyURI .
+
+ex4airo:ControlTestSuite a airo:RiskControl ;
+    rdfs:label """repo ExUnit suite (~900 tests; 958 test declarations on disk at this subject)"""@en ;
+    rdfs:comment
+        """The full ex4pm ExUnit suite under test/ (real collaborators, no mocks)
+         is the standing regression court for all mining and conformance
+         behavior."""@en ;
+    airo:mitigatesRiskConcept ex4airo:RiskConformanceSplit ,
+                              ex4airo:RiskMapUpdateAbsentKeyDeviation ;
+    airo:hasDocumentation "test"^^xsd:anyURI .
+
+ex4airo:ControlPowlConformanceModule a airo:RiskControl ;
+    rdfs:label """POWL conformance + alignment engines"""@en ;
+    rdfs:comment
+        """Independent conformance surface: A* optimal trace alignment
+         (lib/ex4pm_engine/alignment.ex), token replay
+         (lib/ex4pm_engine/conformance/token_replay.ex), and the deliberately
+         non-calling reference oracle
+         (lib/ex4pm/qualification/powl/reference_oracle.ex) cross-check the
+         implementation."""@en ;
+    airo:detectsRiskConcept ex4airo:RiskConformanceSplit ,
+                            ex4airo:RiskReferenceOracleTruncation ;
+    airo:hasDocumentation "lib/ex4pm_engine/alignment.ex"^^xsd:anyURI .
+
+### ------------------------------------------------------------------
+### Qualitative likelihood/severity self-assessment individuals
+### ------------------------------------------------------------------
+
+ex4airo:LikelihoodMedium a airo:Likelihood ;
+    rdfs:label """medium (qualitative self-assessment)"""@en .
+
+ex4airo:LikelihoodLow a airo:Likelihood ;
+    rdfs:label """low (qualitative self-assessment)"""@en .
+
+ex4airo:SeverityHigh a airo:Severity ;
+    rdfs:label """high (qualitative self-assessment)"""@en .
+
+ex4airo:SeverityMedium a airo:Severity ;
+    rdfs:label """medium (qualitative self-assessment)"""@en .

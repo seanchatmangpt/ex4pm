@@ -124,7 +124,11 @@ defmodule Ex4pmEngine.Bench.Topology do
         activities
         |> Enum.chunk_every(2, 1, :discard)
         |> Enum.reduce({dfg_acc, cost_acc}, fn [a, b], {d, c} ->
-          d = Map.update(d, {a, b}, 1, &(&1 + 1))
+          d =
+            case Map.fetch(d, {a, b}) do
+              :error -> Map.put(d, {a, b}, 1)
+              {:ok, v} -> Map.put(d, {a, b}, v + 1)
+            end
           c = VirtualCost.compute(c)
           c = VirtualCost.store(c)
           {d, c}

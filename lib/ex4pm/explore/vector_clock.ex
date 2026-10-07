@@ -1,6 +1,11 @@
 defmodule Ex4pm.Explore.VectorClock do
   @moduledoc false
-  def tick(clock, actor), do: Map.update(clock, actor, 1, &(&1 + 1))
+  def tick(clock, actor) do
+    case Map.fetch(clock, actor) do
+      :error -> Map.put(clock, actor, 1)
+        {:ok, v} -> Map.put(clock, actor, v + 1)
+    end
+  end
   def merge(a, b), do: Map.merge(a, b, fn _k, x, y -> max(x, y) end)
   def compare(a, b) do
     keys = Map.keys(a) ++ Map.keys(b) |> Enum.uniq()

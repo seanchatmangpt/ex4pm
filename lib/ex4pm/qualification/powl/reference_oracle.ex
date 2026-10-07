@@ -102,11 +102,20 @@ defmodule Ex4pm.Qualification.Powl.ReferenceOracle do
           []
 
         true ->
+          # Dual-safe visit increment (w525d/w609): on this runtime Map.update/4
+          # skips fun on an absent key (stores 1 — the intended first-visit count);
+          # documented semantics would store 2. Encode observed behavior explicitly.
+          visits =
+            case Map.fetch(visits, next) do
+              :error -> Map.put(visits, next, 1)
+              {:ok, count} -> Map.put(visits, next, count + 1)
+            end
+
           enumerate_paths(
             successors,
             next,
             [next | path],
-            Map.update(visits, next, 1, &(&1 + 1)),
+            visits,
             allowed
           )
       end

@@ -75,7 +75,10 @@ defmodule Ex4pm.Engine.Discovery.InductiveMiner do
       trace
       |> Enum.chunk_every(2, 1, :discard)
       |> Enum.reduce(acc, fn [a, b], inner ->
-        Map.update(inner, {a, b}, 1, &(&1 + 1))
+        case Map.fetch(inner, {a, b}) do
+          :error -> Map.put(inner, {a, b}, 1)
+          {:ok, v} -> Map.put(inner, {a, b}, v + 1)
+        end
       end)
     end)
   end
@@ -296,11 +299,22 @@ defmodule Ex4pm.Engine.Discovery.InductiveMiner do
     # Reject if any edge points "backward" relative to any other edge's
     # implied order — i.e. reject if the cross-part edge relation is not a
     # strict total-order-consistent DAG with no back edges once sorted.
-    adjacency = Enum.reduce(edges, %{}, fn {a, b}, acc -> Map.update(acc, a, [b], &[b | &1]) end)
+    adjacency =
+      Enum.reduce(edges, %{}, fn {a, b}, acc ->
+        case Map.fetch(acc, a) do
+          :error -> Map.put(acc, a, [b])
+          {:ok, l} -> Map.put(acc, a, [b | l])
+        end
+      end)
     indegree = Enum.reduce(0..(n - 1), Map.new(0..(n - 1), &{&1, 0}), fn _, acc -> acc end)
 
     indegree =
-      Enum.reduce(edges, indegree, fn {_a, b}, acc -> Map.update(acc, b, 1, &(&1 + 1)) end)
+      Enum.reduce(edges, indegree, fn {_a, b}, acc ->
+        case Map.fetch(acc, b) do
+          :error -> Map.put(acc, b, 1)
+          {:ok, v} -> Map.put(acc, b, v + 1)
+        end
+      end)
 
     case kahn_sort(0..(n - 1) |> Enum.to_list(), adjacency, indegree) do
       {:ok, order} -> {:ok, Enum.map(order, &Enum.at(parts, &1))}
@@ -324,7 +338,14 @@ defmodule Ex4pm.Engine.Discovery.InductiveMiner do
 
         new_indegree =
           Enum.reduce(Map.get(adjacency, n, []), indegree, fn m, acc2 ->
-            Map.update(acc2, m, 0, &(&1 - 1))
+            # W604 suspect-site pin (w525d census): absent key stores 0, never -1.
+            # indegree is pre-seeded for every node upstream, so the key is present
+            # in practice; the explicit form preserves the OBSERVED behavior of this
+            # runtime (Map.update/4 skips fun on absent keys) under BOTH runtimes.
+            case Map.fetch(acc2, m) do
+              :error -> Map.put(acc2, m, 0)
+              {:ok, v} -> Map.put(acc2, m, v - 1)
+            end
           end)
 
         do_kahn(remaining, adjacency, new_indegree, [n | acc])

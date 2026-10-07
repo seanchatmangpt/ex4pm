@@ -731,7 +731,10 @@ defmodule Ex4pmCore.ProcessIR do
 
     indegree =
       Enum.reduce(edges, Map.new(node_set, fn id -> {id, 0} end), fn {_from, to}, acc ->
-        Map.update(acc, to, 1, &(&1 + 1))
+        case Map.fetch(acc, to) do
+          :error -> Map.put(acc, to, 1)
+          {:ok, v} -> Map.put(acc, to, v + 1)
+        end
       end)
 
     successors = Enum.group_by(edges, &elem(&1, 0), &elem(&1, 1))
@@ -754,7 +757,14 @@ defmodule Ex4pmCore.ProcessIR do
       next =
         Enum.reduce(zeros, Map.drop(indegree, zeros), fn id, acc ->
           Enum.reduce(Map.get(successors, id, []), acc, fn successor, degrees ->
-            Map.update(degrees, successor, 0, &(&1 - 1))
+            # W604 suspect-site pin (w525d census): absent key stores 0, never -1.
+            # `indegree` is pre-seeded for every node (node_set), so the key is
+            # present in practice; the explicit form preserves the OBSERVED behavior
+            # (Map.update/4 skips fun on absent keys) under BOTH runtimes.
+            case Map.fetch(degrees, successor) do
+              :error -> Map.put(degrees, successor, 0)
+              {:ok, v} -> Map.put(degrees, successor, v - 1)
+            end
           end)
         end)
 

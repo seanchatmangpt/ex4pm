@@ -430,4 +430,12 @@ defmodule Ex4pm.Engine.Cognition do
        }
      }}
   end
+
+  def execute(action, subject, _opts) do
+    {:error,
+     Ex4pm.Refusal.new(:unsupported_cognition_action, "unknown cognition action",
+       subject: subject,
+       details: %{action: action}
+     )}
+  end
 end

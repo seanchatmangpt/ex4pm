@@ -69,9 +69,7 @@ defmodule Ex4pm.Stream.Ingest do
   end
 
   defp duplicate_result(log, validated, existing_receipt) do
-    producer = validated.producer
-    agent_id = Map.get(producer, "agent_id") || Map.get(producer, :agent_id, "unknown")
-    run_id = Map.get(producer, "run_id") || Map.get(producer, :run_id, agent_id)
+    {agent_id, run_id} = producer_ids(validated.producer)
 
     %{
       status: :duplicate_ignored,
@@ -85,6 +83,12 @@ defmodule Ex4pm.Stream.Ingest do
     }
   end
 
+  defp producer_ids(producer) do
+    agent_id = Map.get(producer, "agent_id") || Map.get(producer, :agent_id, "unknown")
+    run_id = Map.get(producer, "run_id") || Map.get(producer, :run_id, agent_id)
+    {agent_id, run_id}
+  end
+
   defp do_ingest(validated, log, opts, store_pid) do
     # 1. Forward events to OnlineMiner if available
     miner_pid = resolve_pid(Keyword.get(opts, :miner, OnlineMiner))
@@ -95,9 +99,7 @@ defmodule Ex4pm.Stream.Ingest do
 
     # 2. Record ingestion outcome receipt (this is also what future duplicate
     # envelopes with the same log.subject.hash will be deduplicated against).
-    producer = validated.producer
-    agent_id = Map.get(producer, "agent_id") || Map.get(producer, :agent_id, "unknown")
-    run_id = Map.get(producer, "run_id") || Map.get(producer, :run_id, agent_id)
+    {agent_id, run_id} = producer_ids(validated.producer)
 
     pending =
       Receipt.pending(log.subject.hash, {:ingest, :batch}, nil, %{

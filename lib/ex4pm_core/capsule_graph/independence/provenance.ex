@@ -4,7 +4,10 @@ defmodule Ex4pmCore.CapsuleGraph.Independence.Provenance do
   def new(edges) when is_list(edges) do
     graph =
       Enum.reduce(edges, %{}, fn {parent, child}, acc ->
-        Map.update(acc, parent, [child], &[child | &1])
+        case Map.fetch(acc, parent) do
+          :error -> Map.put(acc, parent, [child])
+          {:ok, l} -> Map.put(acc, parent, [child | l])
+        end
       end)
 
     case cycle?(graph) do

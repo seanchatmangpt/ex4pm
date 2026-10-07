@@ -1244,7 +1244,13 @@ defmodule Ex4pm.Gall.Powl do
         Map.update!(acc, b, &(&1 + 1))
       end)
 
-    adjacency = Enum.reduce(edges, %{}, fn {a, b}, acc -> Map.update(acc, a, [b], &[b | &1]) end)
+    adjacency =
+      Enum.reduce(edges, %{}, fn {a, b}, acc ->
+        case Map.fetch(acc, a) do
+          :error -> Map.put(acc, a, [b])
+          {:ok, l} -> Map.put(acc, a, [b | l])
+        end
+      end)
     ready = for {node, 0} <- indegree, do: node
     kahn(ready, adjacency, indegree, 0) < length(nodes)
   end
@@ -1268,7 +1274,12 @@ defmodule Ex4pm.Gall.Powl do
   # of iterated pairwise joins, so WF-nets routed through places stay cheap.
   defp transitive_closure(edges) do
     adjacency =
-      Enum.reduce(edges, %{}, fn {a, b}, acc -> Map.update(acc, a, [b], &[b | &1]) end)
+      Enum.reduce(edges, %{}, fn {a, b}, acc ->
+        case Map.fetch(acc, a) do
+          :error -> Map.put(acc, a, [b])
+          {:ok, l} -> Map.put(acc, a, [b | l])
+        end
+      end)
 
     adjacency
     |> Map.keys()

@@ -59,13 +59,21 @@ defmodule Ex4pm.Engine.Discovery.Incremental do
     case_id = state.case_id_fun.(event)
     activity = event.activity
 
-    activities = Map.update(state.activities, activity, 1, &(&1 + 1))
+    activities =
+      case Map.fetch(state.activities, activity) do
+        :error -> Map.put(state.activities, activity, 1)
+        {:ok, v} -> Map.put(state.activities, activity, v + 1)
+      end
     event_count = state.event_count + 1
 
     case Map.fetch(state.last_activity, case_id) do
       {:ok, prev_activity} ->
         edge = {prev_activity, activity}
-        edges = Map.update(state.edges, edge, 1, &(&1 + 1))
+        edges =
+          case Map.fetch(state.edges, edge) do
+            :error -> Map.put(state.edges, edge, 1)
+            {:ok, v} -> Map.put(state.edges, edge, v + 1)
+          end
 
         %{
           state
@@ -76,7 +84,11 @@ defmodule Ex4pm.Engine.Discovery.Incremental do
         }
 
       :error ->
-        starts = Map.update(state.starts, activity, 1, &(&1 + 1))
+        starts =
+          case Map.fetch(state.starts, activity) do
+            :error -> Map.put(state.starts, activity, 1)
+            {:ok, v} -> Map.put(state.starts, activity, v + 1)
+          end
 
         %{
           state
@@ -97,7 +109,10 @@ defmodule Ex4pm.Engine.Discovery.Incremental do
   def finalize(%__MODULE__{} = state) do
     ends =
       Enum.reduce(state.last_activity, %{}, fn {_case_id, activity}, acc ->
-        Map.update(acc, activity, 1, &(&1 + 1))
+        case Map.fetch(acc, activity) do
+          :error -> Map.put(acc, activity, 1)
+          {:ok, v} -> Map.put(acc, activity, v + 1)
+        end
       end)
 
     %{state | ends: ends}

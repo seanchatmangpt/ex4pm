@@ -153,7 +153,10 @@ defmodule Ex4pmEngine.WorkflowNet do
     place_incoming =
       Enum.reduce(net.arcs, %{}, fn arc, acc ->
         if MapSet.member?(places_ids, arc.target) do
-          Map.update(acc, arc.target, 1, &(&1 + 1))
+          case Map.fetch(acc, arc.target) do
+            :error -> Map.put(acc, arc.target, 1)
+            {:ok, v} -> Map.put(acc, arc.target, v + 1)
+          end
         else
           acc
         end
@@ -162,7 +165,10 @@ defmodule Ex4pmEngine.WorkflowNet do
     place_outgoing =
       Enum.reduce(net.arcs, %{}, fn arc, acc ->
         if MapSet.member?(places_ids, arc.source) do
-          Map.update(acc, arc.source, 1, &(&1 + 1))
+          case Map.fetch(acc, arc.source) do
+            :error -> Map.put(acc, arc.source, 1)
+            {:ok, v} -> Map.put(acc, arc.source, v + 1)
+          end
         else
           acc
         end
@@ -253,7 +259,10 @@ defmodule Ex4pmEngine.WorkflowNet do
     preset =
       Enum.reduce(net.arcs, %{}, fn %Arc{source: s, target: t, weight: w}, acc ->
         if Map.has_key?(net.transitions, t) do
-          Map.update(acc, t, %{s => w}, &Map.put(&1, s, w))
+          case Map.fetch(acc, t) do
+            :error -> Map.put(acc, t, %{s => w})
+            {:ok, m} -> Map.put(acc, t, Map.put(m, s, w))
+          end
         else
           acc
         end
@@ -262,7 +271,10 @@ defmodule Ex4pmEngine.WorkflowNet do
     postset =
       Enum.reduce(net.arcs, %{}, fn %Arc{source: t, target: p, weight: w}, acc ->
         if Map.has_key?(net.transitions, t) do
-          Map.update(acc, t, %{p => w}, &Map.put(&1, p, w))
+          case Map.fetch(acc, t) do
+            :error -> Map.put(acc, t, %{p => w})
+            {:ok, m} -> Map.put(acc, t, Map.put(m, p, w))
+          end
         else
           acc
         end
@@ -405,7 +417,10 @@ defmodule Ex4pmEngine.WorkflowNet do
       new_marking =
         Enum.reduce(net.arcs, marking_after_consume, fn
           %Arc{source: ^transition_id, target: p, weight: w}, acc ->
-            Map.update(acc, p, w, &(&1 + w))
+            case Map.fetch(acc, p) do
+              :error -> Map.put(acc, p, w)
+              {:ok, v} -> Map.put(acc, p, v + w)
+            end
 
           _arc, acc ->
             acc
@@ -570,12 +585,19 @@ defmodule Ex4pmEngine.WorkflowNet do
 
             produced =
               Enum.reduce(out_places, consumed, fn {p, w}, acc ->
-                Map.update(acc, p, w, &(&1 + w))
+                case Map.fetch(acc, p) do
+                  :error -> Map.put(acc, p, w)
+                  {:ok, v} -> Map.put(acc, p, v + w)
+                end
               end)
 
             next_m = clean_marking(produced)
             f_updated = MapSet.put(f_acc, t_id)
-            adj_updated = Map.update(adj_acc, marking, [next_m], fn succs -> [next_m | succs] end)
+            adj_updated =
+              case Map.fetch(adj_acc, marking) do
+                :error -> Map.put(adj_acc, marking, [next_m])
+                {:ok, succs} -> Map.put(adj_acc, marking, [next_m | succs])
+              end
 
             if MapSet.member?(v_acc, next_m) or MapSet.size(v_acc) >= max_markings do
               {q_acc, v_acc, adj_updated, f_updated}
@@ -609,7 +631,10 @@ defmodule Ex4pmEngine.WorkflowNet do
     rev_adj =
       Enum.reduce(adj, %{}, fn {src, targets}, acc ->
         Enum.reduce(targets, acc, fn tgt, inner ->
-          Map.update(inner, tgt, [src], &[src | &1])
+          case Map.fetch(inner, tgt) do
+            :error -> Map.put(inner, tgt, [src])
+            {:ok, l} -> Map.put(inner, tgt, [src | l])
+          end
         end)
       end)
 
@@ -823,14 +848,26 @@ defmodule Ex4pmEngine.WorkflowNet do
     place_incoming =
       Enum.reduce(arcs, %{}, fn arc, acc ->
         if MapSet.member?(places_ids, arc.target),
-          do: Map.update(acc, arc.target, 1, &(&1 + 1)),
+          do:
+            (
+              case Map.fetch(acc, arc.target) do
+                :error -> Map.put(acc, arc.target, 1)
+                {:ok, v} -> Map.put(acc, arc.target, v + 1)
+              end
+            ),
           else: acc
       end)
 
     place_outgoing =
       Enum.reduce(arcs, %{}, fn arc, acc ->
         if MapSet.member?(places_ids, arc.source),
-          do: Map.update(acc, arc.source, 1, &(&1 + 1)),
+          do:
+            (
+              case Map.fetch(acc, arc.source) do
+                :error -> Map.put(acc, arc.source, 1)
+                {:ok, v} -> Map.put(acc, arc.source, v + 1)
+              end
+            ),
           else: acc
       end)
 

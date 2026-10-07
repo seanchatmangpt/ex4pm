@@ -4,7 +4,10 @@ defmodule Ex4pm.Explore.ObjectEvent do
   def index(events) do
     Enum.reduce(events, %{}, fn event, acc ->
       Enum.reduce(Map.get(event, :objects, []), acc, fn object_id, index ->
-        Map.update(index, object_id, [event], &(&1 ++ [event]))
+        case Map.fetch(index, object_id) do
+          :error -> Map.put(index, object_id, [event])
+          {:ok, l} -> Map.put(index, object_id, l ++ [event])
+        end
       end)
     end)
   end

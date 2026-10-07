@@ -284,9 +284,8 @@ defmodule Ex4pm.Engine.Beam do
     {:error, Refusal.new(:unsupported_model, "optimization requires a DFG model", subject: model)}
   end
 
-  defp explore(current, _adjacency, ends, depth, path) when depth <= 1 do
-    if MapSet.member?(ends, current), do: [Enum.reverse(path)], else: [Enum.reverse(path)]
-  end
+  defp explore(_current, _adjacency, _ends, depth, path) when depth <= 1,
+    do: [Enum.reverse(path)]
 
   defp explore(current, adjacency, ends, depth, path) do
     next = Map.get(adjacency, current, []) |> Enum.sort()
