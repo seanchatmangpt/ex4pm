@@ -1,0 +1,255 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix prd: <https://seanchatmangpt.dev/ex4pm/prd/v26.10.3#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Product Requirements Document for ex4pm, serialized as RDF/Turtle.
+# Grounded in the repository's real, observable capabilities only:
+#   - OCEL validate_envelope / normalize / ingest pipeline (lib/ex4pm/ocel.ex)
+#   - conformance evaluation with measured numbers (test/conformance_test.exs)
+#   - inductive miner discovery (lib/ex4pm_engine/inductive_miner.ex,
+#     lib/ex4pm/engine/discovery/inductive_miner.ex)
+#   - canonical event-log IR (Ex4pm.Event / Ex4pm.ObjectRef / Ex4pm.EventLog)
+#   - receipts and replay (lib/ex4pm/evidence/)
+# This graph is a factual description. It asserts no receipt, grants no
+# authority, and carries no self-approval or endorsement. Standing values are
+# the "UNKNOWN" placeholders the pack's closed WorkOrder shape requires.
+
+# -- Project identity ----------------------------------------------------------
+
+prd:project a sj:Subject ;
+    rdfs:label "ex4pm product requirements subject" ;
+    dcterms:title "ex4pm — BEAM-native, evidence-oriented process intelligence" ;
+    dcterms:description "A single flat, hex-publishable Elixir Mix library (app :ex4pm) providing OCEL/XES ingest into a canonical event-log IR, process-model discovery, conformance evaluation, simulation, planning, BRCE-gated actuation, receipts and replay." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:baseSha "82aacc1" ;
+    prd:version "26.10.2" ;
+    prd:versionSource "mix.exs @version (line 18)" ;
+    prd:artifact "single Mix library, app :ex4pm, published to Hex" .
+
+# -- Goal areas ------------------------------------------------------------------
+
+prd:goal-ocel-ingest a sj:AcceptanceCriterion ;
+    rdfs:label "G1: canonical OCEL/XES ingest" ;
+    dcterms:description "OCEL 2.0-style object-centric maps and XES XML converge on one canonical Ex4pm.EventLog IR. Ex4pm.OCEL.normalize/1 normalizes raw maps into typed events (Ex4pm.Event: id, activity, timestamp, object_ids, relationships, attributes) and typed objects (Ex4pm.ObjectRef: id, type, value-time attribute logs with attribute_at/3 as-of resolution). Ex4pm.OCEL.validate_envelope/1 validates OCEL envelope payloads. Ex4pm.ingest/2 and Ex4pm.ingest_xes/2 admit raw input into a dataset; malformed activity or timestamp values receive the same typed refusal (%Ex4pm.Refusal{}) in both formats. XES parsing disables DTD processing before XPath projection." ;
+    sj:pathScope "lib/ex4pm/ocel.ex", "lib/ex4pm.ex", "lib/ex4pm/core/" .
+
+prd:goal-conformance a sj:AcceptanceCriterion ;
+    rdfs:label "G2: measured conformance evaluation" ;
+    dcterms:description "Ex4pm.conform/2 evaluates a discovered model against a log and returns a conformance vector over measured dimensions: fitness, precision, policy_conformance, lifecycle_conformance, causal_conformance. Measured values witnessed by test/conformance_test.exs: fitness == 1.0, precision >= 0.9, policy_conformance == 0.75, lifecycle_conformance == 1.0, causal_conformance == 1.0 on the reference Order log; fitness drops below 1.0 when the log deviates from the model; causal_conformance reaches 0.0 on causally inverted logs; standing :alive and a sha256: subject_hash on the conformant vector; violations enumerated per dimension." ;
+    sj:pathScope "test/conformance_test.exs", "lib/ex4pm/engine/conformance/" .
+
+prd:goal-discovery a sj:AcceptanceCriterion ;
+    rdfs:label "G3: process-model discovery" ;
+    dcterms:description "Ex4pm.discover/2 discovers process models from a dataset with algorithm and object_type options (:dfg, POWL, object-centric POWL via lib/ex4pm_engine/miner/oc_powl.ex, inductive miner via lib/ex4pm_engine/inductive_miner.ex and lib/ex4pm/engine/discovery/inductive_miner.ex). Discovery is receipted and each run carries a hash replayable via Ex4pm.replay/1." ;
+    sj:pathScope "lib/ex4pm/engine/discovery/", "lib/ex4pm_engine/inductive_miner.ex", "lib/ex4pm_engine/powl.ex" .
+
+prd:goal-simulation-optimize a sj:AcceptanceCriterion ;
+    rdfs:label "G4: simulation and optimization candidates" ;
+    dcterms:description "Ex4pm.simulate/2 enumerates behavior paths of a model (max_depth, max_paths bounds); Ex4pm.optimize/2 produces intervention candidates over a dataset plus model. Both are CONSTRUCT-only analytical surfaces: their results are candidates, never actuation authority." ;
+    sj:pathScope "lib/ex4pm.ex", "lib/ex4pm/runtime/" .
+
+prd:goal-brce-authority a sj:AcceptanceCriterion ;
+    rdfs:label "G5: BRCE-gated actuation boundary" ;
+    dcterms:description "Ex4pm.operate/3 requires an explicit authority map; every task callback crosses the BRCE boundary (lib/ex4pm/evidence/). A plan returned by Ex4pm.plan/2 is an analytical CONSTRUCT path with zero ambient DO authority. An unavailable engine edge yields a typed standing/refusal rather than silently degrading. SELECT, CONSTRUCT and DO are separate surfaces." ;
+    sj:pathScope "lib/ex4pm/evidence/", "lib/ex4pm.ex" .
+
+prd:goal-receipts-replay a sj:AcceptanceCriterion ;
+    rdfs:label "G6: receipts and replay" ;
+    dcterms:description "Runs produce durable receipts (lib/ex4pm/evidence/) with sha256 hashes; Ex4pm.replay/1 re-executes a run from its receipt hash. The receipt store (Ex4pm.Evidence.Store, 26.10.2) keeps ETS secondary indexes on subject_hash and parent_hash so get_by_subject/1 and get_by_parent/1 are indexed lookups." ;
+    sj:pathScope "lib/ex4pm/evidence/", "test/evidence_store_index_test.exs" .
+
+prd:goal-contracts a sj:AcceptanceCriterion ;
+    rdfs:label "G7: canonical executable contracts" ;
+    dcterms:description "Ex4pm.Contracts (lib/ex4pm/contracts.ex) carries four executable identity surfaces: RDF/Turtle ontology, SHACL shapes, WIT component-world contract, and JSON Schema for receipt interchange. Ex4pm.contracts/0 reads and hashes all four artifacts, verifies required semantic terms, and produces one contract hash." ;
+    sj:pathScope "lib/ex4pm/contracts.ex", "priv/ontology/ex4pm.ttl" .
+
+prd:goal-engines a sj:AcceptanceCriterion ;
+    rdfs:label "G8: multi-engine calculus with pinned runtimes" ;
+    dcterms:description "The engine registry preserves candidates simultaneously: :beam (native Elixir), :ex4pm_plan (pinned cloud planning worker protocol ex4pm-plan/v1, source pinned 99816fb389670174be44ddaaf3b42f00496e6f21, ALIVE only on observed capsule identity plus replay verification), :wasm and :wasm_<algo> (33 per-algorithm adapters over the bundled, sha256-pinned wasm4pm-ex4pm-bindings artifact, zero config via Ex4pmEngine.Wasm.Host), :ferroplan (PDDL/HTN/FOND planning from the bundled sha256-pinned ferroplan wasm), :nif, :remote. Selection is capability- and evidence-driven; implicit selection keeps :beam unless prefer_wasm, an explicit engine:, or an explicit wasm fun is given." ;
+    sj:pathScope "lib/ex4pm/engine/", "lib/ex4pm_engine/wasm/", "priv/wasm4pm/", "priv/ferroplan/" .
+
+# -- Measured evidence anchors ---------------------------------------------------
+
+prd:evidence-conformance-numbers a sj:EvidenceRequirement ;
+    rdfs:label "Conformance numbers source" ;
+    dcterms:description "The figures fitness == 1.0, precision >= 0.9, policy_conformance == 0.75, lifecycle_conformance == 1.0, causal_conformance == 1.0, standing :alive, sha256: subject_hash, per-dimension violations, and the deviation/inversion/lifecycle degradation cases are asserted in test/conformance_test.exs lines 93-204 (Ex4pm.Conformance.evaluate/3 on the reference Order log). They are measurements at that test subject, not guarantees over arbitrary logs." ;
+    sj:pathScope "test/conformance_test.exs" .
+
+prd:evidence-writer a sj:EvidenceRequirement ;
+    rdfs:label "OCEL writer evidence (26.10.3)" ;
+    dcterms:description "Ex4pm.OCEL.Writer (lib/ex4pm/ocel_writer.ex) provides encode/1, encode_iodata/1 (per-event chunked) and encode_gzip/1, court-witnessed in test/ocel_writer_test.exs: round-trip through normalize/1, byte-identity of iodata vs flat encoding, gzip round-trip, and 1k-vs-10k event scaling within ±5% flat reduction per event. Non-EventLog subjects return {:error, %Ex4pm.Refusal{}}. Documented in CHANGELOG.md under [26.10.3]." ;
+    sj:pathScope "lib/ex4pm/ocel_writer.ex", "test/ocel_writer_test.exs", "CHANGELOG.md" .
+
+prd:evidence-streaming a sj:EvidenceRequirement ;
+    rdfs:label "Streaming ingestion evidence" ;
+    dcterms:description "Ex4pm.Stream.Pipeline (lib/ex4pm/stream/) ingests event enumerations through Broadway with backpressure and acknowledgement into an explicit sink; the sink receives observations and gains no ambient DO authority. Ex4pm.Stream.Ingest.ingest_envelope/1,2 is part of the documented public contract." ;
+    sj:pathScope "lib/ex4pm/stream/" .
+
+prd:evidence-ash-projection a sj:EvidenceRequirement ;
+    rdfs:label "Ash control-plane projection evidence" ;
+    dcterms:description "Ash resources (lib/ex4pm/domain/) model datasets, process models, interventions, capabilities and receipt projections. Projection is explicit via Ex4pm.Domain.Projector so persistence cannot silently change semantic truth; bulk event rows remain in the canonical event-log/artifact plane." ;
+    sj:pathScope "lib/ex4pm/domain/" .
+
+# -- Requirements ----------------------------------------------------------------
+
+prd:req-canonical-ir a sj:WorkOrder ;
+    rdfs:label "R1: single canonical event-log IR" ;
+    dcterms:title "All ingest paths converge on Ex4pm.EventLog" ;
+    dcterms:description "OCEL maps, XES XML, and streamed events normalize into one typed IR (Ex4pm.Event, Ex4pm.ObjectRef with value-time attribute logs, Ex4pm.EventLog). Downstream consumers (ash_ex4pm, ash_pplan per CHANGELOG 26.10.3) project from the IR rather than building envelopes." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:canonical-eventlog-ir" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:acceptance prd:goal-ocel-ingest ;
+    sj:falsifier prd:falsifier-ir-divergence ;
+    sj:requiresEvidence prd:evidence-writer ;
+    sj:requiresCourt prd:court-test-suite ;
+    sj:replayIdentity "ex4pm:prd:v26.10.3:R1" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this PRD graph never asserts a receipt." .
+
+prd:req-measured-conformance a sj:WorkOrder ;
+    rdfs:label "R2: conformance is measured, not claimed" ;
+    dcterms:title "Conformance vector with per-dimension measured values and violations" ;
+    dcterms:description "Ex4pm.conform/2 returns a vector with fitness, precision, policy_conformance, lifecycle_conformance, causal_conformance, standing, sha256 subject_hash and enumerated violations; deviating logs measurably reduce the relevant dimension rather than passing silently." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:measured-conformance-vector" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:acceptance prd:goal-conformance ;
+    sj:falsifier prd:falsifier-deviation-passes ;
+    sj:requiresEvidence prd:evidence-conformance-numbers ;
+    sj:requiresCourt prd:court-test-suite ;
+    sj:replayIdentity "ex4pm:prd:v26.10.3:R2" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this PRD graph never asserts a receipt." .
+
+prd:req-discovery-receipted a sj:WorkOrder ;
+    rdfs:label "R3: discovery is receipted and replayable" ;
+    dcterms:title "Every discovery run carries a replayable receipt hash" ;
+    dcterms:description "Ex4pm.discover/2 (algorithms :dfg, inductive miner, POWL/oc-POWL) returns a run whose value is a process model and whose receipt hash replays via Ex4pm.replay/1." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:receipted-discovery" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:acceptance prd:goal-discovery ;
+    sj:falsifier prd:falsifier-unreplayable-discovery ;
+    sj:requiresEvidence sj:receipt-evidence ;
+    sj:requiresCourt prd:court-test-suite ;
+    sj:replayIdentity "ex4pm:prd:v26.10.3:R3" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this PRD graph never asserts a receipt." .
+
+prd:req-brce-do-separation a sj:WorkOrder ;
+    rdfs:label "R4: SELECT/CONSTRUCT/DO separation" ;
+    dcterms:title "No ambient actuation authority on analytical paths" ;
+    dcterms:description "plan/2, simulate/2, optimize/2, statistics/3 and forecast/2 are CONSTRUCT-only. operate/3 is the only DO surface and requires an explicit authority map with all callbacks crossing BRCE. Hooks and planners may manufacture intents; only the BRCE broker executes state-changing callbacks." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:brce-do-separation" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:acceptance prd:goal-brce-authority ;
+    sj:falsifier prd:falsifier-plan-gains-do ;
+    sj:requiresEvidence sj:source-evidence ;
+    sj:requiresCourt prd:court-test-suite ;
+    sj:replayIdentity "ex4pm:prd:v26.10.3:R4" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this PRD graph never asserts a receipt." .
+
+prd:req-pinned-foreign-runtimes a sj:WorkOrder ;
+    rdfs:label "R5: foreign runtimes pinned and admission-gated" ;
+    dcterms:title "WASM artifacts and planning workers carry digest/source pins with typed refusals" ;
+    dcterms:description "The wasm4pm artifact is bundled (priv/wasm4pm/wasm4pm_ex4pm_bindings.wasm, 2,204,812 bytes, sha256 pinned in priv/wasm4pm/MANIFEST.json, 0 imports / 70 exports, overridable via config :ex4pm, :wasm4pm_sha256) and admitted by Ex4pmEngine.Wasm.Admission (sha256 pin, compile, import allowlist, required exports); missing, mismatched or import-bearing artifacts yield typed %Ex4pm.Refusal{}. The ex4pm-plan adapter is pinned to worker source 99816fb389670174be44ddaaf3b42f00496e6f21 and protocol ex4pm-plan/v1; responses without observed capsule identity remain PARTIAL_ALIVE and mismatched source is refused." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:pinned-foreign-runtimes" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:acceptance prd:goal-engines ;
+    sj:falsifier prd:falsifier-unpinned-artifact-runs ;
+    sj:requiresEvidence sj:local-execution-evidence ;
+    sj:requiresCourt prd:court-test-suite ;
+    sj:replayIdentity "ex4pm:prd:v26.10.3:R5" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this PRD graph never asserts a receipt." .
+
+prd:req-contracts-hash a sj:WorkOrder ;
+    rdfs:label "R6: one contract hash over four identity surfaces" ;
+    dcterms:title "Ontology, SHACL, WIT and receipt schema hash to one verified contract" ;
+    dcterms:description "Ex4pm.contracts/0 reads the RDF/Turtle ontology, SHACL shapes, WIT component world and JSON receipt schema, verifies required semantic terms, and produces one contract hash; Ash records and engine structs are projections, not canonical surfaces." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:contract-hash" ;
+    sj:standing "UNKNOWN" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    sj:acceptance prd:goal-contracts ;
+    sj:falsifier prd:falsifier-contract-drift ;
+    sj:requiresEvidence sj:source-evidence ;
+    sj:requiresCourt prd:court-test-suite ;
+    sj:replayIdentity "ex4pm:prd:v26.10.3:R6" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this PRD graph never asserts a receipt." .
+
+# -- Courts ------------------------------------------------------------------------
+
+prd:court-test-suite a sj:Court ;
+    rdfs:label "Repository test-suite court" ;
+    dcterms:description "mix verify (formatting, warnings-as-errors compile, full test suite) at the exact head; individual claims additionally witnessed by the named test files (test/conformance_test.exs, test/ocel_writer_test.exs, test/evidence_store_index_test.exs). CI runs the same ladder and uploads mix.lock as a reproducibility artifact." .
+
+# -- Falsifiers --------------------------------------------------------------------
+
+prd:falsifier-ir-divergence a sj:Falsifier ;
+    rdfs:label "F1: IR divergence" ;
+    dcterms:description "An ingest path (OCEL map, XES XML, or streamed event) produces a representation not convertible to Ex4pm.EventLog, or a malformed OCEL value and its XES equivalent receive different typed treatment, and the test-suite court still exits 0." .
+
+prd:falsifier-deviation-passes a sj:Falsifier ;
+    rdfs:label "F2: deviation passes conformance" ;
+    dcterms:description "A log that deviates from the process model (deleted/duplicated/reordered event, inverted causality, broken lifecycle) evaluates with full fitness/causal/lifecycle conformance and no violations, and the court still exits 0 — observed in test/conformance_test.exs lines 111-204 as the property under test." .
+
+prd:falsifier-unreplayable-discovery a sj:Falsifier ;
+    rdfs:label "F3: unreplayable discovery" ;
+    dcterms:description "A discovery run's receipt hash does not replay via Ex4pm.replay/1 to an equivalent model, or a run produces no receipt, and the court still exits 0." .
+
+prd:falsifier-plan-gains-do a sj:Falsifier ;
+    rdfs:label "F4: plan gains DO authority" ;
+    dcterms:description "A plan from Ex4pm.plan/2, a simulate path, or an optimize candidate is executed as a state change without passing through Ex4pm.operate/3's explicit authority map and BRCE boundary, and the court still exits 0." .
+
+prd:falsifier-unpinned-artifact-runs a sj:Falsifier ;
+    rdfs:label "F5: unpinned artifact or worker runs" ;
+    dcterms:description "A wasm artifact with a digest mismatching priv/wasm4pm/MANIFEST.json, an import-bearing artifact, or an ex4pm-plan response with mismatched observed source executes to :alive instead of a typed refusal/PARTIAL_ALIVE, and the court still exits 0." .
+
+prd:falsifier-contract-drift a sj:Falsifier ;
+    rdfs:label "F6: contract drift" ;
+    dcterms:description "A semantic term required by the contract surface is removed from one of the four artifacts while Ex4pm.contracts/0 still verifies and produces a hash, or Ash/engine structs are treated as canonical instead of projections." .
+
+# -- Limitations and non-goals (honest) ---------------------------------------------
+
+prd:limitation-no-persistent-store-at-scale a sj:EvidenceRequirement ;
+    rdfs:label "L1: no persistent store at scale" ;
+    dcterms:description "Receipt storage is an ETS-based store (Ex4pm.Evidence.Store) with secondary indexes; there is no durable, replicated, scale-out event/receipt store. Ash resources are projections via Ex4pm.Domain.Projector, not a scale persistence story. Large logs are addressed per-call (the OCEL writer chunks per-event to avoid materializing giant terms) but no checkpointed multi-run persistence exists." .
+
+prd:limitation-no-ui a sj:EvidenceRequirement ;
+    rdfs:label "L2: no user interface" ;
+    dcterms:description "There is no shipped user interface. A Phoenix/LiveView demo app lives outside the published library under test/demo_web/, compiled only in the :test environment; the CLI (lib/ex4pm/cli.ex) and mix tasks are the only interactive surfaces." .
+
+prd:limitation-discovery-caveats a sj:EvidenceRequirement ;
+    rdfs:label "L3: discovery caveats" ;
+    dcterms:description "Discovery output is evidence-driven candidate structure, not ground truth: implicit selection prefers :beam unless prefer_wasm/explicit engine is given; optional WASM/NIF/remote routes remain UNSUPPORTED, BLOCKED or PARTIAL_ALIVE until their exact runtime subjects execute; the WIT component contract is a forward boundary that historical wasm-bindgen bundles do not implement; ex4pm-plan ALIVE requires exact worker/capsule identity and replay evidence, otherwise PARTIAL_ALIVE. Conformance numbers are measured at specific test subjects, not guarantees over arbitrary logs." .
+
+prd:non-goal-distributed-store a sj:Falsifier ;
+    rdfs:label "NG1: distributed persistence" ;
+    dcterms:description "Out of scope for v26.10.x: durable replicated event/receipt storage at scale." .
+
+prd:non-goal-ui a sj:Falsifier ;
+    rdfs:label "NG2: end-user UI" ;
+    dcterms:description "Out of scope: a production Phoenix/LiveView application; only the test-only demo under test/demo_web/ exists." .
+
+prd:non-goal-ambient-authority a sj:Falsifier ;
+    rdfs:label "NG3: ambient actuation" ;
+    dcterms:description "Out of scope by design: any surface where a plan, hook, or planner output executes without the BRCE authority map." .
