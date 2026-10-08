@@ -8,7 +8,7 @@
   "generatedFrom": "lib/ex4pm",
   "generator": "scripts/gen_agent_cards.py",
   "id": "ex4pm.ocel",
-  "name": "ex4pm ocel capability card",
+  "name": "ex4pm ocel contract-versioned capability card",
   "protocolVersion": "1.0",
   "skills": [
     {
@@ -16,161 +16,237 @@
       "id": "ex4pm.ocel.attribute-at",
       "name": "attribute_at",
       "source_file": "lib/ex4pm/ocel.ex",
-      "source_module": "Ex4pm.ObjectRef"
+      "source_module": "Ex4pm.ObjectRef",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.OCEL2.attribute_history \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.attribute-history",
       "name": "attribute_history",
       "source_file": "lib/ex4pm/ocel2.ex",
-      "source_module": "Ex4pm.OCEL2"
+      "source_module": "Ex4pm.OCEL2",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.ProcessGraphProjector.calculate \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.calculate",
       "name": "calculate",
       "source_file": "lib/ex4pm/domain/process_graph_projector.ex",
-      "source_module": "Ex4pm.Domain.ProcessGraphProjector"
+      "source_module": "Ex4pm.Domain.ProcessGraphProjector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.capability \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.capability",
       "name": "capability",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.dataset \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.dataset",
       "name": "dataset",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.OCEL.Writer.encode \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.encode",
       "name": "encode",
       "source_file": "lib/ex4pm/ocel_writer.ex",
-      "source_module": "Ex4pm.OCEL.Writer"
+      "source_module": "Ex4pm.OCEL.Writer",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.OCEL.Writer.encode_gzip \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.encode-gzip",
       "name": "encode_gzip",
       "source_file": "lib/ex4pm/ocel_writer.ex",
-      "source_module": "Ex4pm.OCEL.Writer"
+      "source_module": "Ex4pm.OCEL.Writer",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.OCEL.Writer.encode_iodata \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.encode-iodata",
       "name": "encode_iodata",
       "source_file": "lib/ex4pm/ocel_writer.ex",
-      "source_module": "Ex4pm.OCEL.Writer"
+      "source_module": "Ex4pm.OCEL.Writer",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.event \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.event",
       "name": "event",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.event_object \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.event-object",
       "name": "event_object",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.OCEL.flatten \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.flatten",
       "name": "flatten",
       "source_file": "lib/ex4pm/ocel.ex",
-      "source_module": "Ex4pm.OCEL"
+      "source_module": "Ex4pm.OCEL",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.POWL.layers \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.layers",
       "name": "layers",
       "source_file": "lib/ex4pm/powl.ex",
-      "source_module": "Ex4pm.POWL"
+      "source_module": "Ex4pm.POWL",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.POWL.new \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.new",
       "name": "new",
       "source_file": "lib/ex4pm/powl.ex",
-      "source_module": "Ex4pm.POWL"
+      "source_module": "Ex4pm.POWL",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.OCEL.normalize \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.normalize",
       "name": "normalize",
       "source_file": "lib/ex4pm/ocel.ex",
-      "source_module": "Ex4pm.OCEL"
+      "source_module": "Ex4pm.OCEL",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.object \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.object",
       "name": "object",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.object_object \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.object-object",
       "name": "object_object",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.XES.parse \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.parse",
       "name": "parse",
       "source_file": "lib/ex4pm/xes.ex",
-      "source_module": "Ex4pm.XES"
+      "source_module": "Ex4pm.XES",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.process_model \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.process-model",
       "name": "process_model",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.project_log \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.project-log",
       "name": "project_log",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.receipt \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.receipt",
       "name": "receipt",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.refusal \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.refusal",
       "name": "refusal",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.OCEL.validate_envelope \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.validate-envelope",
       "name": "validate_envelope",
       "source_file": "lib/ex4pm/ocel.ex",
-      "source_module": "Ex4pm.OCEL"
+      "source_module": "Ex4pm.OCEL",
+      "tags": [
+        "ocel"
+      ]
     },
     {
       "description": "Ex4pm.Domain.Projector.variant \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.ocel.variant",
       "name": "variant",
       "source_file": "lib/ex4pm/domain/projector.ex",
-      "source_module": "Ex4pm.Domain.Projector"
+      "source_module": "Ex4pm.Domain.Projector",
+      "tags": [
+        "ocel"
+      ]
     }
-  ]
+  ],
+  "supportedInterfaces": [
+    {
+      "protocolBinding": "stdin",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "version": "0.0.0"
 }

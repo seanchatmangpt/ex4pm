@@ -8,7 +8,7 @@
   "generatedFrom": "lib/ex4pm",
   "generator": "scripts/gen_agent_cards.py",
   "id": "ex4pm.evidence",
-  "name": "ex4pm evidence capability card",
+  "name": "ex4pm evidence contract-versioned capability card",
   "protocolVersion": "1.0",
   "skills": [
     {
@@ -16,77 +16,117 @@
       "id": "ex4pm.evidence.admit",
       "name": "admit",
       "source_file": "lib/ex4pm/evidence.ex",
-      "source_module": "Ex4pm.Evidence.BRCE"
+      "source_module": "Ex4pm.Evidence.BRCE",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.GitContainment.ahead_behind \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.ahead-behind",
       "name": "ahead_behind",
       "source_file": "lib/ex4pm/evidence/git_containment.ex",
-      "source_module": "Ex4pm.Evidence.GitContainment"
+      "source_module": "Ex4pm.Evidence.GitContainment",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.GitContainment.ancestor? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.ancestor?",
       "name": "ancestor?",
       "source_file": "lib/ex4pm/evidence/git_containment.ex",
-      "source_module": "Ex4pm.Evidence.GitContainment"
+      "source_module": "Ex4pm.Evidence.GitContainment",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.Batch.close \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.close",
       "name": "close",
       "source_file": "lib/ex4pm/evidence/batch.ex",
-      "source_module": "Ex4pm.Evidence.Batch"
+      "source_module": "Ex4pm.Evidence.Batch",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.GitContainment.containment_receipt \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.containment-receipt",
       "name": "containment_receipt",
       "source_file": "lib/ex4pm/evidence/git_containment.ex",
-      "source_module": "Ex4pm.Evidence.GitContainment"
+      "source_module": "Ex4pm.Evidence.GitContainment",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.Receipt.outcome \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.outcome",
       "name": "outcome",
       "source_file": "lib/ex4pm/evidence.ex",
-      "source_module": "Ex4pm.Evidence.Receipt"
+      "source_module": "Ex4pm.Evidence.Receipt",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.Receipt.pending \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.pending",
       "name": "pending",
       "source_file": "lib/ex4pm/evidence.ex",
-      "source_module": "Ex4pm.Evidence.Receipt"
+      "source_module": "Ex4pm.Evidence.Receipt",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.Batch.quota_met? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.quota-met?",
       "name": "quota_met?",
       "source_file": "lib/ex4pm/evidence/batch.ex",
-      "source_module": "Ex4pm.Evidence.Batch"
+      "source_module": "Ex4pm.Evidence.Batch",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.Batch.resume \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.resume",
       "name": "resume",
       "source_file": "lib/ex4pm/evidence/batch.ex",
-      "source_module": "Ex4pm.Evidence.Batch"
+      "source_module": "Ex4pm.Evidence.Batch",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.DetsStore.terminate \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.terminate",
       "name": "terminate",
       "source_file": "lib/ex4pm/evidence/dets_store.ex",
-      "source_module": "Ex4pm.Evidence.DetsStore"
+      "source_module": "Ex4pm.Evidence.DetsStore",
+      "tags": [
+        "evidence"
+      ]
     },
     {
       "description": "Ex4pm.Evidence.Replay.verify \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.evidence.verify",
       "name": "verify",
       "source_file": "lib/ex4pm/evidence.ex",
-      "source_module": "Ex4pm.Evidence.Replay"
+      "source_module": "Ex4pm.Evidence.Replay",
+      "tags": [
+        "evidence"
+      ]
     }
-  ]
+  ],
+  "supportedInterfaces": [
+    {
+      "protocolBinding": "stdin",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "version": "0.0.0"
 }

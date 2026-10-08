@@ -47,6 +47,11 @@ SKIP_NAMES = {
 }
 
 
+def ex4pm_version() -> str:
+    m = re.search(r'version:\s*"([^"]+)"', (ROOT / "mix.exs").read_text())
+    return m.group(1) if m else "0.0.0"
+
+
 def rel_key(path: Path) -> str:
     return str(path.relative_to(LIB))
 
@@ -126,6 +131,7 @@ def make_skills(cluster, modules):
                 "id": sid,
                 "name": fname,
                 "description": desc,
+                "tags": [cluster],
                 "source_module": mod["module"],
                 "source_file": mod["source"],
             })
@@ -136,12 +142,16 @@ def make_skills(cluster, modules):
 def make_card(cluster, modules):
     skills = make_skills(cluster, modules)
     return {
-        "protocolVersion": PROTOCOL_VERSION,
+        "protocolVersion": "1.0",
+        "version": ex4pm_version(),
         "id": f"ex4pm.{cluster}",
-        "name": f"ex4pm {cluster} capability card",
+        "name": f"ex4pm {cluster} contract-versioned capability card",
         "description": LAW,
         "generatedFrom": "lib/ex4pm",
         "generator": "scripts/gen_agent_cards.py",
+        "supportedInterfaces": [
+            {"protocolVersion": PROTOCOL_VERSION, "protocolBinding": "stdin"}
+        ],
         "capabilities": {
             "streaming": False,
             "receiptedExecution": cluster == "evidence",

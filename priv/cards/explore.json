@@ -8,7 +8,7 @@
   "generatedFrom": "lib/ex4pm",
   "generator": "scripts/gen_agent_cards.py",
   "id": "ex4pm.explore",
-  "name": "ex4pm explore capability card",
+  "name": "ex4pm explore contract-versioned capability card",
   "protocolVersion": "1.0",
   "skills": [
     {
@@ -16,231 +16,337 @@
       "id": "ex4pm.explore.admit",
       "name": "admit",
       "source_file": "lib/ex4pm/explore/constraint_filter.ex",
-      "source_module": "Ex4pm.Explore.ConstraintFilter"
+      "source_module": "Ex4pm.Explore.ConstraintFilter",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.FloydWarshall.all_pairs \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.all-pairs",
       "name": "all_pairs",
       "source_file": "lib/ex4pm/explore/floyd_warshall.ex",
-      "source_module": "Ex4pm.Explore.FloydWarshall"
+      "source_module": "Ex4pm.Explore.FloydWarshall",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.CausalDAG.ancestors \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.ancestors",
       "name": "ancestors",
       "source_file": "lib/ex4pm/explore/causal_dag.ex",
-      "source_module": "Ex4pm.Explore.CausalDAG"
+      "source_module": "Ex4pm.Explore.CausalDAG",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Maximin.best \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.best",
       "name": "best",
       "source_file": "lib/ex4pm/explore/maximin.ex",
-      "source_module": "Ex4pm.Explore.Maximin"
+      "source_module": "Ex4pm.Explore.Maximin",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Registry.by_family \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.by-family",
       "name": "by_family",
       "source_file": "lib/ex4pm/explore/registry.ex",
-      "source_module": "Ex4pm.Explore.Registry"
+      "source_module": "Ex4pm.Explore.Registry",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.UCB1.choose \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.choose",
       "name": "choose",
       "source_file": "lib/ex4pm/explore/ucb1.ex",
-      "source_module": "Ex4pm.Explore.UCB1"
+      "source_module": "Ex4pm.Explore.UCB1",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Hypergraph.closure \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.closure",
       "name": "closure",
       "source_file": "lib/ex4pm/explore/hypergraph.ex",
-      "source_module": "Ex4pm.Explore.Hypergraph"
+      "source_module": "Ex4pm.Explore.Hypergraph",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.VectorClock.compare \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.compare",
       "name": "compare",
       "source_file": "lib/ex4pm/explore/vector_clock.ex",
-      "source_module": "Ex4pm.Explore.VectorClock"
+      "source_module": "Ex4pm.Explore.VectorClock",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.SCC.components \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.components",
       "name": "components",
       "source_file": "lib/ex4pm/explore/scc.ex",
-      "source_module": "Ex4pm.Explore.SCC"
+      "source_module": "Ex4pm.Explore.SCC",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.RobustInterval.contains? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.contains?",
       "name": "contains?",
       "source_file": "lib/ex4pm/explore/robust_interval.ex",
-      "source_module": "Ex4pm.Explore.RobustInterval"
+      "source_module": "Ex4pm.Explore.RobustInterval",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.FixedPoint.converge \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.converge",
       "name": "converge",
       "source_file": "lib/ex4pm/explore/fixed_point.ex",
-      "source_module": "Ex4pm.Explore.FixedPoint"
+      "source_module": "Ex4pm.Explore.FixedPoint",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Pareto.dominates? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.dominates?",
       "name": "dominates?",
       "source_file": "lib/ex4pm/explore/pareto.ex",
-      "source_module": "Ex4pm.Explore.Pareto"
+      "source_module": "Ex4pm.Explore.Pareto",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Information.entropy \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.entropy",
       "name": "entropy",
       "source_file": "lib/ex4pm/explore/information.ex",
-      "source_module": "Ex4pm.Explore.Information"
+      "source_module": "Ex4pm.Explore.Information",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.ObjectEvent.event_centric \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.event-centric",
       "name": "event_centric",
       "source_file": "lib/ex4pm/explore/object_event.ex",
-      "source_module": "Ex4pm.Explore.ObjectEvent"
+      "source_module": "Ex4pm.Explore.ObjectEvent",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Registry.fetch \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.fetch",
       "name": "fetch",
       "source_file": "lib/ex4pm/explore/registry.ex",
-      "source_module": "Ex4pm.Explore.Registry"
+      "source_module": "Ex4pm.Explore.Registry",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Markov.fit \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.fit",
       "name": "fit",
       "source_file": "lib/ex4pm/explore/markov.ex",
-      "source_module": "Ex4pm.Explore.Markov"
+      "source_module": "Ex4pm.Explore.Markov",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.ObjectEvent.index \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.index",
       "name": "index",
       "source_file": "lib/ex4pm/explore/object_event.ex",
-      "source_module": "Ex4pm.Explore.ObjectEvent"
+      "source_module": "Ex4pm.Explore.ObjectEvent",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Information.information_gain \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.information-gain",
       "name": "information_gain",
       "source_file": "lib/ex4pm/explore/information.ex",
-      "source_module": "Ex4pm.Explore.Information"
+      "source_module": "Ex4pm.Explore.Information",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Trajectory.integral \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.integral",
       "name": "integral",
       "source_file": "lib/ex4pm/explore/trajectory.ex",
-      "source_module": "Ex4pm.Explore.Trajectory"
+      "source_module": "Ex4pm.Explore.Trajectory",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.ConsistentHash.locate \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.locate",
       "name": "locate",
       "source_file": "lib/ex4pm/explore/consistent_hash.ex",
-      "source_module": "Ex4pm.Explore.ConsistentHash"
+      "source_module": "Ex4pm.Explore.ConsistentHash",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.AStar.next \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.next",
       "name": "next",
       "source_file": "lib/ex4pm/explore/a_star.ex",
-      "source_module": "Ex4pm.Explore.AStar"
+      "source_module": "Ex4pm.Explore.AStar",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Markov.predict \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.predict",
       "name": "predict",
       "source_file": "lib/ex4pm/explore/markov.ex",
-      "source_module": "Ex4pm.Explore.Markov"
+      "source_module": "Ex4pm.Explore.Markov",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Lexicographic.rank \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.rank",
       "name": "rank",
       "source_file": "lib/ex4pm/explore/lexicographic.ex",
-      "source_module": "Ex4pm.Explore.Lexicographic"
+      "source_module": "Ex4pm.Explore.Lexicographic",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.TokenBucket.refill \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.refill",
       "name": "refill",
       "source_file": "lib/ex4pm/explore/token_bucket.ex",
-      "source_module": "Ex4pm.Explore.TokenBucket"
+      "source_module": "Ex4pm.Explore.TokenBucket",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.TokenReplay.replay \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.replay",
       "name": "replay",
       "source_file": "lib/ex4pm/explore/token_replay.ex",
-      "source_module": "Ex4pm.Explore.TokenReplay"
+      "source_module": "Ex4pm.Explore.TokenReplay",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.ConsistentHash.ring \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.ring",
       "name": "ring",
       "source_file": "lib/ex4pm/explore/consistent_hash.ex",
-      "source_module": "Ex4pm.Explore.ConsistentHash"
+      "source_module": "Ex4pm.Explore.ConsistentHash",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.CrowdingDistance.score \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.score",
       "name": "score",
       "source_file": "lib/ex4pm/explore/crowding_distance.ex",
-      "source_module": "Ex4pm.Explore.CrowdingDistance"
+      "source_module": "Ex4pm.Explore.CrowdingDistance",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.SemanticIdentity.sha256 \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.sha256",
       "name": "sha256",
       "source_file": "lib/ex4pm/explore/semantic_identity.ex",
-      "source_module": "Ex4pm.Explore.SemanticIdentity"
+      "source_module": "Ex4pm.Explore.SemanticIdentity",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.BellmanFord.shortest \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.shortest",
       "name": "shortest",
       "source_file": "lib/ex4pm/explore/bellman_ford.ex",
-      "source_module": "Ex4pm.Explore.BellmanFord"
+      "source_module": "Ex4pm.Explore.BellmanFord",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.Toposort.sort \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.sort",
       "name": "sort",
       "source_file": "lib/ex4pm/explore/toposort.ex",
-      "source_module": "Ex4pm.Explore.Toposort"
+      "source_module": "Ex4pm.Explore.Toposort",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.VectorClock.tick \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.tick",
       "name": "tick",
       "source_file": "lib/ex4pm/explore/vector_clock.ex",
-      "source_module": "Ex4pm.Explore.VectorClock"
+      "source_module": "Ex4pm.Explore.VectorClock",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.TemporalLogic.until \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.until",
       "name": "until",
       "source_file": "lib/ex4pm/explore/temporal_logic.ex",
-      "source_module": "Ex4pm.Explore.TemporalLogic"
+      "source_module": "Ex4pm.Explore.TemporalLogic",
+      "tags": [
+        "explore"
+      ]
     },
     {
       "description": "Ex4pm.Explore.ReplayChain.verify \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.explore.verify",
       "name": "verify",
       "source_file": "lib/ex4pm/explore/replay_chain.ex",
-      "source_module": "Ex4pm.Explore.ReplayChain"
+      "source_module": "Ex4pm.Explore.ReplayChain",
+      "tags": [
+        "explore"
+      ]
     }
-  ]
+  ],
+  "supportedInterfaces": [
+    {
+      "protocolBinding": "stdin",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "version": "0.0.0"
 }

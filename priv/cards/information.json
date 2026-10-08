@@ -8,7 +8,7 @@
   "generatedFrom": "lib/ex4pm",
   "generator": "scripts/gen_agent_cards.py",
   "id": "ex4pm.information",
-  "name": "ex4pm information capability card",
+  "name": "ex4pm information contract-versioned capability card",
   "protocolVersion": "1.0",
   "skills": [
     {
@@ -16,189 +16,277 @@
       "id": "ex4pm.information.admit",
       "name": "admit",
       "source_file": "lib/ex4pm/information/registry.ex",
-      "source_module": "Admitted"
+      "source_module": "Admitted",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.AshCatalog.admit_read \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.admit-read",
       "name": "admit_read",
       "source_file": "lib/ex4pm/information/ash_catalog.ex",
-      "source_module": "Ex4pm.Information.AshCatalog"
+      "source_module": "Ex4pm.Information.AshCatalog",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.AshCatalog.catalog \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.catalog",
       "name": "catalog",
       "source_file": "lib/ex4pm/information/ash_catalog.ex",
-      "source_module": "Ex4pm.Information.AshCatalog"
+      "source_module": "Ex4pm.Information.AshCatalog",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.ReceiptMiddleware.complete \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.complete",
       "name": "complete",
       "source_file": "lib/ex4pm/information/receipt_middleware.ex",
-      "source_module": "Ex4pm.Information.ReceiptMiddleware"
+      "source_module": "Ex4pm.Information.ReceiptMiddleware",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Interop.decode_model \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.decode-model",
       "name": "decode_model",
       "source_file": "lib/ex4pm/information/interop.ex",
-      "source_module": "Ex4pm.Information.Interop"
+      "source_module": "Ex4pm.Information.Interop",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.describe \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.describe",
       "name": "describe",
       "source_file": "lib/ex4pm/information.ex",
-      "source_module": "Ex4pm.Information"
+      "source_module": "Ex4pm.Information",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Interop.encode_model \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.encode-model",
       "name": "encode_model",
       "source_file": "lib/ex4pm/information/interop.ex",
-      "source_module": "Ex4pm.Information.Interop"
+      "source_module": "Ex4pm.Information.Interop",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.ReceiptMiddleware.error \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.error",
       "name": "error",
       "source_file": "lib/ex4pm/information/receipt_middleware.ex",
-      "source_module": "Ex4pm.Information.ReceiptMiddleware"
+      "source_module": "Ex4pm.Information.ReceiptMiddleware",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Protocol.error_response \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.error-response",
       "name": "error_response",
       "source_file": "lib/ex4pm/information/protocol.ex",
-      "source_module": "Ex4pm.Information.Protocol"
+      "source_module": "Ex4pm.Information.Protocol",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.ReceiptMiddleware.event \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.event",
       "name": "event",
       "source_file": "lib/ex4pm/information/receipt_middleware.ex",
-      "source_module": "Ex4pm.Information.ReceiptMiddleware"
+      "source_module": "Ex4pm.Information.ReceiptMiddleware",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Interop.event_log_summary \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.event-log-summary",
       "name": "event_log_summary",
       "source_file": "lib/ex4pm/information/interop.ex",
-      "source_module": "Ex4pm.Information.Interop"
+      "source_module": "Ex4pm.Information.Interop",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.execute \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.execute",
       "name": "execute",
       "source_file": "lib/ex4pm/information.ex",
-      "source_module": "Ex4pm.Information"
+      "source_module": "Ex4pm.Information",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Protocol.json_safe \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.json-safe",
       "name": "json_safe",
       "source_file": "lib/ex4pm/information/protocol.ex",
-      "source_module": "Ex4pm.Information.Protocol"
+      "source_module": "Ex4pm.Information.Protocol",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.list \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.list",
       "name": "list",
       "source_file": "lib/ex4pm/information.ex",
-      "source_module": "Ex4pm.Information"
+      "source_module": "Ex4pm.Information",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.manifest \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.manifest",
       "name": "manifest",
       "source_file": "lib/ex4pm/information.ex",
-      "source_module": "Ex4pm.Information"
+      "source_module": "Ex4pm.Information",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Protocol.normalize \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.normalize",
       "name": "normalize",
       "source_file": "lib/ex4pm/information/protocol.ex",
-      "source_module": "Ex4pm.Information.Protocol"
+      "source_module": "Ex4pm.Information.Protocol",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Admitted.public_capabilities \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.public-capabilities",
       "name": "public_capabilities",
       "source_file": "lib/ex4pm/information/registry.ex",
-      "source_module": "Admitted"
+      "source_module": "Admitted",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.FrontierRelease.qualify_release \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.qualify-release",
       "name": "qualify_release",
       "source_file": "lib/ex4pm/information/frontier_release.ex",
-      "source_module": "Ex4pm.Information.FrontierRelease"
+      "source_module": "Ex4pm.Information.FrontierRelease",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.AshCatalog.read \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.read",
       "name": "read",
       "source_file": "lib/ex4pm/information/ash_catalog.ex",
-      "source_module": "Ex4pm.Information.AshCatalog"
+      "source_module": "Ex4pm.Information.AshCatalog",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Protocol.refusal_map \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.refusal-map",
       "name": "refusal_map",
       "source_file": "lib/ex4pm/information/protocol.ex",
-      "source_module": "Ex4pm.Information.Protocol"
+      "source_module": "Ex4pm.Information.Protocol",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Protocol.refusal_response \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.refusal-response",
       "name": "refusal_response",
       "source_file": "lib/ex4pm/information/protocol.ex",
-      "source_module": "Ex4pm.Information.Protocol"
+      "source_module": "Ex4pm.Information.Protocol",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.AshCatalog.resource_descriptor \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.resource-descriptor",
       "name": "resource_descriptor",
       "source_file": "lib/ex4pm/information/ash_catalog.ex",
-      "source_module": "Ex4pm.Information.AshCatalog"
+      "source_module": "Ex4pm.Information.AshCatalog",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.AshCatalog.resources \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.resources",
       "name": "resources",
       "source_file": "lib/ex4pm/information/ash_catalog.ex",
-      "source_module": "Ex4pm.Information.AshCatalog"
+      "source_module": "Ex4pm.Information.AshCatalog",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Protocol.response \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.response",
       "name": "response",
       "source_file": "lib/ex4pm/information/protocol.ex",
-      "source_module": "Ex4pm.Information.Protocol"
+      "source_module": "Ex4pm.Information.Protocol",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Step.Admit.run \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.run",
       "name": "run",
       "source_file": "lib/ex4pm/information/flow.ex",
-      "source_module": "Ex4pm.Information.Step.Admit"
+      "source_module": "Ex4pm.Information.Step.Admit",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Interop.run_provenance \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.run-provenance",
       "name": "run_provenance",
       "source_file": "lib/ex4pm/information/interop.ex",
-      "source_module": "Ex4pm.Information.Interop"
+      "source_module": "Ex4pm.Information.Interop",
+      "tags": [
+        "information"
+      ]
     },
     {
       "description": "Ex4pm.Information.Protocol.scheduler_limits \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
       "id": "ex4pm.information.scheduler-limits",
       "name": "scheduler_limits",
       "source_file": "lib/ex4pm/information/protocol.ex",
-      "source_module": "Ex4pm.Information.Protocol"
+      "source_module": "Ex4pm.Information.Protocol",
+      "tags": [
+        "information"
+      ]
     }
-  ]
+  ],
+  "supportedInterfaces": [
+    {
+      "protocolBinding": "stdin",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "version": "0.0.0"
 }
