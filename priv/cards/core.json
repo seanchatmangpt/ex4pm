@@ -1,0 +1,372 @@
+{
+  "capabilities": {
+    "authorityLaw": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+    "receiptedExecution": false,
+    "streaming": false
+  },
+  "description": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+  "generatedFrom": "lib/ex4pm",
+  "generator": "scripts/gen_agent_cards.py",
+  "id": "ex4pm.core",
+  "name": "ex4pm core capability card",
+  "protocolVersion": "1.0",
+  "skills": [
+    {
+      "description": "Ex4pm.Aloop.analysis_receipt \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.analysis-receipt",
+      "name": "analysis_receipt",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Contracts.artifacts \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.artifacts",
+      "name": "artifacts",
+      "source_file": "lib/ex4pm/contracts.ex",
+      "source_module": "Ex4pm.Contracts"
+    },
+    {
+      "description": "Ex4pm.Gall.Portable.build \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.build",
+      "name": "build",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Portable"
+    },
+    {
+      "description": "Ex4pm.Gall.Portable.canonical_json \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.canonical-json",
+      "name": "canonical_json",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Portable"
+    },
+    {
+      "description": "Ex4pm.Gall.Compute.capabilities \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.capabilities",
+      "name": "capabilities",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Compute"
+    },
+    {
+      "description": "Ex4pm.Gall.Portable.check \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.check",
+      "name": "check",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Portable"
+    },
+    {
+      "description": "Ex4pm.Aloop.conformant? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.conformant?",
+      "name": "conformant?",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.EconomicISA.decode \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.decode",
+      "name": "decode",
+      "source_file": "lib/ex4pm/economic_isa.ex",
+      "source_module": "Ex4pm.EconomicISA"
+    },
+    {
+      "description": "Ex4pm.Aloop.dfg \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.dfg",
+      "name": "dfg",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Core.Hash.digest \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.digest",
+      "name": "digest",
+      "source_file": "lib/ex4pm/core.ex",
+      "source_module": "Ex4pm.Core.Hash"
+    },
+    {
+      "description": "Ex4pm.Gall.Discovery.discover \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.discover",
+      "name": "discover",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Discovery"
+    },
+    {
+      "description": "Ex4pm.Aloop.divergences \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.divergences",
+      "name": "divergences",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Core.OLAP.drill_down \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.drill-down",
+      "name": "drill_down",
+      "source_file": "lib/ex4pm/core/olap.ex",
+      "source_module": "Ex4pm.Core.OLAP"
+    },
+    {
+      "description": "Ex4pm.EconomicISA.encode_extended \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.encode-extended",
+      "name": "encode_extended",
+      "source_file": "lib/ex4pm/economic_isa.ex",
+      "source_module": "Ex4pm.EconomicISA"
+    },
+    {
+      "description": "Ex4pm.Aloop.episodes \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.episodes",
+      "name": "episodes",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Gall.Powl.equivalent? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.equivalent?",
+      "name": "equivalent?",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Powl"
+    },
+    {
+      "description": "Ex4pm.Gall.Compliance.evaluate \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.evaluate",
+      "name": "evaluate",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Compliance"
+    },
+    {
+      "description": "Ex4pm.Aloop.every_do_receipted? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.every-do-receipted?",
+      "name": "every_do_receipted?",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Aloop.every_receipt_consumed? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.every-receipt-consumed?",
+      "name": "every_receipt_consumed?",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Refusal.exception \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.exception",
+      "name": "exception",
+      "source_file": "lib/ex4pm/core.ex",
+      "source_module": "Ex4pm.Refusal"
+    },
+    {
+      "description": "Ex4pm.Gall.Compute.execute \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.execute",
+      "name": "execute",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Compute"
+    },
+    {
+      "description": "Ex4pm.Gall.Corpus.fixture! \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.fixture!",
+      "name": "fixture!",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Corpus"
+    },
+    {
+      "description": "Ex4pm.Gall.Powl.from_wfnet \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.from-wfnet",
+      "name": "from_wfnet",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Powl"
+    },
+    {
+      "description": "Ex4pm.Aloop.human_causal_edge_present? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.human-causal-edge-present?",
+      "name": "human_causal_edge_present?",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Aloop.human_causal_edges \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.human-causal-edges",
+      "name": "human_causal_edges",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Aloop.loop_depths \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.loop-depths",
+      "name": "loop_depths",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.CLI.main \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.main",
+      "name": "main",
+      "source_file": "lib/ex4pm/cli.ex",
+      "source_module": "Ex4pm.CLI"
+    },
+    {
+      "description": "Ex4pm.Contracts.manifest \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.manifest",
+      "name": "manifest",
+      "source_file": "lib/ex4pm/contracts.ex",
+      "source_module": "Ex4pm.Contracts"
+    },
+    {
+      "description": "Ex4pm.Standing.min \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.min",
+      "name": "min",
+      "source_file": "lib/ex4pm/core.ex",
+      "source_module": "Ex4pm.Standing"
+    },
+    {
+      "description": "Ex4pm.Refusal.new \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.new",
+      "name": "new",
+      "source_file": "lib/ex4pm/core.ex",
+      "source_module": "Ex4pm.Refusal"
+    },
+    {
+      "description": "Ex4pm.Gall.Portable.normalize \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.normalize",
+      "name": "normalize",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Portable"
+    },
+    {
+      "description": "Ex4pm.Aloop.orphan_dos \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.orphan-dos",
+      "name": "orphan_dos",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Aloop.precision \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.precision",
+      "name": "precision",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Gall.Compliance.predict \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.predict",
+      "name": "predict",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Compliance"
+    },
+    {
+      "description": "Ex4pm.Aloop.provider_replacement_occurred? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.provider-replacement-occurred?",
+      "name": "provider_replacement_occurred?",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Aloop.provider_replacements \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.provider-replacements",
+      "name": "provider_replacements",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Aloop.recurrence? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.recurrence?",
+      "name": "recurrence?",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Aloop.repair_replan_chains \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.repair-replan-chains",
+      "name": "repair_replan_chains",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Gall.Powl.semantic_properties \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.semantic-properties",
+      "name": "semantic_properties",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Powl"
+    },
+    {
+      "description": "Ex4pm.Core.OLAP.slice \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.slice",
+      "name": "slice",
+      "source_file": "lib/ex4pm/core/olap.ex",
+      "source_module": "Ex4pm.Core.OLAP"
+    },
+    {
+      "description": "Ex4pm.Application.start \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.start",
+      "name": "start",
+      "source_file": "lib/ex4pm/application.ex",
+      "source_module": "Ex4pm.Application"
+    },
+    {
+      "description": "Ex4pm.Gall.Powl.structure \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.structure",
+      "name": "structure",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Powl"
+    },
+    {
+      "description": "Ex4pm.Aloop.substitution_equivalent? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.substitution-equivalent?",
+      "name": "substitution_equivalent?",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.EconomicISA.to_event \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.to-event",
+      "name": "to_event",
+      "source_file": "lib/ex4pm/economic_isa.ex",
+      "source_module": "Ex4pm.EconomicISA"
+    },
+    {
+      "description": "Ex4pm.Standing.Coded.to_string \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.to-string",
+      "name": "to_string",
+      "source_file": "lib/ex4pm/standing_coded.ex",
+      "source_module": "Ex4pm.Standing.Coded"
+    },
+    {
+      "description": "Ex4pm.Gall.Compliance.train \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.train",
+      "name": "train",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Compliance"
+    },
+    {
+      "description": "Ex4pm.Gall.typed_digest \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.typed-digest",
+      "name": "typed_digest",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall"
+    },
+    {
+      "description": "Ex4pm.Aloop.unconsumed_receipts \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.unconsumed-receipts",
+      "name": "unconsumed_receipts",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Aloop.variants \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.variants",
+      "name": "variants",
+      "source_file": "lib/ex4pm/aloop.ex",
+      "source_module": "Ex4pm.Aloop"
+    },
+    {
+      "description": "Ex4pm.Contracts.verify \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.verify",
+      "name": "verify",
+      "source_file": "lib/ex4pm/contracts.ex",
+      "source_module": "Ex4pm.Contracts"
+    },
+    {
+      "description": "Ex4pm.Gall.Compliance.verify_model \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.core.verify-model",
+      "name": "verify_model",
+      "source_file": "lib/ex4pm/gall.ex",
+      "source_module": "Ex4pm.Gall.Compliance"
+    }
+  ]
+}

@@ -1,0 +1,316 @@
+{
+  "capabilities": {
+    "authorityLaw": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+    "receiptedExecution": false,
+    "streaming": false
+  },
+  "description": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+  "generatedFrom": "lib/ex4pm",
+  "generator": "scripts/gen_agent_cards.py",
+  "id": "ex4pm.engine",
+  "name": "ex4pm engine capability card",
+  "protocolVersion": "1.0",
+  "skills": [
+    {
+      "description": "FlowerFallback.alphabet \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.alphabet",
+      "name": "alphabet",
+      "source_file": "lib/ex4pm/engine/discovery/inductive_miner.ex",
+      "source_module": "FlowerFallback"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.artifact_path \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.artifact-path",
+      "name": "artifact_path",
+      "source_file": "lib/ex4pm/engine/ferroplan.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan"
+    },
+    {
+      "description": "Ex4pm.Engine.Wasm.available? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.available?",
+      "name": "available?",
+      "source_file": "lib/ex4pm/engine/adapters.ex",
+      "source_module": "Ex4pm.Engine.Wasm"
+    },
+    {
+      "description": "Ex4pm.Engine.Registry.candidates \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.candidates",
+      "name": "candidates",
+      "source_file": "lib/ex4pm/engine.ex",
+      "source_module": "Ex4pm.Engine.Registry"
+    },
+    {
+      "description": "Ex4pm.Engine.CallLog.clear \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.clear",
+      "name": "clear",
+      "source_file": "lib/ex4pm/engine/call_log.ex",
+      "source_module": "Ex4pm.Engine.CallLog"
+    },
+    {
+      "description": "Ex4pm.Engine.Differential.compare \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.compare",
+      "name": "compare",
+      "source_file": "lib/ex4pm/engine/differential.ex",
+      "source_module": "Ex4pm.Engine.Differential"
+    },
+    {
+      "description": "Ex4pm.Engine.ExplorerProjection.dataframe \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.dataframe",
+      "name": "dataframe",
+      "source_file": "lib/ex4pm/engine/differential.ex",
+      "source_module": "Ex4pm.Engine.ExplorerProjection"
+    },
+    {
+      "description": "FlowerFallback.detect_exclusive_choice_cut \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.detect-exclusive-choice-cut",
+      "name": "detect_exclusive_choice_cut",
+      "source_file": "lib/ex4pm/engine/discovery/inductive_miner.ex",
+      "source_module": "FlowerFallback"
+    },
+    {
+      "description": "FlowerFallback.detect_sequence_cut \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.detect-sequence-cut",
+      "name": "detect_sequence_cut",
+      "source_file": "lib/ex4pm/engine/discovery/inductive_miner.ex",
+      "source_module": "FlowerFallback"
+    },
+    {
+      "description": "Ex4pm.Engine.CallLog.enabled? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.enabled?",
+      "name": "enabled?",
+      "source_file": "lib/ex4pm/engine/call_log.ex",
+      "source_module": "Ex4pm.Engine.CallLog"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Sessions.ensure_started \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.ensure-started",
+      "name": "ensure_started",
+      "source_file": "lib/ex4pm/engine/ferroplan/sessions.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Sessions"
+    },
+    {
+      "description": "Ex4pm.Engine.CallLog.events \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.events",
+      "name": "events",
+      "source_file": "lib/ex4pm/engine/call_log.ex",
+      "source_module": "Ex4pm.Engine.CallLog"
+    },
+    {
+      "description": "Ex4pm.Engine.execute \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.execute",
+      "name": "execute",
+      "source_file": "lib/ex4pm/engine.ex",
+      "source_module": "Ex4pm.Engine"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.explain \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.explain",
+      "name": "explain",
+      "source_file": "lib/ex4pm/engine/ferroplan.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Host.fetch \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.fetch",
+      "name": "fetch",
+      "source_file": "lib/ex4pm/engine/ferroplan.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Host"
+    },
+    {
+      "description": "Ex4pm.Engine.Discovery.Incremental.finalize \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.finalize",
+      "name": "finalize",
+      "source_file": "lib/ex4pm/engine/discovery/incremental.ex",
+      "source_module": "Ex4pm.Engine.Discovery.Incremental"
+    },
+    {
+      "description": "ReplayResult.fitness_from_counts \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.fitness-from-counts",
+      "name": "fitness_from_counts",
+      "source_file": "lib/ex4pm/engine/conformance/token_replay.ex",
+      "source_module": "ReplayResult"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Sessions.fork \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.fork",
+      "name": "fork",
+      "source_file": "lib/ex4pm/engine/ferroplan/sessions.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Sessions"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Sessions.free \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.free",
+      "name": "free",
+      "source_file": "lib/ex4pm/engine/ferroplan/sessions.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Sessions"
+    },
+    {
+      "description": "Ex4pm.Engine.OnlineMiner.get_conformance \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.get-conformance",
+      "name": "get_conformance",
+      "source_file": "lib/ex4pm/engine/online_miner.ex",
+      "source_module": "Ex4pm.Engine.OnlineMiner"
+    },
+    {
+      "description": "Ex4pm.Engine.OnlineMiner.get_dfg \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.get-dfg",
+      "name": "get_dfg",
+      "source_file": "lib/ex4pm/engine/online_miner.ex",
+      "source_module": "Ex4pm.Engine.OnlineMiner"
+    },
+    {
+      "description": "Ex4pm.Engine.OnlineMiner.get_fleet_status \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.get-fleet-status",
+      "name": "get_fleet_status",
+      "source_file": "lib/ex4pm/engine/online_miner.ex",
+      "source_module": "Ex4pm.Engine.OnlineMiner"
+    },
+    {
+      "description": "Ex4pm.Engine.OnlineMiner.get_summary \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.get-summary",
+      "name": "get_summary",
+      "source_file": "lib/ex4pm/engine/online_miner.ex",
+      "source_module": "Ex4pm.Engine.OnlineMiner"
+    },
+    {
+      "description": "Ex4pm.Engine.OnlineMiner.get_variants \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.get-variants",
+      "name": "get_variants",
+      "source_file": "lib/ex4pm/engine/online_miner.ex",
+      "source_module": "Ex4pm.Engine.OnlineMiner"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.hddl_solve \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.hddl-solve",
+      "name": "hddl_solve",
+      "source_file": "lib/ex4pm/engine/ferroplan.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Sessions.info \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.info",
+      "name": "info",
+      "source_file": "lib/ex4pm/engine/ferroplan/sessions.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Sessions"
+    },
+    {
+      "description": "Ex4pm.Engine.OnlineMiner.ingest \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.ingest",
+      "name": "ingest",
+      "source_file": "lib/ex4pm/engine/online_miner.ex",
+      "source_module": "Ex4pm.Engine.OnlineMiner"
+    },
+    {
+      "description": "Ex4pm.Engine.CallLog.last_note \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.last-note",
+      "name": "last_note",
+      "source_file": "lib/ex4pm/engine/call_log.ex",
+      "source_module": "Ex4pm.Engine.CallLog"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Sessions.list \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.list",
+      "name": "list",
+      "source_file": "lib/ex4pm/engine/ferroplan/sessions.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Sessions"
+    },
+    {
+      "description": "Ex4pm.Engine.Discovery.Incremental.new \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.new",
+      "name": "new",
+      "source_file": "lib/ex4pm/engine/discovery/incremental.ex",
+      "source_module": "Ex4pm.Engine.Discovery.Incremental"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.plan \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.plan",
+      "name": "plan",
+      "source_file": "lib/ex4pm/engine/ferroplan.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.plan_production \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.plan-production",
+      "name": "plan_production",
+      "source_file": "lib/ex4pm/engine/ferroplan.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Sessions.recover \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.recover",
+      "name": "recover",
+      "source_file": "lib/ex4pm/engine/ferroplan/sessions.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Sessions"
+    },
+    {
+      "description": "Ex4pm.Engine.OnlineMiner.reset \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.reset",
+      "name": "reset",
+      "source_file": "lib/ex4pm/engine/online_miner.ex",
+      "source_module": "Ex4pm.Engine.OnlineMiner"
+    },
+    {
+      "description": "Ex4pm.Engine.Registry.select \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.select",
+      "name": "select",
+      "source_file": "lib/ex4pm/engine.ex",
+      "source_module": "Ex4pm.Engine.Registry"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Host.stop_all \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.stop-all",
+      "name": "stop_all",
+      "source_file": "lib/ex4pm/engine/ferroplan.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Host"
+    },
+    {
+      "description": "Ex4pm.Engine.CallLog.subscribe \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.subscribe",
+      "name": "subscribe",
+      "source_file": "lib/ex4pm/engine/call_log.ex",
+      "source_module": "Ex4pm.Engine.CallLog"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.supports? \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.supports?",
+      "name": "supports?",
+      "source_file": "lib/ex4pm/engine/ferroplan.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Session.terminate \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.terminate",
+      "name": "terminate",
+      "source_file": "lib/ex4pm/engine/ferroplan/session.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Session"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Sessions.think \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.think",
+      "name": "think",
+      "source_file": "lib/ex4pm/engine/ferroplan/sessions.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Sessions"
+    },
+    {
+      "description": "Ex4pm.Engine.CallLog.unsubscribe \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.unsubscribe",
+      "name": "unsubscribe",
+      "source_file": "lib/ex4pm/engine/call_log.ex",
+      "source_module": "Ex4pm.Engine.CallLog"
+    },
+    {
+      "description": "Ex4pm.Engine.Discovery.Incremental.update \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.update",
+      "name": "update",
+      "source_file": "lib/ex4pm/engine/discovery/incremental.ex",
+      "source_module": "Ex4pm.Engine.Discovery.Incremental"
+    },
+    {
+      "description": "Ex4pm.Engine.Ferroplan.Session.whereis \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.engine.whereis",
+      "name": "whereis",
+      "source_file": "lib/ex4pm/engine/ferroplan/session.ex",
+      "source_module": "Ex4pm.Engine.Ferroplan.Session"
+    }
+  ]
+}

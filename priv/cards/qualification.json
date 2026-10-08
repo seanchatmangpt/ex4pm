@@ -1,0 +1,141 @@
+{
+  "capabilities": {
+    "authorityLaw": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+    "receiptedExecution": false,
+    "streaming": false
+  },
+  "description": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+  "generatedFrom": "lib/ex4pm",
+  "generator": "scripts/gen_agent_cards.py",
+  "id": "ex4pm.qualification",
+  "name": "ex4pm qualification capability card",
+  "protocolVersion": "1.0",
+  "skills": [
+    {
+      "description": "Ex4pm.Qualification.Powl.Correspondence.check \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.check",
+      "name": "check",
+      "source_file": "lib/ex4pm/qualification/powl/correspondence.ex",
+      "source_module": "Ex4pm.Qualification.Powl.Correspondence"
+    },
+    {
+      "description": "Ex4pm.Qualification.Powl.Correspondence.court \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.court",
+      "name": "court",
+      "source_file": "lib/ex4pm/qualification/powl/correspondence.ex",
+      "source_module": "Ex4pm.Qualification.Powl.Correspondence"
+    },
+    {
+      "description": "Ex4pm.Qualification.environment \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.environment",
+      "name": "environment",
+      "source_file": "lib/ex4pm/qualification.ex",
+      "source_module": "Ex4pm.Qualification"
+    },
+    {
+      "description": "Ex4pm.Qualification.Verifier.evidence_hash \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.evidence-hash",
+      "name": "evidence_hash",
+      "source_file": "lib/ex4pm/qualification/verifier.ex",
+      "source_module": "Ex4pm.Qualification.Verifier"
+    },
+    {
+      "description": "Ex4pm.Qualification.execution_semantics \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.execution-semantics",
+      "name": "execution_semantics",
+      "source_file": "lib/ex4pm/qualification.ex",
+      "source_module": "Ex4pm.Qualification"
+    },
+    {
+      "description": "Ex4pm.Qualification.ExposureCourt.ferroplan_facts \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.ferroplan-facts",
+      "name": "ferroplan_facts",
+      "source_file": "lib/ex4pm/qualification/exposure_court.ex",
+      "source_module": "Ex4pm.Qualification.ExposureCourt"
+    },
+    {
+      "description": "Ex4pm.Qualification.Crown.finalize \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.finalize",
+      "name": "finalize",
+      "source_file": "lib/ex4pm/qualification/crown.ex",
+      "source_module": "Ex4pm.Qualification.Crown"
+    },
+    {
+      "description": "Ex4pm.Qualification.Crown.finalize_file \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.finalize-file",
+      "name": "finalize_file",
+      "source_file": "lib/ex4pm/qualification/crown.ex",
+      "source_module": "Ex4pm.Qualification.Crown"
+    },
+    {
+      "description": "Ex4pm.Qualification.Powl.Semantics.identity \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.identity",
+      "name": "identity",
+      "source_file": "lib/ex4pm/qualification/powl/semantics.ex",
+      "source_module": "Ex4pm.Qualification.Powl.Semantics"
+    },
+    {
+      "description": "Ex4pm.Qualification.Powl.PropertyCorpus.invalid_identity_court \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.invalid-identity-court",
+      "name": "invalid_identity_court",
+      "source_file": "lib/ex4pm/qualification/powl/property_corpus.ex",
+      "source_module": "Ex4pm.Qualification.Powl.PropertyCorpus"
+    },
+    {
+      "description": "Ex4pm.Qualification.ExposureCourt.load_inputs \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.load-inputs",
+      "name": "load_inputs",
+      "source_file": "lib/ex4pm/qualification/exposure_court.ex",
+      "source_module": "Ex4pm.Qualification.ExposureCourt"
+    },
+    {
+      "description": "Ex4pm.Qualification.ReferenceNif.load_nif \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.load-nif",
+      "name": "load_nif",
+      "source_file": "lib/ex4pm/qualification/reference_nif.ex",
+      "source_module": "Ex4pm.Qualification.ReferenceNif"
+    },
+    {
+      "description": "Ex4pm.Qualification.Powl.Certificate.new \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.new",
+      "name": "new",
+      "source_file": "lib/ex4pm/qualification/powl/certificate.ex",
+      "source_module": "Ex4pm.Qualification.Powl.Certificate"
+    },
+    {
+      "description": "Ex4pm.Qualification.ExposureCourt.real_violations \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.real-violations",
+      "name": "real_violations",
+      "source_file": "lib/ex4pm/qualification/exposure_court.ex",
+      "source_module": "Ex4pm.Qualification.ExposureCourt"
+    },
+    {
+      "description": "Ex4pm.Qualification.ExposureCourt.CanonicalRequests.requests \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.requests",
+      "name": "requests",
+      "source_file": "lib/ex4pm/qualification/exposure_court.ex",
+      "source_module": "Ex4pm.Qualification.ExposureCourt.CanonicalRequests"
+    },
+    {
+      "description": "Ex4pm.Qualification.ExposureCourt.run \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.run",
+      "name": "run",
+      "source_file": "lib/ex4pm/qualification/exposure_court.ex",
+      "source_module": "Ex4pm.Qualification.ExposureCourt"
+    },
+    {
+      "description": "Ex4pm.Qualification.Powl.Correspondence.sabotage \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.sabotage",
+      "name": "sabotage",
+      "source_file": "lib/ex4pm/qualification/powl/correspondence.ex",
+      "source_module": "Ex4pm.Qualification.Powl.Correspondence"
+    },
+    {
+      "description": "Ex4pm.Qualification.ExposureCourt.violations \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.qualification.violations",
+      "name": "violations",
+      "source_file": "lib/ex4pm/qualification/exposure_court.ex",
+      "source_module": "Ex4pm.Qualification.ExposureCourt"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "capabilities": {
+    "authorityLaw": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+    "receiptedExecution": false,
+    "streaming": false
+  },
+  "description": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+  "generatedFrom": "lib/ex4pm",
+  "generator": "scripts/gen_agent_cards.py",
+  "id": "ex4pm.stream",
+  "name": "ex4pm stream capability card",
+  "protocolVersion": "1.0",
+  "skills": [
+    {
+      "description": "Ex4pm.Stream.DriftSink.handle_message \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.stream.handle-message",
+      "name": "handle_message",
+      "source_file": "lib/ex4pm/stream/drift_sink.ex",
+      "source_module": "Ex4pm.Stream.DriftSink"
+    },
+    {
+      "description": "Ex4pm.Stream.Ingest.ingest_envelope \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.stream.ingest-envelope",
+      "name": "ingest_envelope",
+      "source_file": "lib/ex4pm/stream/ingest.ex",
+      "source_module": "Ex4pm.Stream.Ingest"
+    },
+    {
+      "description": "Ex4pm.Stream.Metrics.metrics \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.stream.metrics",
+      "name": "metrics",
+      "source_file": "lib/ex4pm/stream/metrics.ex",
+      "source_module": "Ex4pm.Stream.Metrics"
+    },
+    {
+      "description": "Ex4pm.Stream.SensorSink.new \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.stream.new",
+      "name": "new",
+      "source_file": "lib/ex4pm/stream/sensor_sink.ex",
+      "source_module": "Ex4pm.Stream.SensorSink"
+    },
+    {
+      "description": "Ex4pm.Stream.DriftSink.observe \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.stream.observe",
+      "name": "observe",
+      "source_file": "lib/ex4pm/stream/drift_sink.ex",
+      "source_module": "Ex4pm.Stream.DriftSink"
+    },
+    {
+      "description": "Ex4pm.Stream.SensorSink.sample \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.stream.sample",
+      "name": "sample",
+      "source_file": "lib/ex4pm/stream/sensor_sink.ex",
+      "source_module": "Ex4pm.Stream.SensorSink"
+    }
+  ]
+}

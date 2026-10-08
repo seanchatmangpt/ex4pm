@@ -1,0 +1,85 @@
+{
+  "capabilities": {
+    "authorityLaw": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+    "receiptedExecution": false,
+    "streaming": false
+  },
+  "description": "BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+  "generatedFrom": "lib/ex4pm",
+  "generator": "scripts/gen_agent_cards.py",
+  "id": "ex4pm.runtime",
+  "name": "ex4pm runtime capability card",
+  "protocolVersion": "1.0",
+  "skills": [
+    {
+      "description": "Ex4pm.Runtime.PlanningPool.acquire \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.acquire",
+      "name": "acquire",
+      "source_file": "lib/ex4pm/runtime/planning_pool.ex",
+      "source_module": "Ex4pm.Runtime.PlanningPool"
+    },
+    {
+      "description": "Ex4pm.Runtime.compile \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.compile",
+      "name": "compile",
+      "source_file": "lib/ex4pm/runtime.ex",
+      "source_module": "Ex4pm.Runtime"
+    },
+    {
+      "description": "Ex4pm.Runtime.Distributed.concurrency_probe \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.concurrency-probe",
+      "name": "concurrency_probe",
+      "source_file": "lib/ex4pm/runtime/distributed.ex",
+      "source_module": "Ex4pm.Runtime.Distributed"
+    },
+    {
+      "description": "Ex4pm.Runtime.execute \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.execute",
+      "name": "execute",
+      "source_file": "lib/ex4pm/runtime.ex",
+      "source_module": "Ex4pm.Runtime"
+    },
+    {
+      "description": "Ex4pm.Runtime.Distributed.execute_remote_task \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.execute-remote-task",
+      "name": "execute_remote_task",
+      "source_file": "lib/ex4pm/runtime/distributed.ex",
+      "source_module": "Ex4pm.Runtime.Distributed"
+    },
+    {
+      "description": "Data.fire \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.fire",
+      "name": "fire",
+      "source_file": "lib/ex4pm/runtime/powl_executor.ex",
+      "source_module": "Data"
+    },
+    {
+      "description": "Data.marking \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.marking",
+      "name": "marking",
+      "source_file": "lib/ex4pm/runtime/powl_executor.ex",
+      "source_module": "Data"
+    },
+    {
+      "description": "Ex4pm.Runtime.PlanningPool.release \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.release",
+      "name": "release",
+      "source_file": "lib/ex4pm/runtime/planning_pool.ex",
+      "source_module": "Ex4pm.Runtime.PlanningPool"
+    },
+    {
+      "description": "Ex4pm.Runtime.ReactorStep.run \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.run",
+      "name": "run",
+      "source_file": "lib/ex4pm/runtime/reactor_step.ex",
+      "source_module": "Ex4pm.Runtime.ReactorStep"
+    },
+    {
+      "description": "Ex4pm.Runtime.Distributed.security_posture \u2014 BRCE.execute/4 is the exclusive receipted-DO boundary; receipt proves admission, never authority",
+      "id": "ex4pm.runtime.security-posture",
+      "name": "security_posture",
+      "source_file": "lib/ex4pm/runtime/distributed.ex",
+      "source_module": "Ex4pm.Runtime.Distributed"
+    }
+  ]
+}
