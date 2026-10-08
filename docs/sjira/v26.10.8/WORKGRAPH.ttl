@@ -1,0 +1,116 @@
+@prefix sj: <https://ggen-igniter.dev/ontology/semantic-jira#> .
+@prefix wg: <https://seanchatmangpt.dev/ex4pm/sjira/v26.10.8#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# Workgraph for the ex4pm v26.10.8 docs campaign.
+# Factual RDF: commits, court counts, and residues observed on the real
+# checkout at HEAD da21f05 (branch main, in sync with origin/main at author
+# time). sj: is doc-graph vocabulary only; receipts live in code/receipt
+# files. Standing values are the six sanctioned cross-repo strings
+# (beam4pm/ontology.ttl:2671, cited from ex4pm.ttl's six ex4pm:Capability
+# individuals). Courts witnessed 7/0 at receipt time
+# (docs/sjira/v26.10.8/CAMPAIGN-RECEIPT.md), so work orders witnessed by
+# those courts carry sj:evidenceCeiling "EXECUTED_VERIFIED".
+
+# -- Campaign identity ----------------------------------------------------------
+
+wg:campaign a sj:Subject ;
+    rdfs:label "ex4pm v26.10.8 campaign" ;
+    dcterms:title "ex4pm v26.10.8 docs campaign workgraph" ;
+    dcterms:description "Docs campaign on top of the v26.10.8 release tag (9f6103a): boundary/authority law explanation, process-mining family cross-references, beam4pm deprecation banners and docs index, archive of superseded ARD/PRD/requirements material, and the v26.10.8 version alignment. HEAD at author time: da21f05, clean tree, 0 ahead / 0 behind origin/main." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:baseSha "9f6103a" ;
+    sj:headSha "da21f05" ;
+    wg:receipt "docs/sjira/v26.10.8/CAMPAIGN-RECEIPT.md" ;
+    wg:courtRun "7/0" .
+
+# -- Work orders ----------------------------------------------------------------
+
+wg:wo-boundary-law-doc a sj:WorkOrder ;
+    rdfs:label "WO-1: boundary and authority law explanation" ;
+    dcterms:title "Boundary and authority law explanation doc (core engine)" ;
+    dcterms:description "docs: boundary and authority law explanation landed as commit 21b0855, explaining the BRCE/authority boundary of the core engine in docs/. Witnessed by the campaign court run (7/0) at HEAD da21f05." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:wo:v26.10.8:boundary-law-doc" ;
+    sj:standing "ALIVE" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    wg:commit "21b0855" ;
+    wg:courtRun "7/0" ;
+    sj:replayIdentity "ex4pm:wo:v26.10.8:boundary-law-doc" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this workgraph never asserts a receipt of its own." .
+
+wg:wo-family-xrefs a sj:WorkOrder ;
+    rdfs:label "WO-2: process-mining family cross-references" ;
+    dcterms:title "Cross-reference the process-mining family across repos" ;
+    dcterms:description "Fleet-campaign cross-referencing landed as commits a165752 (cross-reference process-mining family) and 8915e85 (beam4pm deprecation banners + docs/README.md index), linking ex4pm docs to the family (beam4pm, wasm4pm) without merging their graphs. Witnessed by the campaign court run (7/0)." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:wo:v26.10.8:family-xrefs" ;
+    sj:standing "ALIVE" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    wg:commit "a165752", "8915e85" ;
+    wg:courtRun "7/0" ;
+    sj:replayIdentity "ex4pm:wo:v26.10.8:family-xrefs" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this workgraph never asserts a receipt of its own." .
+
+wg:wo-archive-cleanup a sj:WorkOrder ;
+    rdfs:label "WO-3: archive superseded docs" ;
+    dcterms:title "Move superseded ARD/PRD/requirements and diverged copies into docs/archive/" ;
+    dcterms:description "Commit 92d480f moved superseded ARD/PRD/requirements, jira v26.9.* waves, and diverged consumer/ diataxis copies into docs/archive/, leaving docs/sjira/v26.10.3/ARD-PRD.ttl as the living PRD shape. Witnessed by the campaign court run (7/0)." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:wo:v26.10.8:archive-cleanup" ;
+    sj:standing "ALIVE" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    wg:commit "92d480f" ;
+    wg:courtRun "7/0" ;
+    sj:replayIdentity "ex4pm:wo:v26.10.8:archive-cleanup" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this workgraph never asserts a receipt of its own." .
+
+wg:wo-version-bump a sj:WorkOrder ;
+    rdfs:label "WO-4: v26.10.8 version alignment" ;
+    dcterms:title "Version bump to 26.10.8 and changelog landing" ;
+    dcterms:description "Commit 8ea8bd3 aligned the version to 26.10.8 in mix.exs and landed the 26.10.2/26.10.3 changelog entries; the v26.10.8 tag (9f6103a) sits on top of it. Witnessed by the campaign court run (7/0) at HEAD da21f05." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:wo:v26.10.8:version-bump" ;
+    sj:standing "ALIVE" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    wg:commit "8ea8bd3" ;
+    wg:courtRun "7/0" ;
+    sj:replayIdentity "ex4pm:wo:v26.10.8:version-bump" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this workgraph never asserts a receipt of its own." .
+
+wg:wo-campaign-receipt a sj:WorkOrder ;
+    rdfs:label "WO-5: v26.10.8 campaign receipt" ;
+    dcterms:title "Campaign receipt documenting witnessed gates" ;
+    dcterms:description "Commit da21f05 landed docs/sjira/v26.10.8/CAMPAIGN-RECEIPT.md recording the witnessed court run (7 courts, 0 failures), HEAD 21b0855, and a clean in-sync working tree. This workgraph itself is a later doc-graph addition, not part of that receipt's subject." ;
+    sj:repository "seanchatmangpt/ex4pm" ;
+    sj:subject "ex4pm:wo:v26.10.8:campaign-receipt" ;
+    sj:standing "ALIVE" ;
+    sj:evidenceCeiling "EXECUTED_VERIFIED" ;
+    sj:authorityCeiling "CONSTRUCT" ;
+    sj:authorityRequirement "NONE" ;
+    wg:commit "da21f05" ;
+    wg:courtRun "7/0" ;
+    sj:replayIdentity "ex4pm:wo:v26.10.8:campaign-receipt" ;
+    sj:promotionRule "Standing advances only from an independent exact-head court receipt for the same subject; this workgraph never asserts a receipt of its own." .
+
+# -- Evidence anchors -----------------------------------------------------------
+
+wg:evidence-courts a sj:EvidenceRequirement ;
+    rdfs:label "Campaign court run" ;
+    dcterms:description "7 courts run, 0 failures at HEAD 21b0855, recorded in docs/sjira/v26.10.8/CAMPAIGN-RECEIPT.md. Measurements at that subject, not guarantees over arbitrary heads." ;
+    sj:pathScope "docs/sjira/v26.10.8/CAMPAIGN-RECEIPT.md" .
+
+wg:falsifier-stale-sha a sj:Falsifier ;
+    rdfs:label "Falsifier: stale SHA or court count" ;
+    dcterms:description "This workgraph is falsified if any cited SHA is absent from the branch's history, or the cited court count disagrees with the receipt file on disk at the cited HEAD." ;
+    sj:pathScope "docs/sjira/v26.10.8/WORKGRAPH.ttl", "docs/sjira/v26.10.8/CAMPAIGN-RECEIPT.md" .
