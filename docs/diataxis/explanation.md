@@ -112,6 +112,10 @@ rather than executing unreceipted
 
 ## Where the deeper material lives
 
+- `docs/diataxis/explanation/boundary-and-authority-law.md` — the full
+  authority chain (KNOWN/PROJECTED/AVAILABLE/ADMITTED/ALIVE/AUTHORIZED/DO)
+  with per-module file:line grounding; the Ash-layer variant lives in
+  `~/ash_ex4pm/docs/diataxis/reference/api.md`
 - `docs/ARCHITECTURE.md` — full architecture
 - `docs/CHICAGO.md` — testing discipline
 - `docs/FRONTIER-RELEASE-PROCESS-INTELLIGENCE.md` — release process

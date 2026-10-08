@@ -13,6 +13,11 @@ Documentation index for ex4pm.
   `diataxis/`).
 - `guides/`, `explanation/`, `reference/` — topical documents not yet folded
   into `diataxis/`.
+- `diataxis/explanation/boundary-and-authority-law.md` — the
+  KNOWN != PROJECTED != AVAILABLE != ADMITTED != ALIVE != AUTHORIZED != DO
+  authority chain as implemented in the core engine (receipted-but-authority-less
+  analytical runs, `operate/3` as the only DO path, ferroplan as a no-DO
+  planning law); the Ash-layer variant lives in `~/ash_ex4pm`.
 - `sjira/`, `thesis/`, `upstream-reports/` — semantic-jira records, design
   thesis, and cross-repo port reports.
 
