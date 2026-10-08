@@ -15,7 +15,7 @@ defmodule Ex4pm.MixProject do
     Application.put_env(:ash, :default_string_length_count, :codepoints)
   end
 
-  @version "26.10.1"
+  @version "26.10.8"
   @source_url "https://github.com/seanchatmangpt/ex4pm"
 
   def project do

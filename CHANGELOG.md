@@ -14,6 +14,57 @@ silence means unchanged; state it.
 
 ## [Unreleased]
 
+## [26.10.8] - 2026-10-08
+
+Version alignment release: `@version` 26.10.1 → 26.10.8, aligning the ex4pm
+and ash_ex4pm release trains on one version point. No code changes in this
+release; it also lands the previously in-flight 26.10.2/26.10.3 changelog
+entries whose code (OCEL writer, ETS evidence-store indexes) was already on
+main.
+
+### Public contract
+
+- `Ex4pm.OCEL.validate_envelope/1` required envelope keys: UNCHANGED.
+- `Ex4pm.Stream.Ingest.ingest_envelope/1,2` options: UNCHANGED.
+- `Ex4pm.Evidence.BRCE.execute/4` authority-map shape: UNCHANGED.
+
+## [26.10.3] - 2026-10-03
+
+New: `Ex4pm.OCEL.Writer` — the OCEL 2.0 JSON writer now lives DOWN-STACK in
+ex4pm (engine owns the wire format), pairing with the reader
+`Ex4pm.OCEL.normalize/1`. Consumers (ash_ex4pm, ash_pplan) project from the
+canonical `Ex4pm.EventLog` IR instead of building the envelope themselves.
+Surface: `encode/1` → `{:ok, String.t()}`, `encode_iodata/1` → `{:ok, iodata}`
+(per-event chunked so a 100k-event log never materializes one giant term),
+`encode_gzip/1` → `{:ok, binary}` via `:zlib` (no new deps). Laws, each
+court-witnessed in `test/ocel_writer_test.exs`: round-trip
+(`normalize(Jason.decode!(encode(log)))` reconstructs same events/objects),
+byte-identity (`IO.iodata_to_binary(encode_iodata(log)) == encode(log)`),
+gzip round-trip, and flat reductions/event scaling (1k vs 10k, ±5%).
+Non-`EventLog` subjects return `{:error, %Ex4pm.Refusal{}}` (never-raise).
+
+### Public contract
+
+- ADDED: `Ex4pm.OCEL.Writer.encode/1`, `encode_iodata/1`, `encode_gzip/1`
+  (`lib/ex4pm/ocel_writer.ex`) — new public surface.
+- `Ex4pm.OCEL.validate_envelope/1` required envelope keys: UNCHANGED.
+- `Ex4pm.Stream.Ingest.ingest_envelope/1,2` options: UNCHANGED.
+- `Ex4pm.Evidence.BRCE.execute/4` authority-map shape: UNCHANGED.
+
+## [26.10.2] - 2026-10-01
+
+Performance: `Ex4pm.Evidence.Store` keeps ETS secondary indexes on `subject_hash`
+and `parent_hash`, so `get_by_subject/1` and `get_by_parent/1` are indexed lookups
+instead of full-table scans (PR #53). The indexes stay exact even if a caller
+replaces an existing receipt hash. Invariant coverage for the indexed lookups in
+`test/evidence_store_index_test.exs`.
+
+### Public contract
+
+- `Ex4pm.OCEL.validate_envelope/1` required envelope keys: UNCHANGED.
+- `Ex4pm.Stream.Ingest.ingest_envelope/1,2` options: UNCHANGED.
+- `Ex4pm.Evidence.BRCE.execute/4` authority-map shape: UNCHANGED.
+
 ## [26.10.1] - 2026-10-01
 
 Real wasm4pm and ferroplan execution are first-class: the wasm4pm artifact is bundled and served by a
