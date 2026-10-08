@@ -1,3 +1,5 @@
+> **DEPRECATED**: beam4pm knowledge removed from ex4pm per 2fd3a21; historical document.
+
 # RAISE-EVIDENCE-DERIVED-ACTUATION-GUARANTEES (Raise, upstream: ggen_igniter/ggen)
 
 ## Evidence

@@ -1,3 +1,5 @@
+> **DEPRECATED**: beam4pm knowledge removed from ex4pm per 2fd3a21; historical document.
+
 # GENERATE-CROSS-REPO-ONTOLOGY-IMPORT-LOADER (Create, upstream: ggen_igniter)
 
 ## Evidence
