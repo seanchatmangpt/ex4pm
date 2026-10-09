@@ -176,12 +176,14 @@ v8:SJIRA-26108-001 a sj:WorkOrder ;
   sj:standing "ALIVE" ;
   sj:repository "seanchatmangpt/ex4pm" ;
   sj:baseSha "50071c47d795fe12c73afca884aa29a4deb36826" ;
+  sj:landedCommit "50071c47d795fe12c73afca884aa29a4deb36826" ;
+  sj:subjectSha "50071c47d795fe12c73afca884aa29a4deb36826" ;
   sj:replayIdentity "seanchatmangpt/ex4pm:v26.10.8:a2a" ;
   sj:acceptance "feat(a2a): capability cards from evidence surface (v1.0, generated)" ;
   sj:falsifier "mix test  # expect exit 0 at HEAD; a failure at the cited SHAs refutes" ;
   sj:authorityCeiling "CONSTRUCT" ;
   sj:evidenceCeiling "Receipt artifacts under docs/sjira/v26.10.8/ plus *.r.json court outputs; no runtime DO." ;
-  sj:requiresReceiptClass "docs/sjira/receipt" ;
+  sj:requiresReceiptClass "publication" ;
   sj:pathScope
     "priv" ,
     "scripts" ;
@@ -194,7 +196,6 @@ v8:SJIRA-26108-001 a sj:WorkOrder ;
   sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ;
     dcterms:description "the witnessing artifact docs/sjira/v26.10.8/CERTIFY-VERIFY.md no longer cites 50071c4 (witness-set change refutes)" ] ;
   sj:requiresEvidence "docs/sjira/v26.10.8/CERTIFY-VERIFY.md" ;
-  sj:receipt "50071c47d795fe12c73afca884aa29a4deb36826" ;
   sj:nextCheckpoint v8:cp-SJIRA-26108-001 ;
   prov:wasDerivedFrom
     <https://github.com/seanchatmangpt/ex4pm/commit/50071c47d795fe12c73afca884aa29a4deb36826> .
@@ -214,12 +215,14 @@ v8:SJIRA-26108-002 a sj:WorkOrder ;
   sj:standing "ALIVE" ;
   sj:repository "seanchatmangpt/ex4pm" ;
   sj:baseSha "92d480ff39ead31b70e9aca8040fb995ebfdf641" ;
+  sj:landedCommit "92d480ff39ead31b70e9aca8040fb995ebfdf641" ;
+  sj:subjectSha "92d480ff39ead31b70e9aca8040fb995ebfdf641" ;
   sj:replayIdentity "seanchatmangpt/ex4pm:v26.10.8:archive" ;
   sj:acceptance "docs(archive): move superseded ARD/PRD/requirements, jira v26.9.* waves, and diverged consumer/ diataxis copies into docs/archive/" ;
   sj:falsifier "mix test  # expect exit 0 at HEAD; a failure at the cited SHAs refutes" ;
   sj:authorityCeiling "CONSTRUCT" ;
   sj:evidenceCeiling "Receipt artifacts under docs/sjira/v26.10.8/ plus *.r.json court outputs; no runtime DO." ;
-  sj:requiresReceiptClass "docs/sjira/receipt" ;
+  sj:requiresReceiptClass "publication" ;
   sj:pathScope
     "docs" ;
   sj:projection
@@ -231,7 +234,6 @@ v8:SJIRA-26108-002 a sj:WorkOrder ;
     dcterms:description "the witnessing artifact docs/sjira/v26.10.8/candidates.jsonl no longer cites 92d480f (witness-set change refutes)" ] ;
   sj:requiresEvidence "docs/sjira/v26.10.8/CAMPAIGN-RECEIPT.md" ;
   sj:requiresEvidence "docs/sjira/v26.10.8/candidates.jsonl" ;
-  sj:receipt "92d480ff39ead31b70e9aca8040fb995ebfdf641" ;
   sj:nextCheckpoint v8:cp-SJIRA-26108-002 ;
   prov:wasDerivedFrom
     <https://github.com/seanchatmangpt/ex4pm/commit/92d480ff39ead31b70e9aca8040fb995ebfdf641> .
@@ -251,12 +253,14 @@ v8:SJIRA-26108-003 a sj:WorkOrder ;
   sj:standing "ALIVE" ;
   sj:repository "seanchatmangpt/ex4pm" ;
   sj:baseSha "6758bd7d305ea0125b0d2473c4bea2443b80fa5e" ;
+  sj:landedCommit "6758bd7d305ea0125b0d2473c4bea2443b80fa5e" ;
+  sj:subjectSha "6758bd7d305ea0125b0d2473c4bea2443b80fa5e" ;
   sj:replayIdentity "seanchatmangpt/ex4pm:v26.10.8:cards" ;
   sj:acceptance "fix(cards): v1.0 member-contract compliance (version, supportedInterfaces, skill tags)" ;
   sj:falsifier "mix test  # expect exit 0 at HEAD; a failure at the cited SHAs refutes" ;
   sj:authorityCeiling "CONSTRUCT" ;
   sj:evidenceCeiling "Receipt artifacts under docs/sjira/v26.10.8/ plus *.r.json court outputs; no runtime DO." ;
-  sj:requiresReceiptClass "docs/sjira/receipt" ;
+  sj:requiresReceiptClass "publication" ;
   sj:pathScope
     "priv" ,
     "scripts" ;
@@ -269,7 +273,6 @@ v8:SJIRA-26108-003 a sj:WorkOrder ;
   sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ;
     dcterms:description "the witnessing artifact docs/sjira/v26.10.8/CERTIFY-VERIFY.md no longer cites 6758bd7 (witness-set change refutes)" ] ;
   sj:requiresEvidence "docs/sjira/v26.10.8/CERTIFY-VERIFY.md" ;
-  sj:receipt "6758bd7d305ea0125b0d2473c4bea2443b80fa5e" ;
   sj:nextCheckpoint v8:cp-SJIRA-26108-003 ;
   prov:wasDerivedFrom
     <https://github.com/seanchatmangpt/ex4pm/commit/6758bd7d305ea0125b0d2473c4bea2443b80fa5e> .
@@ -289,12 +292,17 @@ v8:SJIRA-26108-004 a sj:WorkOrder ;
   sj:standing "ALIVE" ;
   sj:repository "seanchatmangpt/ex4pm" ;
   sj:baseSha "8915e8554f68c58b6e39525d7cb5b28f47858774" ;
+  sj:landedCommit "21b0855c20dead340da78bcc21d85f6986c84905" ;
+  sj:landedCommit "8915e8554f68c58b6e39525d7cb5b28f47858774" ;
+  sj:landedCommit "a165752a2e6a0e951ecbdbddea27cf5a58e572fe" ;
+  sj:landedCommit "cb400347436b7c24f60c08eca5b4ee2c4ec3606c" ;
+  sj:subjectSha "21b0855c20dead340da78bcc21d85f6986c84905" ;
   sj:replayIdentity "seanchatmangpt/ex4pm:v26.10.8:docs" ;
   sj:acceptance "docs: beam4pm deprecation banners + docs/README.md index; docs: cross-reference process-mining family (fleet campaign); docs: boundary and authority law explanation (core engine); docs: doc-hdit scaffolds for struct/type-heavy uncovered modules" ;
   sj:falsifier "mix test  # expect exit 0 at HEAD; a failure at the cited SHAs refutes" ;
   sj:authorityCeiling "CONSTRUCT" ;
   sj:evidenceCeiling "Receipt artifacts under docs/sjira/v26.10.8/ plus *.r.json court outputs; no runtime DO." ;
-  sj:requiresReceiptClass "docs/sjira/receipt" ;
+  sj:requiresReceiptClass "publication" ;
   sj:pathScope
     "docs" ;
   sj:projection
@@ -319,10 +327,6 @@ v8:SJIRA-26108-004 a sj:WorkOrder ;
   sj:requiresEvidence "docs/sjira/v26.10.8/CAMPAIGN-RECEIPT.md" ;
   sj:requiresEvidence "docs/sjira/v26.10.8/CERTIFY-VERIFY.md" ;
   sj:requiresEvidence "docs/sjira/v26.10.8/candidates.jsonl" ;
-  sj:receipt "8915e8554f68c58b6e39525d7cb5b28f47858774" ;
-  sj:receipt "a165752a2e6a0e951ecbdbddea27cf5a58e572fe" ;
-  sj:receipt "21b0855c20dead340da78bcc21d85f6986c84905" ;
-  sj:receipt "cb400347436b7c24f60c08eca5b4ee2c4ec3606c" ;
   sj:nextCheckpoint v8:cp-SJIRA-26108-004 ;
   prov:wasDerivedFrom
     <https://github.com/seanchatmangpt/ex4pm/commit/8915e8554f68c58b6e39525d7cb5b28f47858774> ,
@@ -338,19 +342,26 @@ v8:cp-SJIRA-26108-004 a sj:Checkpoint ;
 v8:SJIRA-26108-005 a sj:WorkOrder ;
   rdfs:label "SJIRA-26108-005: docs(sjira): v26.10.8 campaign receipt" ;
   dcterms:identifier "SJIRA-26108-005" ;
-  dcterms:title "sjira work axis (5 commit(s))" ;
-  dcterms:description "Converts the fleet admission run's machine-refused orders for ex4pm into; lawful JSONL candidates (docs/sjira/v26.10.8/candidates.jsonl): standing; UNKNOWN at entry, origin_authority pinned to; sj:objective-code-work-authority, base_sha expanded to full 40-hex,; structured acceptance/falsifier lists (prose-graph orders carry criteria (+14 more bullet(s))" ;
+  dcterms:title "sjira work axis (6 commit(s))" ;
+  dcterms:description "Converts the fleet admission run's machine-refused orders for ex4pm into; lawful JSONL candidates (docs/sjira/v26.10.8/candidates.jsonl): standing; UNKNOWN at entry, origin_authority pinned to; sj:objective-code-work-authority, base_sha expanded to full 40-hex,; structured acceptance/falsifier lists (prose-graph orders carry criteria (+17 more bullet(s))" ;
   sj:subject "seanchatmangpt/ex4pm:sjira@da21f05" ;
   sj:promotionRule "Standing may advance only from an independent exact-head court receipt binding this order member SHAs and a durable 5-field receipt." ;
   sj:standing "ALIVE" ;
   sj:repository "seanchatmangpt/ex4pm" ;
   sj:baseSha "da21f059dbfde465c04da0244cae1ff08e738530" ;
+  sj:landedCommit "34500898d2fd0bccddb0244913aa1efd2da1bcf6" ;
+  sj:landedCommit "437bb19381d934a5eabaea16d59cca95f6a3919f" ;
+  sj:landedCommit "669334e2dd40da25514756924b5ac6c48dc47352" ;
+  sj:landedCommit "cf09220a88616a34f27b5f2db31a99d26bd6fa4a" ;
+  sj:landedCommit "da21f059dbfde465c04da0244cae1ff08e738530" ;
+  sj:landedCommit "e7d9d77cfea2339989df0a24112c32045cbcc2fb" ;
+  sj:subjectSha "34500898d2fd0bccddb0244913aa1efd2da1bcf6" ;
   sj:replayIdentity "seanchatmangpt/ex4pm:v26.10.8:sjira" ;
-  sj:acceptance "docs(sjira): v26.10.8 campaign receipt; docs(sjira): v26.10.8 campaign workgraph; docs(sjira): v26.10.8 round-2 admission candidates (JSONL); docs(sjira): certify receipt drift verification at post-cards HEAD; docs(sjira): ex4pm certify receipt + replay seam fix" ;
+  sj:acceptance "docs(sjira): v26.10.8 campaign receipt; docs(sjira): v26.10.8 campaign workgraph; docs(sjira): v26.10.8 round-2 admission candidates (JSONL); docs(sjira): certify receipt drift verification at post-cards HEAD; docs(sjira): ex4pm certify receipt + replay seam fix; docs(sjira): regenerate v26.10.8 WORKGRAPH.ttl via gen_workgraph.py" ;
   sj:falsifier "mix test  # expect exit 0 at HEAD; a failure at the cited SHAs refutes" ;
   sj:authorityCeiling "CONSTRUCT" ;
   sj:evidenceCeiling "Receipt artifacts under docs/sjira/v26.10.8/ plus *.r.json court outputs; no runtime DO." ;
-  sj:requiresReceiptClass "docs/sjira/receipt" ;
+  sj:requiresReceiptClass "publication" ;
   sj:pathScope
     "docs" ;
   sj:projection
@@ -366,6 +377,8 @@ v8:SJIRA-26108-005 a sj:WorkOrder ;
     dcterms:description "commit 3450089 lands: docs(sjira): certify receipt drift verification at post-cards HEAD (UNKNOWN: no on-disk receipt/court artifact witnesses this commit)" ] ;
   sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 4 ;
     dcterms:description "commit e7d9d77 lands: docs(sjira): ex4pm certify receipt + replay seam fix (UNKNOWN: no on-disk receipt/court artifact witnesses this commit)" ] ;
+  sj:acceptanceItem [ a sj:AcceptanceCriterion ; sj:index 5 ;
+    dcterms:description "commit 437bb19 lands: docs(sjira): regenerate v26.10.8 WORKGRAPH.ttl via gen_workgraph.py (UNKNOWN: no on-disk receipt/court artifact witnesses this commit)" ] ;
   sj:falsifierItem [ a sj:Falsifier ; sj:index 0 ;
     dcterms:description "the witnessing artifact docs/sjira/v26.10.8/candidates.jsonl no longer cites da21f05 (witness-set change refutes)" ] ;
   sj:falsifierItem [ a sj:Falsifier ; sj:index 1 ;
@@ -376,18 +389,20 @@ v8:SJIRA-26108-005 a sj:WorkOrder ;
     dcterms:description "UNKNOWN: no on-disk receipt/court artifact witnesses 3450089; no falsifier command is available for this member commit" ] ;
   sj:falsifierItem [ a sj:Falsifier ; sj:index 4 ;
     dcterms:description "UNKNOWN: no on-disk receipt/court artifact witnesses e7d9d77; no falsifier command is available for this member commit" ] ;
+  sj:falsifierItem [ a sj:Falsifier ; sj:index 5 ;
+    dcterms:description "UNKNOWN: no on-disk receipt/court artifact witnesses 437bb19; no falsifier command is available for this member commit" ] ;
   sj:requiresEvidence "docs/sjira/v26.10.8/candidates.jsonl" ;
-  sj:receipt "da21f059dbfde465c04da0244cae1ff08e738530" ;
   sj:nextCheckpoint v8:cp-SJIRA-26108-005 ;
   prov:wasDerivedFrom
     <https://github.com/seanchatmangpt/ex4pm/commit/da21f059dbfde465c04da0244cae1ff08e738530> ,
     <https://github.com/seanchatmangpt/ex4pm/commit/669334e2dd40da25514756924b5ac6c48dc47352> ,
     <https://github.com/seanchatmangpt/ex4pm/commit/cf09220a88616a34f27b5f2db31a99d26bd6fa4a> ,
     <https://github.com/seanchatmangpt/ex4pm/commit/34500898d2fd0bccddb0244913aa1efd2da1bcf6> ,
-    <https://github.com/seanchatmangpt/ex4pm/commit/e7d9d77cfea2339989df0a24112c32045cbcc2fb> .
+    <https://github.com/seanchatmangpt/ex4pm/commit/e7d9d77cfea2339989df0a24112c32045cbcc2fb> ,
+    <https://github.com/seanchatmangpt/ex4pm/commit/437bb19381d934a5eabaea16d59cca95f6a3919f> .
 v8:cp-SJIRA-26108-005 a sj:Checkpoint ;
   rdfs:label "checkpoint: sjira axis" ;
   sj:checkpointOf v8:SJIRA-26108-005 ;
   sj:standing "ALIVE" ;
-  dcterms:description "checkpoint after 5 commit(s) on the sjira axis; standing inherited from the order, never asserted" .
+  dcterms:description "checkpoint after 6 commit(s) on the sjira axis; standing inherited from the order, never asserted" .
 
