@@ -177,3 +177,13 @@ target/release/doc-hdit certify   /tmp/hdit-v26108-rerun/ex4pm.inputs.regex.json
   repaired docs-side. Unblock locus: ggen-marketplace extractor
   (kill `table_row_scaffold` claims that ground against no symbol), then
   re-certify and re-land.
+## Extractor identity pin (ggen-marketplace fleet law [150], 2026-10-09)
+
+The chains in this doc (14c65e67... canonical, f357e486... /tmp replay) are
+**grandfathered**: they predate the extractor pin and remain valid as bound.
+Certify now embeds an `extractor` field (BLAKE3 over the extractor source
+bytes) into every new receipt and refuses typed (`REFUSED:EXTRACTOR_MISMATCH`)
+on replay when the current extractor identity differs from the recorded one;
+`--force-rebaseline` mints a NEW baseline receipt acknowledging the drift.
+Pass `--extractor scripts/gen_doc_surface.py` (ggen-marketplace) when
+replaying so new receipts carry the pin.
