@@ -1,0 +1,52 @@
+doc-hdit certify at ex4pm d9422d3 — inputs ex4pm.inputs.d9422d3.json (sha256 02385896b320c7e548cb65bba5d9fb86e2133cf66405ca26a47a8c36d6cf3846)
+extractor: ggen-marketplace hdit-v2-structs @ ba6f302c9, gen_doc_surface.py --engine regex
+binary: packs/rust-doc-hdit-pack/target/release/doc-hdit sha256 95738fe1...495 (uncommitted certify.rs/doc-hdit.rs lane edits present)
+verdict: REFUSED:DOC_HDIT_CERTIFY_GATE_FAIL (Phi_halluc 0.0791 > 0.001) — no receipt minted
+
+gate lines:
+cache: miss ae7f05dd4fb10444
+cache: derived stored 65f0d3e9eef9fe56
+cache: hit ae7f05dd4fb10444
+cache: derived hit 65f0d3e9eef9fe56
+REFUSED:DOC_HDIT_CERTIFY_GATE_FAIL:Phi_halluc value=0.0791 threshold=0.0010
+REFUSED:DOC_HDIT_CERTIFY:gate failure — no receipt minted
+PIPELINE_EXIT:1
+
+audit summary JSON:
+{
+  "phi": 0.0790983606557377,
+  "phi_vsa": 1.251079533842673,
+  "prose_artifacts": 90,
+  "q_density": 0.9209016393442623,
+  "s_coverage": 0.9104477611940298,
+  "s_coverage_raw": 0.2174,
+  "s_coverage_vsa": 0.196,
+  "s_coverage_report": {
+    "collapsed_delta": 0,
+    "covered": 1037,
+    "total": 1139,
+    "total_raw": 1139
+  },
+  "uncovered_modules_top10": [
+    {
+      "module": "Ex4pmWeb.Router",
+      "uncovered_items": 6
+    },
+    {
+      "module": "Ex4pm.Information.MermaidExport",
+      "uncovered_items": 2
+    },
+    {
+      "module": "Ex4pm.Qualification.ExposureCourt",
+      "uncovered_items": 2
+    },
+    {
+      "module": "Ex4pm.Wasm.Verify",
+      "uncovered_items": 2
+    },
+    {
+      "module": "Ex4pmEngine.Cognition.Prolog",
+      "uncovered_items": 2
+    }
+  ]
+}

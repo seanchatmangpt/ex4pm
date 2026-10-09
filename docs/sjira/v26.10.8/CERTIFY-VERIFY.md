@@ -108,3 +108,72 @@ refuted and this doc must be refreshed.
   ACCEPTED (hash `f357e486...`, S 0.9214). Remaining exposure: extraction is not
   bit-stable run-to-run, so the standing is bound to the committed inputs
   (`ex4pm.inputs.json`, sha256 `170be93f...`), not to HEAD unconditionally.
+
+## Re-baseline at merged main d9422d3 — REFUSED (falsifier fired, 2026-10-09)
+
+Lane ex4pm-receipt2 re-ran the canonical certify at ex4pm `d9422d3` with fresh
+cache in /tmp, per this doc's falsifier. **The ACCEPTED baseline above is
+refuted**: certify REFUSES at `d9422d3` on both extractor engines.
+
+- Inputs `ex4pm.inputs.d9422d3.json` (regex engine, canonical-surface:
+  595 modules / 2530 claims / 1051 paths / 1139 public items), sha256
+  `02385896b320c7e548cb65bba5d9fb86e2133cf66405ca26a47a8c36d6cf3846`:
+  **REFUSED:DOC_HDIT_CERTIFY_GATE_FAIL** — Phi_halluc **0.0791 > 0.001**.
+  S_coverage **0.9104 >= 0.90 PASS**, Q_density 0.9209 PASS. No receipt minted.
+- Inputs at the `auto` engine (tree-sitter path selected): total refusal —
+  S_coverage 0.5033 (9302 public items after extractor d10824331's str_key
+  expansion) and Phi_halluc 0.0258. Evidence: `ex4pm.certify.d9422d3.log`.
+- Old baseline (chain `14c65e67...`, subject cb400347, S 0.9253 / Phi 0.0)
+  is **superseded**: its subject no longer exists at HEAD. Chain file
+  `ex4pm.chain.jsonl` and inputs `ex4pm.inputs.json` kept unmodified as the
+  historical receipt chain.
+
+### Gate table at d9422d3 (regex engine, canonical surface)
+
+| gate | value | threshold | verdict |
+|---|---|---|---|
+| S_coverage | 0.9104 | >= 0.90 | PASS |
+| Phi_halluc | 0.0791 | <= 0.001 | **FAIL** |
+| Q_density | 0.9209 | >= 0.65 | PASS |
+
+### Drift cause (extractor-side, not a doc-surface regression)
+
+Extractor commit `d10824331` ("Elixir atom/string-key surface items", ggen-marketplace
+hdit-v2-structs) changed claim extraction: 397 `doc_string` claims were replaced by
+261 `table_row_scaffold` claims whose `object` is a raw table cell token ("len",
+"as_of", "fe99c07") that grounds against no code symbol — 200+ phantom claims,
+Phi 0.0 -> 0.0791. Separately, the `auto` engine now selects tree-sitter when
+installed, expanding the public surface 1139 -> 9302 items (str_key items,
+pub-gate bypassed) and collapsing S_coverage. Neither is a docs regression:
+coverage over the canonical surface still clears 0.90, so the fix locus is the
+extractor (ggen-marketplace `scripts/gen_doc_surface.py`), not ex4pm docs.
+
+### Replay
+
+Same recipe as above, plus engine pin and the new subject:
+
+```sh
+cd /Users/sac/ggen-marketplace
+python3 scripts/gen_doc_surface.py code /Users/sac/ex4pm --engine regex \
+  > /tmp/hdit-v26108-rerun/ex4pm.code.regex.json
+python3 scripts/gen_doc_surface.py doc /Users/sac/ex4pm --engine regex \
+  --code-json /tmp/hdit-v26108-rerun/ex4pm.code.regex.json \
+  > /tmp/hdit-v26108-rerun/ex4pm.doc.regex.json
+# merge as above (claims get id ex4pm-{i}; carry paths/directories/known_external)
+# ... -> /tmp/hdit-v26108-rerun/ex4pm.inputs.regex.json
+cd packs/rust-doc-hdit-pack
+target/release/doc-hdit vectorize /tmp/hdit-v26108-rerun/ex4pm.inputs.regex.json --cache /tmp/hdit-v26108-rerun/cache-regex
+target/release/doc-hdit certify   /tmp/hdit-v26108-rerun/ex4pm.inputs.regex.json courts/doc_quality.court \
+  --chain /tmp/hdit-v26108-rerun/ex4pm.chain.regex.jsonl --cache /tmp/hdit-v26108-rerun/cache-regex
+# expect REFUSED:DOC_HDIT_CERTIFY_GATE_FAIL (Phi_halluc 0.0791) until the extractor
+# stops emitting table_row_scaffold junk claims.
+```
+
+## Standing
+
+- ex4pm doc-hdit gate standing at HEAD d9422d3: **REFUSED** (Phi_halluc gate) —
+  bound to `ex4pm.inputs.d9422d3.json` (sha256 `02385896...`). The ACCEPTED
+  standing at cb400347 is historical; the standing at current HEAD cannot be
+  repaired docs-side. Unblock locus: ggen-marketplace extractor
+  (kill `table_row_scaffold` claims that ground against no symbol), then
+  re-certify and re-land.
