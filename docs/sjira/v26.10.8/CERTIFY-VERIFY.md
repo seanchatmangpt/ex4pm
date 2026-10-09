@@ -187,3 +187,64 @@ on replay when the current extractor identity differs from the recorded one;
 `--force-rebaseline` mints a NEW baseline receipt acknowledging the drift.
 Pass `--extractor scripts/gen_doc_surface.py` (ggen-marketplace) when
 replaying so new receipts carry the pin.
+
+## Re-certify at HEAD e4963ba — FAIL-honest (falsifier fired, 2026-10-09, lane R27)
+
+Re-ran extract → vectorize → audit → certify at ex4pm `e4963ba`, extractor
+ggen-marketplace `scripts/gen_doc_surface.py` working tree, sha256
+`4c862576ab63595f9cd0417b35341af3ec1001f49450e79bf2e4c291a4a4246f`
+(last landed commit on the file `d10824331`; the working tree carries
+lane-[152] scaffold-spec changes uncommitted — pin is the working-tree bytes
+above). **REFUSED:DOC_HDIT_CERTIFY_GATE_FAIL — Phi_halluc 0.0046 > 0.001**
+(offending claims 1436, 1437, 1497). S_coverage 0.9104 PASS, Q_density 0.9954
+PASS. No receipt minted. The d9422d3 REFUSED rebaseline above stands; this run
+confirms it at the newer HEAD. Artifacts: `/tmp/hdit-r27/regex/` (inputs.json,
+audit output).
+
+### The 3 phantom claims are NOT doc defects — no doc-side repair exists
+
+The three offending rows are `param_table` claims in
+`docs/scaffolds/reference.md` (sections `Ex4pmEngine.Cognition.Ocpq` and
+`Ex4pmEngine.WorkflowNet`): `evaluate_box`, `evaluate_box_indexed`,
+`simulate_traces`. All three symbols **exist in the real code surface**:
+
+- `lib/ex4pm_engine/cognition/ocpq.ex:139` — `evaluate_box/3` (with `@doc`)
+- `lib/ex4pm_engine/cognition/ocpq.ex:144` — `evaluate_box_indexed/3`
+- `lib/ex4pm_engine/workflow_net.ex:439` — `simulate_traces/2` (with `@doc`)
+
+Git history (`git log -S` for each) shows no removal or rename since
+`725f495` (umbrella flatten). The doc rows name the real current symbols —
+editing or deleting them would be fabrication in the other direction. The
+phantom verdict is an **extractor defect**: the regex engine's
+`scan_elixir` depth tracker counts `end` keywords without matching `do`
+(every anonymous `fn -> ... end` decrements module depth), so
+`lib/ex4pm_engine/cognition/ocpq.ex` extracts to **0 public items** and
+`Ex4pmEngine.WorkflowNet` loses everything after its first `fn`. The
+tree-sitter (`auto`) engine extracts all three symbols correctly, but its
+surface retains the d9422d3-era public-item expansion (9320 items vs 1154),
+which fails S_coverage (~0.50 at d9422d3); it was not a viable certify path
+either. The landed lane-[152] scaffold-spec change does not cover these
+claims: they are `param_table` kind, not scaffold cells.
+
+### Disposition
+
+| symbol | doc row | code truth | disposition |
+|---|---|---|---|
+| `evaluate_box` | docs/scaffolds/reference.md:396,796 | ocpq.ex:139, real | keep row; blocker upstream |
+| `evaluate_box_indexed` | docs/scaffolds/reference.md:398,798 | ocpq.ex:144, real | keep row; blocker upstream |
+| `simulate_traces` | docs/scaffolds/reference.md:413,810 | workflow_net.ex:439, real | keep row; blocker upstream |
+
+**Remaining blocker is upstream**: ggen-marketplace `scripts/gen_doc_surface.py`
+regex engine must (a) not decrement module depth on `end` tokens belonging to
+`fn`/`case`/`receive`/`try` blocks opened without `do` (`fn ->`), and (b) extend
+the scaffold-spec Phi exclusion (or fix extraction) to `param_table` claims that
+ground against symbols the regex extractor itself dropped. Once landed, re-run
+the recipe above at that extractor pin; this lane makes no further doc edits.
+
+### Gate table at e4963ba (regex engine, working-tree extractor pin 4c862576ab)
+
+| gate | value | threshold | verdict |
+|---|---|---|---|
+| S_coverage | 0.9104 | >= 0.90 | PASS |
+| Phi_halluc | 0.0046 (claims 1436, 1437, 1497) | <= 0.001 | **FAIL** |
+| Q_density | 0.9954 | >= 0.65 | PASS |
