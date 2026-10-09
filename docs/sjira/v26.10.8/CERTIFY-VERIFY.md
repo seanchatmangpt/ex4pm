@@ -196,6 +196,7 @@ replaying so new receipts carry the pin.
 Re-ran extract → vectorize → audit → certify at ex4pm `e4963ba`, extractor
 ggen-marketplace `scripts/gen_doc_surface.py` working tree, sha256
 `4c862576ab63595f9cd0417b35341af3ec1001f49450e79bf2e4c291a4a4246f`
+<!-- superseded-by f51d81ac4f7e4119dff950327237effee4968f4aa9aba52c7d62c5362f441fa9 as-of 2026-10-09 (R34); pin retained as historical subject identity — REFUSED run, no live-standing claim. -->
 (last landed commit on the file `d10824331`; the working tree carries
 lane-[152] scaffold-spec changes uncommitted — pin is the working-tree bytes
 above). **REFUSED:DOC_HDIT_CERTIFY_GATE_FAIL — Phi_halluc 0.0046 > 0.001**
