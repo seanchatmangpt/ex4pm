@@ -72,11 +72,11 @@ STANDING:
 
 | Era | Core Architectural Mechanism | Primary Verification Module | Execution Artifact |
 |---|---|---|---|
-| **2026** | 1-Safe Sound OCPN + 5D Conformance | [`Ex4pmEngine.OCPN.SoundnessEngine`](file:///Users/sac/ex4pm/apps/ex4pm_engine/lib/ex4pm_engine/ocpn/soundness_engine.ex) | 647k Event Streaming ($>570\text{k ev/s}$) |
-| **2026** | Automated OCEL 2.0 to LaTeX Export | [`Ex4pmEngine.OcelToLatex`](file:///Users/sac/ex4pm/apps/ex4pm_engine/lib/ex4pm_engine/ocel_to_latex.ex) | [`generated_ocel_benchmark_tables.tex`](file:///Users/sac/ex4pm/docs/thesis/chapters/generated_ocel_benchmark_tables.tex) |
-| **2030** | Unified Hypergraph (Ash + R2RML + OCPN) | [`Ex4pmEngine.Hypergraph`](file:///Users/sac/ex4pm/apps/ex4pm_engine/lib/ex4pm_engine/hypergraph.ex) | Ash $\to$ R2RML + 1-Safe OCPN |
-| **2030** | Generative Autonomic Sagas | [`Ex4pmEngine.GenerativeAutonomic`](file:///Users/sac/ex4pm/apps/ex4pm_engine/lib/ex4pm_engine/generative_autonomic.ex) | In-Memory Reactor Hot-Reloading |
-| **2030** | Cryptographic Capability Mesh | [`Ex4pmEvidence.CapabilityMesh`](file:///Users/sac/ex4pm/apps/ex4pm_evidence/lib/ex4pm_evidence/capability_mesh.ex) | Merkle DAG of W3C EARL 1.0 Proofs |
-| **2040** | Quantum Superpositional Petri Nets | [`Ex4pmEngine.QuantumProcess`](file:///Users/sac/ex4pm/apps/ex4pm_engine/lib/ex4pm_engine/quantum_process.ex) | State Vectors in Hilbert Space $|M\rangle$ |
-| **2040** | Zero-Knowledge OCPN (zk-OCPN) | [`Ex4pmEngine.ZkOcpn`](file:///Users/sac/ex4pm/apps/ex4pm_engine/lib/ex4pm_engine/zk_ocpn.ex) | $\mathcal{O}(1)$ R1CS Polynomial Verification |
-| **2040** | Topos Sheaf Morphogenesis | [`Ex4pmEngine.Topos`](file:///Users/sac/ex4pm/apps/ex4pm_engine/lib/ex4pm_engine/topos.ex) | Categorical Soundness Functor $\mathcal{F}$ |
+| **2026** | 1-Safe Sound OCPN + 5D Conformance | [`Ex4pmEngine.OCPN.SoundnessEngine`](../../lib/ex4pm_engine/ocpn/soundness_engine.ex) | 647k Event Streaming ($>570\text{k ev/s}$) |
+| **2026** | Automated OCEL 2.0 to LaTeX Export | [`Ex4pmEngine.OcelToLatex`](../../lib/ex4pm_engine/ocel_to_latex.ex) | [`generated_ocel_benchmark_tables.tex`](../thesis/chapters/generated_ocel_benchmark_tables.tex) |
+| **2030** | Unified Hypergraph (Ash + R2RML + OCPN) | [`Ex4pmEngine.Hypergraph`](../../lib/ex4pm_engine/hypergraph.ex) | Ash $\to$ R2RML + 1-Safe OCPN |
+| **2030** | Generative Autonomic Sagas | [`Ex4pmEngine.GenerativeAutonomic`](../../lib/ex4pm_engine/generative_autonomic.ex) | In-Memory Reactor Hot-Reloading |
+| **2030** | Cryptographic Capability Mesh | [`Ex4pmEvidence.CapabilityMesh`](../../lib/ex4pm_evidence/capability_mesh.ex) | Merkle DAG of W3C EARL 1.0 Proofs |
+| **2040** | Quantum Superpositional Petri Nets | [`Ex4pmEngine.QuantumProcess`](../../lib/ex4pm_engine/quantum_process.ex) | State Vectors in Hilbert Space $|M\rangle$ |
+| **2040** | Zero-Knowledge OCPN (zk-OCPN) | [`Ex4pmEngine.ZkOcpn`](../../lib/ex4pm_engine/zk_ocpn.ex) | $\mathcal{O}(1)$ R1CS Polynomial Verification |
+| **2040** | Topos Sheaf Morphogenesis | [`Ex4pmEngine.Topos`](../../lib/ex4pm_engine/topos.ex) | Categorical Soundness Functor $\mathcal{F}$ |
