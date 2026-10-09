@@ -292,3 +292,5 @@ stand unchanged.
 `docs/sjira/v26.10.8/`; the d9422d3 REFUSED rebaseline above is retired (struck,
 not deleted) with this receipt as the superseding evidence. Artifacts of record:
 `/tmp/hdit-r49/regex/`.
+
+Gated under the module-level denominator law (ggen-marketplace docs/sjira/v26.10.8/DENOMINATOR-SCOPE-DECISION.md @0f3d840ff); per-function coverage figures are the report-only layer. As-of 2026-10-09.
