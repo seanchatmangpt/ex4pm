@@ -171,12 +171,15 @@ target/release/doc-hdit certify   /tmp/hdit-v26108-rerun/ex4pm.inputs.regex.json
 
 ## Standing
 
-- ex4pm doc-hdit gate standing at HEAD d9422d3: **REFUSED** (Phi_halluc gate) —
+- ~~ex4pm doc-hdit gate standing at HEAD d9422d3: **REFUSED** (Phi_halluc gate) —
   bound to `ex4pm.inputs.d9422d3.json` (sha256 `02385896...`). The ACCEPTED
   standing at cb400347 is historical; the standing at current HEAD cannot be
   repaired docs-side. Unblock locus: ggen-marketplace extractor
   (kill `table_row_scaffold` claims that ground against no symbol), then
-  re-certify and re-land.
+  re-certify and re-land.~~ **RETIRED 2026-10-09 (lane R49)**: the d9422d3 REFUSED
+  rebaseline was an extractor defect, not a docs defect — see the ACCEPTED
+  re-certification below; its blocker (the `fn`-depth tracker in `scan_elixir`) is
+  fixed upstream.
 ## Extractor identity pin (ggen-marketplace fleet law [150], 2026-10-09)
 
 The chains in this doc (14c65e67... canonical, f357e486... /tmp replay) are
@@ -248,3 +251,43 @@ the recipe above at that extractor pin; this lane makes no further doc edits.
 | S_coverage | 0.9104 | >= 0.90 | PASS |
 | Phi_halluc | 0.0046 (claims 1436, 1437, 1497) | <= 0.001 | **FAIL** |
 | Q_density | 0.9954 | >= 0.65 | PASS |
+
+## Re-certify ACCEPTED at HEAD 17e2831 (extractor fix b99942bdb, 2026-10-09, lane R49)
+
+Executed the R27 re-run recipe above at ex4pm `17e28316f6d35982be20aa6941bdc67ab11508ab`
+with the post-fix ggen-marketplace extractor `scripts/gen_doc_surface.py` at commit
+`b99942bdb` ("fix(doc-surface): count fn-openers in scan_elixir block depth",
+working tree clean for that file).
+
+- **Extractor pin (sha256 of extractor source)**:
+  `f51d81ac4f7e4119dff950327237effee4968f4aa9aba52c7d62c5362f441fa9`
+  (rotated from `4c862576ab...` per R34's +34/-1 edit; recorded at certify time).
+  Certify's embedded `extractor` field (BLAKE3 over the same source):
+  `c3e5ff52ebc01217335fcab5db67f232096bfda73304b6eb8652c2fe1a24d49b`.
+- **Receipt (ACCEPTED)**: chain `ex4pm.chain.17e2831.jsonl`, hash
+  `29e4c748dff0577753a3c7a03787fb17e49ef855fb1f1667f25e1593d3980bab`,
+  parent `""`, subject
+  `605451771d36a3010669f368164233138f861a342db384dc53dfcdbed713de84`,
+  inputs `ex4pm.inputs.17e2831.json` (sha256
+  `910ac0655a69b148270397ed47496d21048f8c9ae5d661207ccff23b8bdac3c9`;
+  595 modules / 2360 claims / 1054 paths).
+
+### Gate table at 17e2831 (regex engine, extractor pin f51d81ac)
+
+| gate | value | threshold | verdict |
+|---|---|---|---|
+| S_coverage | 0.9150 | >= 0.90 | PASS |
+| Phi_halluc | 0.0000 | <= 0.001 | PASS |
+| Q_density | 1.0000 | >= 0.65 | PASS |
+
+**ACCEPTED**, exit 0. All three R27 phantoms now ground: `evaluate_box`,
+`evaluate_box_indexed`, `simulate_traces` are witnessed present in the extracted
+code surface (ocpq.ex / workflow_net.ex) after the `fn`-depth fix — the doc rows
+stand unchanged.
+
+### Landing
+
+`ex4pm.inputs.17e2831.json` + `ex4pm.chain.17e2831.jsonl` committed under
+`docs/sjira/v26.10.8/`; the d9422d3 REFUSED rebaseline above is retired (struck,
+not deleted) with this receipt as the superseding evidence. Artifacts of record:
+`/tmp/hdit-r49/regex/`.
