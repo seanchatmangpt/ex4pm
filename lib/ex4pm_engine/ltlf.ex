@@ -24,25 +24,41 @@ defmodule Ex4pmEngine.LTLf do
             | {:or, [t()]}
   end
 
+  @type check_result :: :ok | {:violation, term()}
+
+  @type evaluation :: %{
+          required(:satisfied?) => boolean(),
+          required(:total_formulas) => non_neg_integer(),
+          required(:violations_count) => non_neg_integer(),
+          required(:violations) => [{Formula.t(), term()}]
+        }
+
+  @spec response(term(), term()) :: {:response, String.t(), String.t()}
   @doc "Constructs a Response(A, B) constraint: whenever A occurs, B must eventually occur."
   def response(a, b), do: {:response, to_string(a), to_string(b)}
 
   @doc "Constructs a Precedence(A, B) constraint: B cannot occur unless A has already occurred."
+  @spec precedence(term(), term()) :: {:precedence, String.t(), String.t()}
   def precedence(a, b), do: {:precedence, to_string(a), to_string(b)}
 
   @doc "Constructs a Non-Coexistence(A, B) constraint: A and B cannot both occur in the same trace."
+  @spec non_coexistence(term(), term()) :: {:non_coexistence, String.t(), String.t()}
   def non_coexistence(a, b), do: {:non_coexistence, to_string(a), to_string(b)}
 
   @doc "Constructs a Chain-Response(A, B) constraint: whenever A occurs, B must occur immediately next."
+  @spec chain_response(term(), term()) :: {:chain_response, String.t(), String.t()}
   def chain_response(a, b), do: {:chain_response, to_string(a), to_string(b)}
 
   @doc "Constructs an Exactly-Once(A) constraint: A must occur exactly once in the trace."
+  @spec exactly_once(term()) :: {:exactly_once, String.t()}
   def exactly_once(a), do: {:exactly_once, to_string(a)}
 
   @doc "Constructs an Absence(A) constraint: A must never occur in the trace."
+  @spec absence(term()) :: {:absence, String.t()}
   def absence(a), do: {:absence, to_string(a)}
 
   @doc "Convenience evaluator returning a simple boolean satisfied? result."
+  @spec evaluate([String.t()], Formula.t() | [Formula.t()]) :: boolean()
   def evaluate(trace, formula) do
     evaluate_trace(trace, formula).satisfied?
   end
@@ -52,6 +68,7 @@ defmodule Ex4pmEngine.LTLf do
   `trace` is a list of activity strings.
   Returns `%{satisfied?: boolean(), violations: [tuple()]}`.
   """
+  @spec evaluate_trace([String.t()], [Formula.t()]) :: evaluation()
   def evaluate_trace(trace, formulas) when is_list(trace) and is_list(formulas) do
     violations =
       Enum.flat_map(formulas, fn formula ->
@@ -69,10 +86,12 @@ defmodule Ex4pmEngine.LTLf do
     }
   end
 
+  @spec evaluate_trace([String.t()], Formula.t()) :: evaluation()
   def evaluate_trace(trace, single_formula) when is_list(trace) and is_tuple(single_formula) do
     evaluate_trace(trace, [single_formula])
   end
 
+  @spec check_formula([String.t()], Formula.t()) :: check_result()
   # 1. Response(A, B): Every occurrence of A must be followed by at least one B
   def check_formula(trace, {:response, a, b}) do
     indexed = Enum.with_index(trace)

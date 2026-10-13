@@ -22,6 +22,55 @@ defmodule Ex4pmEngine.OCPN do
 
   alias Ex4pmEngine.OCPN
 
+  @type id :: String.t()
+
+  @typedoc "Typed place: `%{id, object_type, initial?, terminal?}`"
+  @type place :: %{
+          required(:id) => String.t(),
+          required(:object_type) => String.t(),
+          required(:initial?) => boolean(),
+          required(:terminal?) => boolean()
+        }
+
+  @typedoc "Transition: `%{id, label, object_types}`"
+  @type transition :: %{
+          required(:id) => String.t(),
+          required(:label) => String.t(),
+          required(:object_types) => [String.t()]
+        }
+
+  @typedoc "Typed arc: `%{source, target, object_type, variable}`"
+  @type arc :: %{
+          required(:source) => String.t(),
+          required(:target) => String.t(),
+          required(:object_type) => String.t(),
+          required(:variable) => atom()
+        }
+
+  @type t :: %OCPN{
+          id: id() | nil,
+          name: String.t(),
+          object_types: [String.t()],
+          places: %{required(String.t()) => place()},
+          transitions: %{required(String.t()) => transition()},
+          arcs: [arc()],
+          metadata: map()
+        }
+
+  @type violation :: {:orphan_creation, String.t(), String.t()} | {:silent_token_destruction, String.t(), String.t()}
+
+  @type conservation_result ::
+          {:ok, :conserved} | {:error, {:token_conservation_violated, [violation()]}}
+
+  @type soundness_summary :: %{
+          required(:object_type) => String.t(),
+          required(:place_count) => non_neg_integer(),
+          required(:transition_count) => non_neg_integer(),
+          required(:arc_count) => non_neg_integer(),
+          required(:sound?) => boolean()
+        }
+
+  @spec new(term(), Enumerable.t(), keyword()) :: t()
   @doc "Constructs a new Object-Centric Petri Net."
   def new(id, object_types, opts \\ []) do
     %OCPN{
@@ -31,6 +80,7 @@ defmodule Ex4pmEngine.OCPN do
     }
   end
 
+  @spec add_place(t(), term(), term(), keyword()) :: t()
   @doc "Adds a typed place to the OCPN."
   def add_place(%OCPN{} = net, place_id, object_type, opts \\ []) do
     place = %{
@@ -43,6 +93,7 @@ defmodule Ex4pmEngine.OCPN do
     %{net | places: Map.put(net.places, place.id, place)}
   end
 
+  @spec add_transition(t(), term(), term(), Enumerable.t()) :: t()
   @doc "Adds a transition to the OCPN."
   def add_transition(%OCPN{} = net, trans_id, label, involved_object_types) do
     trans = %{
@@ -54,6 +105,7 @@ defmodule Ex4pmEngine.OCPN do
     %{net | transitions: Map.put(net.transitions, trans.id, trans)}
   end
 
+  @spec add_arc(t(), term(), term(), term(), variable :: atom()) :: t()
   @doc "Adds a typed arc to the OCPN."
   def add_arc(%OCPN{} = net, source, target, object_type, variable \\ :x) do
     arc = %{
@@ -72,6 +124,7 @@ defmodule Ex4pmEngine.OCPN do
   the number of input tokens consumed matches the output tokens produced
   or explicitly transitions to terminal/consumed state.
   """
+  @spec verify_token_conservation(t()) :: conservation_result()
   def verify_token_conservation(%OCPN{} = net) do
     violations =
       Enum.flat_map(net.transitions, fn {t_id, trans} ->
@@ -103,6 +156,8 @@ defmodule Ex4pmEngine.OCPN do
   Projects the OCPN onto a single object type ot, yielding a standard Workflow Net.
   Verifies 1-safe soundness on the projection.
   """
+  @spec project_and_verify_soundness(t(), term()) ::
+          {:ok, soundness_summary()} | {:error, {:invalid_source_place, non_neg_integer()}} | {:error, {:invalid_sink_place, non_neg_integer()}}
   def project_and_verify_soundness(%OCPN{} = net, object_type) do
     ot = to_string(object_type)
     places = Map.filter(net.places, fn {_, p} -> p.object_type == ot end)

@@ -23,6 +23,35 @@ defmodule Ex4pmEngine.DAPN do
             | :always_true
   end
 
+  @type vmap :: %{optional(String.t() | atom()) => term()}
+  @type marking :: [String.t()]
+  @type transition_def :: %{
+          required(:inputs) => [String.t()],
+          required(:outputs) => [String.t()],
+          required(:label) => term(),
+          optional(:guard) => Guard.t() | nil
+        }
+  @type dapn_spec :: %{
+          required(:transitions) => %{required(term()) => transition_def()},
+          optional(:initial_marking) => [String.t()],
+          optional(:final_marking) => [String.t()]
+        }
+  @type trace_event :: %{
+          required(atom() | binary()) => term()
+        }
+
+  @type execution_result ::
+          {:ok,
+           %{
+             required(:satisfied?) => true,
+             required(:final_marking) => marking(),
+             required(:final_env) => vmap(),
+             required(:fired_transitions) => [{term(), String.t() | nil, map()}]
+           }}
+          | {:error, {:guard_or_control_violation, String.t() | nil, marking(), vmap()}}
+          | {:error, {:unconsumed_tokens_at_end, marking()}}
+
+  @spec evaluate_guard(Guard.t() | nil, vmap()) :: boolean()
   @doc "Evaluates a first-order guard against an accumulated attribute environment map."
   def evaluate_guard(:always_true, _vmap), do: true
   def evaluate_guard(nil, _vmap), do: true
@@ -94,6 +123,7 @@ defmodule Ex4pmEngine.DAPN do
   defp apply_op(:in, actual, expected), do: is_list(expected) and actual in expected
   defp apply_op(_op, _actual, _expected), do: false
 
+  @spec can_fire?(marking(), [String.t()], Guard.t() | nil, vmap()) :: boolean()
   @doc """
   Checks if a DAPN transition can fire given current marking and attribute dictionary.
   """
@@ -108,6 +138,7 @@ defmodule Ex4pmEngine.DAPN do
   Simulates execution of a data-aware trace over a DAPN specification with cumulative variable propagation.
   `trace` is a list of `%{activity: String.t(), attributes: map()}` events.
   """
+  @spec execute_dapn_trace([trace_event()], dapn_spec(), vmap()) :: execution_result()
   def execute_dapn_trace(trace, dapn_spec, initial_env \\ %{})
       when is_list(trace) and is_map(dapn_spec) and is_map(initial_env) do
     transitions = Map.fetch!(dapn_spec, :transitions)

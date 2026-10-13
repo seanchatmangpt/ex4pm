@@ -37,7 +37,7 @@ defmodule Ex4pmEngine.StochasticProfiler do
 
           {count, case_seq} =
             Enum.reduce(lines, {0, case_sequences}, fn line, {acc, cs_acc} ->
-              case Jason.decode(line) do
+              case decode_line(line) do
                 {:ok, json} when is_map(json) ->
                   json
                   |> events_from()
@@ -220,5 +220,12 @@ defmodule Ex4pmEngine.StochasticProfiler do
     end
 
     {n + 1, Map.put(cs, case_id, act)}
+  end
+
+  # OTP 27 :json raises on malformed input; map to the Jason.decode/1 tuple shape.
+  defp decode_line(line) do
+    {:ok, :json.decode(line)}
+  rescue
+    _ -> {:error, :invalid_json}
   end
 end

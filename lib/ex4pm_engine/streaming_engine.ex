@@ -32,7 +32,7 @@ defmodule Ex4pmEngine.StreamingEngine do
           tables = {activities_table, objects_table, durations_table}
 
           Enum.reduce(lines, 0, fn line, acc ->
-            case Jason.decode(line) do
+            case decode_line(line) do
               {:ok, %{"ocel:activity" => act} = json} ->
                 acc +
                   record(
@@ -122,5 +122,12 @@ defmodule Ex4pmEngine.StreamingEngine do
 
     if duration, do: :ets.insert(durations_table, {act, duration})
     1
+  end
+
+  # OTP 27 :json raises on malformed input; map to the Jason.decode/1 tuple shape.
+  defp decode_line(line) do
+    {:ok, :json.decode(line)}
+  rescue
+    _ -> {:error, :invalid_json}
   end
 end

@@ -14,7 +14,7 @@ defmodule Ex4pmEngine.Reactors.SelfConformanceReactor.StreamOcel do
         |> Stream.reject(&(&1 == ""))
         |> Stream.take(limit)
         |> Stream.map(fn line ->
-          case Jason.decode(line) do
+          case decode_line(line) do
             {:ok, json} ->
               activity = json["ocel:activity"] || "unknown"
               eid = json["ocel:eid"] || "ev_#{System.unique_integer([:positive])}"
@@ -312,6 +312,13 @@ defmodule Ex4pmEngine.Reactors.SelfConformanceReactor do
          receipt: ev.receipt
        }}
     end)
+  end
+
+  # OTP 27 :json raises on malformed input; map to the Jason.decode/1 tuple shape.
+  defp decode_line(line) do
+    {:ok, :json.decode(line)}
+  rescue
+    _ -> {:error, :invalid_json}
   end
 
   return(:final)

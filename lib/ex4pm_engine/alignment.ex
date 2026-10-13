@@ -16,6 +16,14 @@ defmodule Ex4pmEngine.Alignment do
   defmodule Move do
     @enforce_keys [:type, :cost]
     defstruct [:type, :log_activity, :model_transition, :cost]
+
+    @type move_type :: :sync | :log_only | :model_only
+    @type t :: %__MODULE__{
+            type: move_type(),
+            log_activity: String.t() | nil,
+            model_transition: String.t() | nil,
+            cost: float()
+          }
   end
 
   defmodule Result do
@@ -39,8 +47,35 @@ defmodule Ex4pmEngine.Alignment do
       cost: 0.0,
       exact_match?: false
     ]
+
+    @type net_spec :: %{
+            required(:transitions) => %{
+              required(term()) => %{
+                required(:inputs) => [String.t()],
+                required(:outputs) => [String.t()],
+                required(:label) => String.t() | nil
+              }
+            },
+            optional(:initial_marking) => [String.t()],
+            optional(:final_marking) => [String.t()]
+          }
+
+    @type t :: %__MODULE__{
+            moves: [Move.t()],
+            total_cost: float(),
+            fitness: float(),
+            trace_length: non_neg_integer(),
+            model_moves_count: non_neg_integer(),
+            log_moves_count: non_neg_integer(),
+            sync_moves_count: non_neg_integer(),
+            cost: float(),
+            exact_match?: boolean()
+          }
   end
 
+  @type alignment_outcome :: {:ok, Result.t()} | {:error, term()}
+
+  @spec align([String.t()], Result.net_spec(), keyword()) :: Result.t() | {:error, term()}
   @doc """
   Direct alignment API for trace and Petri Net / Workflow Net.
   Returns `%Result{}` with `.cost` and `.exact_match?`.
@@ -58,6 +93,7 @@ defmodule Ex4pmEngine.Alignment do
 
   `transitions` is a map of `%{trans_name => %{inputs: [places], outputs: [places], label: String.t()}}`.
   """
+  @spec align_trace([String.t()], Result.net_spec(), keyword()) :: alignment_outcome()
   def align_trace(trace, net_spec, opts \\ []) when is_list(trace) and is_map(net_spec) do
     transitions = Map.fetch!(net_spec, :transitions)
     initial_marking = Map.get(net_spec, :initial_marking, ["p_in"]) |> Enum.sort()
@@ -206,6 +242,7 @@ defmodule Ex4pmEngine.Alignment do
   Avoids single-case flattening and handles object divergence/convergence.
   `ocel_events` is a list of `%{activity: String.t(), omap: [String.t()]}`.
   """
+  @spec align_ocpn([map()], Result.net_spec(), keyword()) :: alignment_outcome()
   def align_ocpn(ocel_events, ocpn_spec, opts \\ [])
       when is_list(ocel_events) and is_map(ocpn_spec) do
     # Extract activities while preserving omap context
