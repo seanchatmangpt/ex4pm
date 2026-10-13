@@ -16,11 +16,29 @@ defmodule Ex4pmEngine.Choreography do
   defmodule Channel do
     @enforce_keys [:name, :source_agent, :target_agent]
     defstruct [:name, :source_agent, :target_agent, capacity: :infinity]
+
+    @type t :: %__MODULE__{
+            name: term(),
+            source_agent: term(),
+            target_agent: term(),
+            capacity: pos_integer() | :infinity
+          }
   end
 
   defmodule AgentNet do
     @enforce_keys [:id, :net]
     defstruct [:id, :net, sends: %{}, receives: %{}]
+
+    @type t :: %__MODULE__{
+            id: term(),
+            net: %{
+              required(:transitions) => map(),
+              required(:initial_marking) => [String.t()],
+              required(:final_marking) => [String.t()]
+            },
+            sends: %{required(term()) => term()},
+            receives: %{required(term()) => term()}
+          }
   end
 
   defmodule Report do
@@ -32,8 +50,17 @@ defmodule Ex4pmEngine.Choreography do
       :composite_reachable_states,
       counterexamples: []
     ]
+
+    @type t :: %__MODULE__{
+            sound?: boolean(),
+            orphan_messages?: boolean(),
+            deadlocks: [term()],
+            composite_reachable_states: non_neg_integer(),
+            counterexamples: [term()]
+          }
   end
 
+  @spec verify_choreography([AgentNet.t()], [Channel.t()]) :: Report.t()
   @doc """
   Composes two or more communicating agents over designated message channels and verifies choreography soundness.
   """
