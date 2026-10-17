@@ -2,6 +2,8 @@ import Config
 
 config :logger, level: :info
 
+config :ash, default_string_length_count: :codepoints
+
 config :ex4pm, ash_domains: [Ex4pmDomain, Ex4pm.Domain]
 
 config :ash_admin,
