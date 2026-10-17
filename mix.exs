@@ -161,21 +161,16 @@ defmodule Ex4pm.MixProject do
         "docs/ARCHITECTURE.md",
         "docs/FERROPLAN-RUNTIME.md",
         "docs/ALGORITHM-REGISTRY-GENERATION.md",
-        "docs/ARD-v26.9.x-wasm4pm-phase1.md",
-        "CHANGELOG.md",
-        "docs/consumer/tutorials.md",
-        "docs/consumer/how-to-guides.md",
-        "docs/consumer/reference.md",
-        "docs/consumer/explanation.md"
+        "docs/archive/ARD-v26.9.x-wasm4pm-phase1.md",
+        "CHANGELOG.md"
       ],
       groups_for_extras: [
         Guides: ~r{^docs/guides/},
         "WASM and planning": [
           "docs/FERROPLAN-RUNTIME.md",
           "docs/ALGORITHM-REGISTRY-GENERATION.md",
-          "docs/ARD-v26.9.x-wasm4pm-phase1.md"
-        ],
-        "Consumer Guide": Path.wildcard("docs/consumer/*.md")
+          "docs/archive/ARD-v26.9.x-wasm4pm-phase1.md"
+        ]
       ],
       groups_for_modules: [
         "Public API": [Ex4pm, Ex4pm.Engine, Ex4pm.Engine.Result, Ex4pm.Refusal, Ex4pm.Contracts],
