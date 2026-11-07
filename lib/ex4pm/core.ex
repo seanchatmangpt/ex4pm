@@ -33,19 +33,31 @@ defmodule Ex4pm.Refusal do
   """
 
   @enforce_keys [:code, :message]
-  defstruct [:code, :message, :subject, details: %{}]
+  defstruct [:code, :message, :subject, :mode, :missing_tokens, details: %{}]
 
   @type t :: %__MODULE__{
           code: atom(),
           message: String.t(),
           subject: term() | nil,
+          mode: atom() | nil,
+          missing_tokens: non_neg_integer() | nil,
           details: map()
         }
 
   def new(code, message, opts \\ []) do
     subject = Keyword.get(opts, :subject)
+    mode = Keyword.get(opts, :mode)
+    missing_tokens = Keyword.get(opts, :missing_tokens)
     details = Keyword.get(opts, :details, %{})
-    %__MODULE__{code: code, message: message, subject: subject, details: details}
+
+    %__MODULE__{
+      code: code,
+      message: message,
+      subject: subject,
+      mode: mode,
+      missing_tokens: missing_tokens,
+      details: details
+    }
   end
 
   def exception(opts) do
