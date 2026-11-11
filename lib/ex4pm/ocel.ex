@@ -125,6 +125,10 @@ defmodule Ex4pm.OCEL do
     {:error, Refusal.new(:invalid_observation, "event observation must be a map", subject: other)}
   end
 
+  def flatten(%EventLog{} = log, nil) do
+    {:ok, %{"__event_log__" => Enum.sort_by(log.events, &event_sort_key/1)}}
+  end
+
   def flatten(%EventLog{} = log, object_type)
       when is_binary(object_type) or is_atom(object_type) do
     selected =
@@ -153,10 +157,6 @@ defmodule Ex4pm.OCEL do
     else
       {:ok, traces}
     end
-  end
-
-  def flatten(%EventLog{} = log, nil) do
-    {:ok, %{"__event_log__" => Enum.sort_by(log.events, &event_sort_key/1)}}
   end
 
   defp normalize_objects(objects) when is_map(objects) do

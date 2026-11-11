@@ -1,7 +1,7 @@
 {
   "schema": "ex4pm.ggen.vendor-lock/v1",
   "source_repo": "ggen-marketplace",
-  "source_git_sha": "d467c417adffeea6f303b354867063c860bffeb7",
+  "source_git_sha": "0a299b821ff5095489627997a93657f6c318fda1",
   "packs": [
     {
       "name": "ex4pm-wasm4pm-bindings-pack",
@@ -56,7 +56,7 @@
   "generated": [
     {
       "path": "provenance.ttl",
-      "sha256": "d112b223546d51982289d2eb4b2e8e9468975811f85f03a7be16f9d7830d9cfc"
+      "sha256": "7f7d9ab45da17d59248e5053c1a8e3c283e69d80e045110f7437d7311479bacd"
     }
   ]
 }

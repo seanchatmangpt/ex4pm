@@ -751,7 +751,7 @@ defmodule Ex4pm.Qualification.ExposureCourt do
 
   defp sections(<<id, rest::binary>>, acc) do
     {size, rest} = leb(rest)
-    <<body::binary-size(size), rest::binary>> = rest
+    <<body::binary-size(^size), rest::binary>> = rest
 
     case id do
       7 ->
@@ -767,7 +767,7 @@ defmodule Ex4pm.Qualification.ExposureCourt do
 
   defp read_exports(n, bin, acc) do
     {len, bin} = leb(bin)
-    <<name::binary-size(len), _kind, bin::binary>> = bin
+    <<name::binary-size(^len), _kind, bin::binary>> = bin
     {_idx, bin} = leb(bin)
     read_exports(n - 1, bin, [name | acc])
   end

@@ -1,0 +1,60 @@
+;; v26.11.10.problem.hddl
+;;
+;; HDDL 2.1 problem file for the ex4pm v26.11.10 release campaign
+;; (see docs/jira/v26.11.10/PLAN.md, PRD-v26.11.10.md, and ARD-v26.11.10.md).
+;;
+;; Models the execution of the release wave to achieve full release qualification
+;; and Hex publication for v26.11.10.
+;;
+;; Hand-verified against HDDL 2.1 grammar (Hoeller et al., 2020).
+
+(define (problem finish-ex4pm-v26-11-10-problem)
+  (:domain ex4pm-release-v26-11-10)
+
+  (:objects
+    ;; release constant v26-11-10 is declared in domain
+  )
+
+  (:htn
+    :parameters ()
+    :subtasks (and
+      (t0 (FINISH-EX4PM-RELEASE v26-11-10))
+    )
+  )
+
+  (:init
+    ;; -- Initial state reflects active work in progress --
+    ;; Reviewers are dispatched to generate domain critiques
+    (review-assigned rev-zach-daniel)
+    (review-assigned rev-joe-armstrong)
+    (review-assigned rev-jose-valim)
+    (review-assigned rev-chris-mccord)
+    (review-assigned rev-dave-thomas)
+    (review-assigned rev-andy-hunt)
+    (review-assigned rev-wil-van-der-aalst)
+    (review-assigned rev-leslie-lamport)
+    (review-assigned rev-bytecode-alliance)
+    (review-assigned rev-sre)
+
+    ;; Core architectural requirements already landed on main
+    ;; (commits e384dd1, 744299e, 852215c, and priv/smalt/ bridge)
+    (requirement-implemented r2-smalt-bridge)
+    (requirement-implemented r3-refusal-enhancements)
+    (requirement-implemented r4-otp27-json-hot-path)
+    (requirement-implemented r5-spec-typing)
+    (requirement-implemented r6-wasm-33-algo)
+
+    ;; Remaining preconditions (reviews completed, docs finalized, gates passed,
+    ;; package published) are resolved through task execution.
+  )
+
+  (:goal (and
+    (all-reviews-completed)
+    (all-requirements-implemented)
+    (all-docs-authored)
+    (milestone-2-completed)
+    (all-gates-passed)
+    (hex-published v26-11-10)
+    (release-closed v26-11-10)
+  ))
+)

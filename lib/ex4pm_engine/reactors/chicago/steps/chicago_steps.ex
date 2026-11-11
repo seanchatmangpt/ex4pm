@@ -170,7 +170,7 @@ defmodule Ex4pmEngine.Reactors.Chicago.Steps do
       }
 
       bn = BayesianNetwork.new(nodes, cpts)
-      {:ok, posterior} = BayesianNetwork.infer(bn, "Rain", %{"GrassWet" => "true"})
+      {:ok, %{distribution: posterior}} = BayesianNetwork.infer(bn, "Rain", %{"GrassWet" => "true"})
       prob = Map.get(posterior, "true", 0.2)
       {:ok, %{anomaly_posterior_given_root: prob}}
     end

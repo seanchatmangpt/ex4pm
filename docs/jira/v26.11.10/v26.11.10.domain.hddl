@@ -1,0 +1,357 @@
+;; v26.11.10.domain.hddl
+;;
+;; HDDL 2.1 domain encoding the release campaign for ex4pm v26.11.10
+;; (see docs/jira/v26.11.10/PLAN.md, PRD-v26.11.10.md, and ARD-v26.11.10.md).
+;;
+;; Models the three sequential release milestones:
+;;   M1: 10-persona expert architecture review wave
+;;   M2: Core documentation, work orders (001-010), and version synchronization
+;;   M3: 9-gate verification ladder, package build, and Hex.pm publication
+;;
+;; Hand-verified against HDDL 2.1 grammar (Hoeller et al., 2020).
+;; Conforms to requirements :hierarchy :typing :negative-preconditions :equality.
+
+(define (domain ex4pm-release-v26-11-10)
+  (:requirements :hierarchy :typing :negative-preconditions :equality)
+
+  (:types
+    milestone - object
+    requirement - object
+    persona_review - object
+    release - object
+    verification_gate - object
+    doc_artifact - object
+  )
+
+  (:constants
+    ;; Milestones
+    m1-review-wave - milestone
+    m2-docs-workorders - milestone
+    m3-verify-publish - milestone
+
+    ;; Core Requirements
+    r1-review-synthesis - requirement
+    r2-smalt-bridge - requirement
+    r3-refusal-enhancements - requirement
+    r4-otp27-json-hot-path - requirement
+    r5-spec-typing - requirement
+    r6-wasm-33-algo - requirement
+    r7-hex-publish - requirement
+
+    ;; The 10 Persona Reviews
+    rev-zach-daniel - persona_review
+    rev-joe-armstrong - persona_review
+    rev-jose-valim - persona_review
+    rev-chris-mccord - persona_review
+    rev-dave-thomas - persona_review
+    rev-andy-hunt - persona_review
+    rev-wil-van-der-aalst - persona_review
+    rev-leslie-lamport - persona_review
+    rev-bytecode-alliance - persona_review
+    rev-sre - persona_review
+
+    ;; Documentation Artifacts
+    doc-plan - doc_artifact
+    doc-domain-hddl - doc_artifact
+    doc-problem-hddl - doc_artifact
+    doc-prd - doc_artifact
+    doc-ard - doc_artifact
+    doc-receipt - doc_artifact
+    doc-workorders - doc_artifact
+
+    ;; The 9 Verification Gates (mix verify ladder)
+    gate-format - verification_gate
+    gate-compile - verification_gate
+    gate-lint-truth - verification_gate
+    gate-exposure-court - verification_gate
+    gate-ggen-determinism-1 - verification_gate
+    gate-test-suite - verification_gate
+    gate-powl-court - verification_gate
+    gate-sabotage-court - verification_gate
+    gate-ggen-determinism-2 - verification_gate
+
+    ;; Release Identifier
+    v26-11-10 - release
+  )
+
+  (:predicates
+    ;; Milestone 1: Review Wave
+    (review-assigned ?r - persona_review)
+    (review-conducted ?r - persona_review)
+    (all-reviews-completed)
+
+    ;; Milestone 2: Requirements & Documentation
+    (requirement-implemented ?req - requirement)
+    (all-requirements-implemented)
+    (doc-authored ?d - doc_artifact)
+    (all-docs-authored)
+    (version-bumped ?rel - release)
+    (changelog-updated ?rel - release)
+    (readme-updated ?rel - release)
+    (milestone-2-completed)
+
+    ;; Milestone 3: Verification Ladder & Hex Publish
+    (gate-passed ?g - verification_gate)
+    (all-gates-passed)
+    (package-built ?rel - release)
+    (hex-published ?rel - release)
+    (release-closed ?rel - release)
+  )
+
+  ;; ==========================================================================
+  ;; Top-Level Compound Task
+  ;; ==========================================================================
+
+  (:task FINISH-EX4PM-RELEASE
+    :parameters (?rel - release)
+  )
+
+  (:method m-finish-release
+    :parameters (?rel - release)
+    :task (FINISH-EX4PM-RELEASE ?rel)
+    :ordered-subtasks (and
+      (t1 (EXECUTE-MILESTONE-1-REVIEWS))
+      (t2 (EXECUTE-MILESTONE-2-DOCS ?rel))
+      (t3 (EXECUTE-MILESTONE-3-PUBLISH ?rel))
+    )
+  )
+
+  ;; ==========================================================================
+  ;; Milestone 1: Multi-Agent Review Wave
+  ;; ==========================================================================
+
+  (:task EXECUTE-MILESTONE-1-REVIEWS
+    :parameters ()
+  )
+
+  (:method m-execute-reviews
+    :task (EXECUTE-MILESTONE-1-REVIEWS)
+    :ordered-subtasks (and
+      (r01 (conduct-review rev-zach-daniel))
+      (r02 (conduct-review rev-joe-armstrong))
+      (r03 (conduct-review rev-jose-valim))
+      (r04 (conduct-review rev-chris-mccord))
+      (r05 (conduct-review rev-dave-thomas))
+      (r06 (conduct-review rev-andy-hunt))
+      (r07 (conduct-review rev-wil-van-der-aalst))
+      (r08 (conduct-review rev-leslie-lamport))
+      (r09 (conduct-review rev-bytecode-alliance))
+      (r10 (conduct-review rev-sre))
+      (r11 (confirm-all-reviews-completed))
+    )
+  )
+
+  (:action conduct-review
+    :parameters (?r - persona_review)
+    :precondition ()
+    :effect (review-conducted ?r)
+  )
+
+  (:action confirm-all-reviews-completed
+    :parameters ()
+    :precondition (and
+      (review-conducted rev-zach-daniel)
+      (review-conducted rev-joe-armstrong)
+      (review-conducted rev-jose-valim)
+      (review-conducted rev-chris-mccord)
+      (review-conducted rev-dave-thomas)
+      (review-conducted rev-andy-hunt)
+      (review-conducted rev-wil-van-der-aalst)
+      (review-conducted rev-leslie-lamport)
+      (review-conducted rev-bytecode-alliance)
+      (review-conducted rev-sre)
+    )
+    :effect (all-reviews-completed)
+  )
+
+  ;; ==========================================================================
+  ;; Milestone 2: Requirements Verification & Documentation
+  ;; ==========================================================================
+
+  (:task EXECUTE-MILESTONE-2-DOCS
+    :parameters (?rel - release)
+  )
+
+  (:method m-execute-docs
+    :parameters (?rel - release)
+    :task (EXECUTE-MILESTONE-2-DOCS ?rel)
+    :ordered-subtasks (and
+      (req1 (verify-requirement r1-review-synthesis))
+      (req2 (verify-requirement r2-smalt-bridge))
+      (req3 (verify-requirement r3-refusal-enhancements))
+      (req4 (verify-requirement r4-otp27-json-hot-path))
+      (req5 (verify-requirement r5-spec-typing))
+      (req6 (verify-requirement r6-wasm-33-algo))
+      (req7 (verify-requirement r7-hex-publish))
+      (req-all (confirm-all-requirements-implemented))
+      (doc1 (author-doc-artifact doc-plan))
+      (doc2 (author-doc-artifact doc-domain-hddl))
+      (doc3 (author-doc-artifact doc-problem-hddl))
+      (doc4 (author-doc-artifact doc-prd))
+      (doc5 (author-doc-artifact doc-ard))
+      (doc6 (author-doc-artifact doc-receipt))
+      (doc7 (author-doc-artifact doc-workorders))
+      (doc-all (confirm-all-docs-authored))
+      (b1 (bump-version ?rel))
+      (b2 (update-changelog ?rel))
+      (b3 (update-readme ?rel))
+      (b4 (confirm-milestone-2-completed))
+    )
+  )
+
+  (:action verify-requirement
+    :parameters (?req - requirement)
+    :precondition ()
+    :effect (requirement-implemented ?req)
+  )
+
+  (:action confirm-all-requirements-implemented
+    :parameters ()
+    :precondition (and
+      (requirement-implemented r1-review-synthesis)
+      (requirement-implemented r2-smalt-bridge)
+      (requirement-implemented r3-refusal-enhancements)
+      (requirement-implemented r4-otp27-json-hot-path)
+      (requirement-implemented r5-spec-typing)
+      (requirement-implemented r6-wasm-33-algo)
+      (requirement-implemented r7-hex-publish)
+    )
+    :effect (all-requirements-implemented)
+  )
+
+  (:action author-doc-artifact
+    :parameters (?d - doc_artifact)
+    :precondition ()
+    :effect (doc-authored ?d)
+  )
+
+  (:action confirm-all-docs-authored
+    :parameters ()
+    :precondition (and
+      (doc-authored doc-plan)
+      (doc-authored doc-domain-hddl)
+      (doc-authored doc-problem-hddl)
+      (doc-authored doc-prd)
+      (doc-authored doc-ard)
+      (doc-authored doc-receipt)
+      (doc-authored doc-workorders)
+    )
+    :effect (all-docs-authored)
+  )
+
+  (:action bump-version
+    :parameters (?rel - release)
+    :precondition ()
+    :effect (version-bumped ?rel)
+  )
+
+  (:action update-changelog
+    :parameters (?rel - release)
+    :precondition ()
+    :effect (changelog-updated ?rel)
+  )
+
+  (:action update-readme
+    :parameters (?rel - release)
+    :precondition ()
+    :effect (readme-updated ?rel)
+  )
+
+  (:action confirm-milestone-2-completed
+    :parameters ()
+    :precondition (and
+      (all-requirements-implemented)
+      (all-docs-authored)
+    )
+    :effect (milestone-2-completed)
+  )
+
+  ;; ==========================================================================
+  ;; Milestone 3: Verification Ladder & Hex Publish
+  ;; ==========================================================================
+
+  (:task EXECUTE-MILESTONE-3-PUBLISH
+    :parameters (?rel - release)
+  )
+
+  (:method m-execute-publish
+    :parameters (?rel - release)
+    :task (EXECUTE-MILESTONE-3-PUBLISH ?rel)
+    :ordered-subtasks (and
+      (v0 (RUN-VERIFICATION-LADDER))
+      (v1 (build-hex-package ?rel))
+      (v2 (publish-to-hex ?rel))
+      (v3 (close-release ?rel))
+    )
+  )
+
+  (:task RUN-VERIFICATION-LADDER
+    :parameters ()
+  )
+
+  (:method m-run-verification-ladder
+    :task (RUN-VERIFICATION-LADDER)
+    :ordered-subtasks (and
+      (g1 (run-gate gate-format))
+      (g2 (run-gate gate-compile))
+      (g3 (run-gate gate-lint-truth))
+      (g4 (run-gate gate-exposure-court))
+      (g5 (run-gate gate-ggen-determinism-1))
+      (g6 (run-gate gate-test-suite))
+      (g7 (run-gate gate-powl-court))
+      (g8 (run-gate gate-sabotage-court))
+      (g9 (run-gate gate-ggen-determinism-2))
+      (g10 (confirm-all-gates-passed))
+    )
+  )
+
+  (:action run-gate
+    :parameters (?g - verification_gate)
+    :precondition ()
+    :effect (gate-passed ?g)
+  )
+
+  (:action confirm-all-gates-passed
+    :parameters ()
+    :precondition (and
+      (gate-passed gate-format)
+      (gate-passed gate-compile)
+      (gate-passed gate-lint-truth)
+      (gate-passed gate-exposure-court)
+      (gate-passed gate-ggen-determinism-1)
+      (gate-passed gate-test-suite)
+      (gate-passed gate-powl-court)
+      (gate-passed gate-sabotage-court)
+      (gate-passed gate-ggen-determinism-2)
+    )
+    :effect (all-gates-passed)
+  )
+
+  (:action build-hex-package
+    :parameters (?rel - release)
+    :precondition (and
+      (all-gates-passed)
+      (version-bumped ?rel)
+    )
+    :effect (package-built ?rel)
+  )
+
+  (:action publish-to-hex
+    :parameters (?rel - release)
+    :precondition (and
+      (package-built ?rel)
+    )
+    :effect (hex-published ?rel)
+  )
+
+  (:action close-release
+    :parameters (?rel - release)
+    :precondition (and
+      (all-reviews-completed)
+      (milestone-2-completed)
+      (all-gates-passed)
+      (hex-published ?rel)
+    )
+    :effect (release-closed ?rel)
+  )
+)

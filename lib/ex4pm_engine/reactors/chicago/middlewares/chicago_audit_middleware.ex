@@ -8,7 +8,6 @@ defmodule Ex4pmEngine.Reactors.Chicago.Middlewares.ChicagoAuditMiddleware do
   into process telemetry and caller mailbox.
   """
   use Reactor.Middleware
-  require Logger
 
   @impl true
   def init(context) do

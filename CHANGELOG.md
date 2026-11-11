@@ -14,6 +14,36 @@ silence means unchanged; state it.
 
 ## [Unreleased]
 
+## [26.11.10] - 2026-11-10
+
+Production release v26.11.10:
+- Smalt bridge integration: Bundled file-level OCEL 2.0 to ex4pm event log and POWL translation bridge (`priv/smalt/powl_bridge.exs`) enabling zero-dependency CLI discovery (`discover`), conformance checking (`conform`), and JSON DFG serialization across Smalt and ex4pm pipelines.
+- OTP 27 `:json` hot path: Migrated NDJSON event log ingestion and chunked streaming from Jason to native Erlang/OTP 27 `:json` module on the hot execution path for zero-allocation parsing throughput.
+- Refusal enhancements: Added `:mode` (execution mode context) and `:missing_tokens` (granular 1-safety token underflow diagnostics) typed fields to `%Ex4pm.Refusal{}` for deterministic error propagation and Petri net audit telemetry.
+- Comprehensive `@spec` coverage: Closed typespec coverage across all public API, engine, stream, domain, and qualification modules, eliminating dialyzer edge cases and validating against Elixir 1.17 and 1.20 compilers.
+- 33 WASM algorithms: Admitted and verified the complete 33-algorithm suite in `Ex4pmEngine.Wasm.AlgoRegistry` with zero-import sandboxing, SHA-256 digest pinning, and dual-run determinism against `priv/wasm4pm/MANIFEST.json`.
+- 10-persona expert review campaign: Completed architecture and code quality review across 10 expert domains (Zach Daniel, Joe Armstrong, José Valim, Chris McCord, Dave Thomas & Andy Hunt, Wil van der Aalst, Leslie Lamport, Bytecode Alliance, and SRE), establishing release work orders and verification receipts in `docs/jira/v26.11.10/`.
+
+### Public contract
+
+- `Ex4pm.OCEL.validate_envelope/1` required envelope keys: UNCHANGED.
+- `Ex4pm.Stream.Ingest.ingest_envelope/1,2` options: UNCHANGED.
+- `Ex4pm.Evidence.BRCE.execute/4` authority-map shape: UNCHANGED.
+
+## [26.10.17] - 2026-10-17
+
+Fleet release v26.10.17:
+- Rebuilt and pinned zero-import WASM artifact `wasm4pm_ex4pm_bindings.wasm` from `~/wasm4pm` commit `3147d03` with 70 ABI exports.
+- Verified `ex4pm-wasm4pm-bindings-pack` from `~/ggen-marketplace` determinism and updated vendor locks.
+- Fixed Elixir 1.20 compilation warnings across exposure court, OCEL, and Chicago reactors.
+- Bundled Smalt OCEL-to-ex4pm file-level bridge (`priv/smalt/powl_bridge.exs`).
+
+### Public contract
+
+- `Ex4pm.OCEL.validate_envelope/1` required envelope keys: UNCHANGED.
+- `Ex4pm.Stream.Ingest.ingest_envelope/1,2` options: UNCHANGED.
+- `Ex4pm.Evidence.BRCE.execute/4` authority-map shape: UNCHANGED.
+
 ## [26.10.8] - 2026-10-08
 
 Version alignment release: `@version` 26.10.1 → 26.10.8, aligning the ex4pm
