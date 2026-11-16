@@ -4,7 +4,7 @@
 % Reproducibility: run `mix ex4pm.ocel_to_latex <path_to_ocel.ndjson>`
 % ==========================================================================
 
-\subsection{Empirical Execution Benchmark (Full 4910 Event Ingestion)}
+\subsection{Empirical Execution Benchmark (Full 13975 Event Ingestion)}
 
 \begin{table}[ht!]
 \centering
@@ -13,20 +13,20 @@
 \toprule
 \textbf{Benchmark Dimension} & \textbf{Observed Measurement} & \textbf{Unit} \\
 \midrule
-\textbf{Total Ingested Events} & \textbf{4910} & events \\
-Ingestion Execution Wall Time & 28 & ms \\
-\textbf{Peak Streaming Rate} & \textbf{4910.0} & ev/sec \\
-Discovered Unique Activities & 31 & actions \\
-Discovered Object Types & 11 & types \\
+\textbf{Total Ingested Events} & \textbf{13975} & events \\
+Ingestion Execution Wall Time & 128 & ms \\
+\textbf{Peak Streaming Rate} & \textbf{13975.0} & ev/sec \\
+Discovered Unique Activities & 132 & actions \\
+Discovered Object Types & 74 & types \\
 \midrule
-\textbf{Shannon Log Entropy $H(\mathcal{L})$} & \textbf{2.0915} & bits \\
-Log-Normal Parameter $\hat{\mu}$ & 0.3559 & -- \\
-Log-Normal Parameter $\hat{\sigma}$ & 0.9306 & -- \\
-Mean Action Duration & 4.46 & ms \\
-P50 (Median) Latency & 1 & ms \\
-P90 Latency & 3 & ms \\
-\textbf{P99 Tail Bottleneck Latency} & \textbf{80} & ms \\
-Maximum Observed Latency & 2091 & ms \\
+\textbf{Shannon Log Entropy $H(\mathcal{L})$} & \textbf{4.0107} & bits \\
+Log-Normal Parameter $\hat{\mu}$ & 0.5977 & -- \\
+Log-Normal Parameter $\hat{\sigma}$ & 1.1515 & -- \\
+Mean Action Duration & 8.21 & ms \\
+P50 (Median) Latency & 0 & ms \\
+P90 Latency & 10 & ms \\
+\textbf{P99 Tail Bottleneck Latency} & \textbf{252} & ms \\
+Maximum Observed Latency & 1361 & ms \\
 \bottomrule
 \end{tabular}
 \caption{Information-theoretic entropy and log-normal latency parameters estimated from the full 647k production OCEL 2.0 dataset.}
@@ -42,18 +42,18 @@ Maximum Observed Latency & 2091 & ms \\
 \toprule
 \textbf{Discovered Activity} & \textbf{Enterprise Domain} & \textbf{Count} \\
 \midrule
-\texttt{epoch.read\_unscoped} & Enterprise Core & 3102 \\
-\texttt{run.read\_unscoped} & Enterprise Core & 676 \\
-\texttt{receipt.seal} & Enterprise Core & 303 \\
-\texttt{internal\_api\_token.by\_hash} & Enterprise Core & 234 \\
-\texttt{receipt.for\_epoch} & Enterprise Core & 122 \\
-\texttt{run.tick} & Enterprise Core & 98 \\
-\texttt{actuation\_receipt.read} & Enterprise Core & 82 \\
-\texttt{actuation\_intent.read} & Enterprise Core & 56 \\
-\texttt{actuation\_intent.transition} & Enterprise Core & 28 \\
-\texttt{run.transition\_state} & Enterprise Core & 24 \\
-\texttt{run.engine\_cycle} & Enterprise Core & 21 \\
-\texttt{webhook\_delivery.read} & Platform & 21 \\
+\texttt{user.read} & Enterprise Core & 2092 \\
+\texttt{token.is\_revoked} & Enterprise Core & 2006 \\
+\texttt{token.get\_token} & Enterprise Core & 2003 \\
+\texttt{user.get\_by\_subject} & Enterprise Core & 1993 \\
+\texttt{internal\_api\_token.by\_hash} & Enterprise Core & 1882 \\
+\texttt{epoch.read\_unscoped} & Enterprise Core & 446 \\
+\texttt{notification.read} & Enterprise Core & 417 \\
+\texttt{user\_role.read} & Enterprise Core & 348 \\
+\texttt{role.read} & Enterprise Core & 330 \\
+\texttt{token.store\_token} & Enterprise Core & 275 \\
+\texttt{work\_order.read} & Enterprise Core & 234 \\
+\texttt{user.sign\_in\_with\_password} & Enterprise Core & 141 \\
 \bottomrule
 \end{tabular}
 \caption{Top-12 activity execution frequencies extracted directly from the IEEE OCEL 2.0 stream.}
@@ -69,16 +69,16 @@ Maximum Observed Latency & 2091 & ms \\
 \toprule
 \textbf{Source Activity} & \textbf{Target Activity} & \textbf{Count} \\
 \midrule
-\texttt{epoch.read\_unscoped} $\to$ \texttt{epoch.read\_unscoped} & & 3091 \\
-\texttt{run.read\_unscoped} $\to$ \texttt{run.read\_unscoped} & & 540 \\
-\texttt{receipt.seal} $\to$ \texttt{receipt.seal} & & 286 \\
-\texttt{internal\_api\_token.by\_hash} $\to$ \texttt{internal\_api\_token.by\_hash} & & 233 \\
-\texttt{receipt.for\_epoch} $\to$ \texttt{receipt.for\_epoch} & & 106 \\
-\texttt{run.tick} $\to$ \texttt{run.read\_unscoped} & & 97 \\
-\texttt{run.read\_unscoped} $\to$ \texttt{run.tick} & & 84 \\
-\texttt{actuation\_receipt.read} $\to$ \texttt{actuation\_receipt.read} & & 40 \\
-\texttt{actuation\_intent.read} $\to$ \texttt{actuation\_intent.read} & & 28 \\
-\texttt{actuation\_intent.transition} $\to$ \texttt{actuation\_intent.read} & & 27 \\
+\texttt{internal\_api\_token.by\_hash} $\to$ \texttt{internal\_api\_token.by\_hash} & & 1879 \\
+\texttt{user.get\_by\_subject} $\to$ \texttt{user.read} & & 1197 \\
+\texttt{token.is\_revoked} $\to$ \texttt{token.get\_token} & & 1162 \\
+\texttt{user.read} $\to$ \texttt{user.get\_by\_subject} & & 1076 \\
+\texttt{token.get\_token} $\to$ \texttt{token.is\_revoked} & & 1044 \\
+\texttt{user.read} $\to$ \texttt{user.read} & & 880 \\
+\texttt{token.is\_revoked} $\to$ \texttt{token.is\_revoked} & & 841 \\
+\texttt{token.get\_token} $\to$ \texttt{token.get\_token} & & 840 \\
+\texttt{user.get\_by\_subject} $\to$ \texttt{user.get\_by\_subject} & & 793 \\
+\texttt{epoch.read\_unscoped} $\to$ \texttt{epoch.read\_unscoped} & & 443 \\
 \bottomrule
 \end{tabular}
 \caption{Top-10 most frequent directly-follows transitions across the full event log. Stochastic row-normalized probabilities $P_{ij}$ are available in the companion supplementary matrix.}
@@ -94,26 +94,26 @@ Maximum Observed Latency & 2091 & ms \\
 \toprule
 \textbf{Activity (Ordered by Frequency)} & \textbf{Event Count} & \textbf{Cumulative Coverage (\%)} \\
 \midrule
-\texttt{epoch.read\_unscoped} & 3102 & 63.18\% \\
-\texttt{run.read\_unscoped} & 676 & 76.95\% \\
-\texttt{receipt.seal} & 303 & 83.12\% \\
-\texttt{internal\_api\_token.by\_hash} & 234 & 87.88\% \\
-\texttt{receipt.for\_epoch} & 122 & 90.37\% \\
-\texttt{run.tick} & 98 & 92.36\% \\
-\texttt{actuation\_receipt.read} & 82 & 94.03\% \\
-\texttt{actuation\_intent.read} & 56 & 95.17\% \\
-\texttt{actuation\_intent.transition} & 28 & 95.74\% \\
-\texttt{run.transition\_state} & 24 & 96.23\% \\
-\texttt{run.engine\_cycle} & 21 & 96.66\% \\
-\texttt{webhook\_delivery.read} & 21 & 97.09\% \\
-\texttt{webhook\_delivery.retry\_failed\_deliveries} & 21 & 97.52\% \\
-\texttt{actuation\_intent.admit} & 14 & 97.8\% \\
-\texttt{actuation\_receipt.checkpoint} & 14 & 98.09\% \\
-\texttt{actuation\_receipt.prepare} & 14 & 98.37\% \\
-\texttt{actuation\_receipt.seal} & 14 & 98.66\% \\
-\texttt{route\_castle\_run.execute} & 14 & 98.94\% \\
-\texttt{run.create} & 12 & 99.19\% \\
-\texttt{epoch.create} & 11 & 99.41\% \\
+\texttt{user.read} & 2092 & 14.97\% \\
+\texttt{token.is\_revoked} & 2006 & 29.32\% \\
+\texttt{token.get\_token} & 2003 & 43.66\% \\
+\texttt{user.get\_by\_subject} & 1993 & 57.92\% \\
+\texttt{internal\_api\_token.by\_hash} & 1882 & 71.38\% \\
+\texttt{epoch.read\_unscoped} & 446 & 74.58\% \\
+\texttt{notification.read} & 417 & 77.56\% \\
+\texttt{user\_role.read} & 348 & 80.05\% \\
+\texttt{role.read} & 330 & 82.41\% \\
+\texttt{token.store\_token} & 275 & 84.38\% \\
+\texttt{work\_order.read} & 234 & 86.05\% \\
+\texttt{user.sign\_in\_with\_password} & 141 & 87.06\% \\
+\texttt{trade.subtrades} & 135 & 88.03\% \\
+\texttt{tenant.read} & 106 & 88.79\% \\
+\texttt{user\_preference.read} & 90 & 89.43\% \\
+\texttt{lookup\_value.by\_type} & 73 & 89.95\% \\
+\texttt{visit.read} & 70 & 90.45\% \\
+\texttt{client.read} & 60 & 90.88\% \\
+\texttt{conversation.read} & 52 & 91.26\% \\
+\texttt{run.read\_unscoped} & 50 & 91.61\% \\
 \bottomrule
 \end{tabular}
 \caption{Pareto cumulative event coverage across top-20 activities, demonstrating the long-tail concentration in the production event log.}
